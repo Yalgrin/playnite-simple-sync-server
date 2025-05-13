@@ -15,6 +15,6 @@ library data in Postgres database and image files in the file system.
 
 #### Instructions
 
-1. Download the `example-compose.yml` file.
-2. In the `volume` sections, specify the paths which will be used to persist data on your machine.
+1. Download the [`example-compose.yml`](https://github.com/Yalgrin/playnite-simple-sync-server/blob/master/example-compose.yml) file.
+2. In the `volumes` sections, specify the paths which will be used to persist data on your machine.
 3. Run `docker compose -f example-compose.yml up -d`.
