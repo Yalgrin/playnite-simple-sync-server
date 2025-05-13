@@ -1,0 +1,32 @@
+server:
+  port: ${SYNC_SERVER_PORT:8093}
+
+logging:
+  file:
+    path: ${SYNC_SERVER_LOG_DIR:./logs/}
+  level:
+    ROOT: INFO
+    pl.yalgrin: DEBUG
+    org.springframework.r2dbc.core.DefaultDatabaseClient: DEBUG
+
+spring:
+  application:
+    name: playnite-simple-sync-server
+  liquibase:
+    changelog: classpath:/db/changelog/db.changelog-master.xml
+    url: jdbc:postgresql://${SYNC_SERVER_DB_HOST:localhost}:${SYNC_SERVER_DB_PORT:49010}/${SYNC_SERVER_DB_NAME:playnite}
+    user: ${SYNC_SERVER_DB_USER:playnite}
+    password: ${SYNC_SERVER_DB_PASSWORD:playnite}
+  r2dbc:
+    url: r2dbc:postgresql://${SYNC_SERVER_DB_HOST:localhost}:${SYNC_SERVER_DB_PORT:49010}/${SYNC_SERVER_DB_NAME:playnite}
+    username: ${SYNC_SERVER_DB_USER:playnite}
+    password: ${SYNC_SERVER_DB_PASSWORD:playnite}
+  codec:
+    max-in-memory-size: ${SYNC_SERVER_MAX_FILE_SIZE:100MB}
+  servlet:
+    multipart:
+      max-file-size: ${SYNC_SERVER_MAX_FILE_SIZE:100MB}
+      max-request-size: ${SYNC_SERVER_MAX_FILE_SIZE:100MB}
+
+application:
+  metadata-folder: ${SYNC_SERVER_METADATA_FOLDER:./metadata}

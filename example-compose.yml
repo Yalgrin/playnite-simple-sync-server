@@ -1,0 +1,42 @@
+services:
+  playnite-sync-server:
+    image: yalgrin/playnite-simple-sync-server:0.1.0
+    container_name: playnite-simple-sync-server
+    hostname: playnite-simple-sync-server
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'D:/Playnite-Sync-Server/metadata/:/app/metadata'
+      - 'D:/Playnite-Sync-Server/logs/:/app/logs'
+    environment:
+      SYNC_SERVER_PORT: 8093
+      SYNC_SERVER_LOG_DIR: /app/logs/
+      SYNC_SERVER_DB_HOST: playnite-db
+      SYNC_SERVER_DB_PORT: 5432
+      SYNC_SERVER_DB_NAME: playnite
+      SYNC_SERVER_DB_USER: playnite
+      SYNC_SERVER_DB_PASSWORD: playnite
+      SYNC_SERVER_MAX_FILE_SIZE: 100MB
+      SYNC_SERVER_METADATA_FOLDER: /app/metadata
+    ports:
+      - "8093:8093"
+    depends_on:
+      - playnite-db
+  playnite-db:
+    image: postgres:17.5
+    container_name: playnite-db
+    hostname: playnite-db
+    restart: unless-stopped
+    logging:
+      options:
+        max-size: 10m
+    volumes:
+      - 'D:/Playnite-Sync-Server/postgres/data/:/var/lib/postgresql/data'
+    ports:
+      - "49010:5432"
+    environment:
+      POSTGRES_DB: playnite
+      POSTGRES_USER: playnite
+      POSTGRES_PASSWORD: playnite

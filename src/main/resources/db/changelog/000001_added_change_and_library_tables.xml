@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="000001-1" author="yalgrin">
+        <createTable tableName="playnite_change">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="type" type="varchar(50)"/>
+            <column name="client_id" type="varchar(100)"/>
+            <column name="object_id" type="bigint"/>
+            <column name="created_at" type="timestamp with time zone"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-2" author="yalgrin">
+        <createTable tableName="playnite_category">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-3" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_category" columnNames="playnite_id"
+                             constraintName="p_category_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-4" author="yalgrin">
+        <createIndex tableName="playnite_category" indexName="p_category_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-5" author="yalgrin">
+        <createTable tableName="playnite_genre">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-6" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_genre" columnNames="playnite_id"
+                             constraintName="p_genre_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-7" author="yalgrin">
+        <createIndex tableName="playnite_genre" indexName="p_genre_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-8" author="yalgrin">
+        <createTable tableName="playnite_platform">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="specification_id" type="varchar(255)"/>
+            <column name="icon_md5" type="varchar(255)"/>
+            <column name="cover_image_md5" type="varchar(255)"/>
+            <column name="background_image_md5" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-9" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_platform" columnNames="playnite_id"
+                             constraintName="p_platform_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-10" author="yalgrin">
+        <createIndex tableName="playnite_platform" indexName="p_platform_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-11" author="yalgrin">
+        <createTable tableName="playnite_platform_diff">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="contents" type="json"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-12" author="yalgrin">
+        <createIndex tableName="playnite_platform_diff" indexName="p_platform_diff_playnite_id_idx">
+            <column name="playnite_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-13" author="yalgrin">
+        <createIndex tableName="playnite_platform_diff" indexName="p_platform_diff_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-14" author="yalgrin">
+        <createTable tableName="playnite_company">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-15" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_company" columnNames="playnite_id"
+                             constraintName="p_company_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-16" author="yalgrin">
+        <createIndex tableName="playnite_company" indexName="p_company_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-17" author="yalgrin">
+        <createTable tableName="playnite_feature">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-18" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_feature" columnNames="playnite_id"
+                             constraintName="p_feature_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-19" author="yalgrin">
+        <createIndex tableName="playnite_feature" indexName="p_feature_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-20" author="yalgrin">
+        <createTable tableName="playnite_tag">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-21" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_tag" columnNames="playnite_id"
+                             constraintName="p_tag_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-22" author="yalgrin">
+        <createIndex tableName="playnite_tag" indexName="p_tag_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-23" author="yalgrin">
+        <createTable tableName="playnite_series">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-24" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_series" columnNames="playnite_id"
+                             constraintName="p_series_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-25" author="yalgrin">
+        <createIndex tableName="playnite_series" indexName="p_series_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-26" author="yalgrin">
+        <createTable tableName="playnite_age_rating">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-27" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_age_rating" columnNames="playnite_id"
+                             constraintName="p_age_rating_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-28" author="yalgrin">
+        <createIndex tableName="playnite_age_rating" indexName="p_age_rating_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-29" author="yalgrin">
+        <createTable tableName="playnite_region">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="specification_id" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-30" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_region" columnNames="playnite_id"
+                             constraintName="p_region_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-31" author="yalgrin">
+        <createIndex tableName="playnite_region" indexName="p_region_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-32" author="yalgrin">
+        <createTable tableName="playnite_source">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-33" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_source" columnNames="playnite_id"
+                             constraintName="p_source_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-34" author="yalgrin">
+        <createIndex tableName="playnite_source" indexName="p_source_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-35" author="yalgrin">
+        <createTable tableName="playnite_comp_status">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-36" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_comp_status" columnNames="playnite_id"
+                             constraintName="p_comp_status_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-37" author="yalgrin">
+        <createIndex tableName="playnite_comp_status" indexName="p_comp_status_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-38" author="yalgrin">
+        <createTable tableName="playnite_filter_preset">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="contents" type="json"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-39" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_filter_preset" columnNames="playnite_id"
+                             constraintName="p_filter_preset_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-40" author="yalgrin">
+        <createIndex tableName="playnite_filter_preset" indexName="p_filter_preset_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-41" author="yalgrin">
+        <createTable tableName="playnite_game">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="game_id" type="varchar(255)"/>
+            <column name="plugin_id" type="varchar(255)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="contents" type="json"/>
+            <column name="icon_md5" type="varchar(255)"/>
+            <column name="cover_image_md5" type="varchar(255)"/>
+            <column name="background_image_md5" type="varchar(255)"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-42" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_game" columnNames="playnite_id"
+                             constraintName="p_game_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000001-43" author="yalgrin">
+        <createIndex tableName="playnite_game" indexName="p_game_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-44" author="yalgrin">
+        <createIndex tableName="playnite_game" indexName="p_game_game_id_idx">
+            <column name="game_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-45" author="yalgrin">
+        <createIndex tableName="playnite_game" indexName="p_game_plugin_id_idx">
+            <column name="plugin_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-46" author="yalgrin">
+        <createTable tableName="playnite_game_diff">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="game_id" type="varchar(255)"/>
+            <column name="plugin_id" type="varchar(255)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="contents" type="json"/>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000001-47" author="yalgrin">
+        <createIndex tableName="playnite_game_diff" indexName="p_game_diff_playnite_id_idx">
+            <column name="playnite_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-48" author="yalgrin">
+        <createIndex tableName="playnite_game_diff" indexName="p_game_diff_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-49" author="yalgrin">
+        <createIndex tableName="playnite_game_diff" indexName="p_game_diff_game_id_idx">
+            <column name="game_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000001-50" author="yalgrin">
+        <createIndex tableName="playnite_game_diff" indexName="p_game_diff_plugin_id_idx">
+            <column name="plugin_id"/>
+        </createIndex>
+    </changeSet>
+</databaseChangeLog>
