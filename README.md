@@ -25,12 +25,11 @@ library data in Postgres database and image files in the file system.
         volumes:
           - 'D:/Playnite-Sync-Server/postgres/data/:/var/lib/postgresql/data'
 
-Replace `D:/Playnite-Sync-Server` with the path to the directory of your choosing.
+   Replace `D:/Playnite-Sync-Server` with the path to the directory of your choosing.
 
 3. Navigate to the directory where `example-compose.yml` is located and execute the following command in the terminal/command line:
 
-
-    docker compose -f example-compose.yml up -d
+        docker compose -f example-compose.yml up -d
 
 The server should now be running on port 8093 (unless changed). You can now specify the URL of the app in the plugin settings as follows:
 
