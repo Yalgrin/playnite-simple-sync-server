@@ -64,4 +64,20 @@
     <changeSet id="000002-15" author="yalgrin">
         <modifyDataType tableName="playnite_game_diff" columnName="name" newDataType="varchar(1000)"/>
     </changeSet>
+
+    <changeSet id="000002-16" author="yalgrin">
+        <modifyDataType tableName="playnite_game" columnName="game_id" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-17" author="yalgrin">
+        <modifyDataType tableName="playnite_game" columnName="plugin_id" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-18" author="yalgrin">
+        <modifyDataType tableName="playnite_game_diff" columnName="game_id" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-19" author="yalgrin">
+        <modifyDataType tableName="playnite_game_diff" columnName="plugin_id" newDataType="varchar(1000)"/>
+    </changeSet>
 </databaseChangeLog>
