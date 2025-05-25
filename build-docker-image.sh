@@ -1,2 +1,2 @@
 #!/bin/bash
-docker build -t yalgrin/playnite-simple-sync-server:0.1.0 .
+docker build -t yalgrin/playnite-simple-sync-server:0.1.1 .

@@ -1,6 +1,6 @@
 services:
   playnite-sync-server:
-    image: yalgrin/playnite-simple-sync-server:0.1.0
+    image: yalgrin/playnite-simple-sync-server:0.1.1
     container_name: playnite-simple-sync-server
     hostname: playnite-simple-sync-server
     restart: unless-stopped

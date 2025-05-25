@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="000002-1" author="yalgrin">
+        <modifyDataType tableName="playnite_category" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-2" author="yalgrin">
+        <modifyDataType tableName="playnite_genre" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-3" author="yalgrin">
+        <modifyDataType tableName="playnite_platform" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-4" author="yalgrin">
+        <modifyDataType tableName="playnite_platform_diff" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-5" author="yalgrin">
+        <modifyDataType tableName="playnite_company" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-6" author="yalgrin">
+        <modifyDataType tableName="playnite_feature" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-7" author="yalgrin">
+        <modifyDataType tableName="playnite_tag" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-8" author="yalgrin">
+        <modifyDataType tableName="playnite_series" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-9" author="yalgrin">
+        <modifyDataType tableName="playnite_age_rating" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-10" author="yalgrin">
+        <modifyDataType tableName="playnite_region" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-11" author="yalgrin">
+        <modifyDataType tableName="playnite_source" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-12" author="yalgrin">
+        <modifyDataType tableName="playnite_comp_status" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-13" author="yalgrin">
+        <modifyDataType tableName="playnite_filter_preset" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-14" author="yalgrin">
+        <modifyDataType tableName="playnite_game" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+
+    <changeSet id="000002-15" author="yalgrin">
+        <modifyDataType tableName="playnite_game_diff" columnName="name" newDataType="varchar(1000)"/>
+    </changeSet>
+</databaseChangeLog>

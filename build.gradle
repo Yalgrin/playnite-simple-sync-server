@@ -5,7 +5,7 @@ plugins {
 }
 
 group = 'pl.yalgrin'
-version = '0.1.0'
+version = '0.1.1'
 
 java {
     toolchain {
@@ -39,6 +39,7 @@ dependencies {
     implementation 'org.postgresql:postgresql'
     implementation 'org.postgresql:r2dbc-postgresql'
     implementation 'io.vavr:vavr:0.10.4'
+    implementation "io.projectreactor:reactor-tools"
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
