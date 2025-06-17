@@ -72,10 +72,6 @@ public class GameMapper extends AbstractObjectWithMetadataMapper<Game, GameDiff,
             game.setPluginId(dto.getPluginId());
             diffDTO.getChangedFields().add(GameDTO.Fields.PLUGIN_ID);
         }
-        if (hasChanged(targetDto.isIncludeLibraryPluginAction(), dto.isIncludeLibraryPluginAction())) {
-            diffDTO.setIncludeLibraryPluginAction(dto.isIncludeLibraryPluginAction());
-            diffDTO.getChangedFields().add(GameDTO.Fields.INCLUDE_LIBRARY_PLUGIN_ACTION);
-        }
         if (hasChanged(targetDto.getPlatforms(), dto.getPlatforms())) {
             diffDTO.setPlatforms(dto.getPlatforms());
             diffDTO.getChangedFields().add(GameDTO.Fields.PLATFORMS);
@@ -239,12 +235,6 @@ public class GameMapper extends AbstractObjectWithMetadataMapper<Game, GameDiff,
             targetDto.setSortingName(dto.getSortingName());
             diffDTO.setSortingName(dto.getSortingName());
             diffDTO.getChangedFields().add(GameDTO.Fields.SORTING_NAME);
-        }
-        if (changedFields.contains(GameDTO.Fields.INCLUDE_LIBRARY_PLUGIN_ACTION) && hasChanged(
-                targetDto.isIncludeLibraryPluginAction(), dto.isIncludeLibraryPluginAction())) {
-            targetDto.setIncludeLibraryPluginAction(dto.isIncludeLibraryPluginAction());
-            diffDTO.setIncludeLibraryPluginAction(dto.isIncludeLibraryPluginAction());
-            diffDTO.getChangedFields().add(GameDTO.Fields.INCLUDE_LIBRARY_PLUGIN_ACTION);
         }
         if (changedFields.contains(GameDTO.Fields.PLATFORMS) && hasChanged(targetDto.getPlatforms(),
                 dto.getPlatforms())) {
@@ -415,7 +405,7 @@ public class GameMapper extends AbstractObjectWithMetadataMapper<Game, GameDiff,
         dto.setFavorite(targetDto.isFavorite());
         dto.setLastActivity(targetDto.getLastActivity());
         dto.setSortingName(targetDto.getSortingName());
-        dto.setIncludeLibraryPluginAction(targetDto.isIncludeLibraryPluginAction());
+        dto.setIncludeLibraryPluginAction(true);
         dto.setPlatforms(targetDto.getPlatforms());
         dto.setPublishers(targetDto.getPublishers());
         dto.setDevelopers(targetDto.getDevelopers());
@@ -480,7 +470,7 @@ public class GameMapper extends AbstractObjectWithMetadataMapper<Game, GameDiff,
             diffDTO.setSortingName(targetDto.getSortingName());
         }
         if (changedFields.contains(GameDTO.Fields.INCLUDE_LIBRARY_PLUGIN_ACTION)) {
-            diffDTO.setIncludeLibraryPluginAction(targetDto.isIncludeLibraryPluginAction());
+            diffDTO.setIncludeLibraryPluginAction(true);
         }
         if (changedFields.contains(GameDTO.Fields.PLATFORMS)) {
             diffDTO.setPlatforms(targetDto.getPlatforms());

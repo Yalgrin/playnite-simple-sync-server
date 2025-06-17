@@ -47,6 +47,7 @@ public class GameDiffDTO extends AbstractDiffDTO {
     @JsonProperty(PLUGIN_ID)
     private String pluginId;
 
+    @Deprecated(forRemoval = true)
     @JsonProperty(INCLUDE_LIBRARY_PLUGIN_ACTION)
     private boolean includeLibraryPluginAction;
 
