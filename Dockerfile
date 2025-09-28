@@ -4,7 +4,7 @@ COPY build.gradle settings.gradle ./
 COPY src ./src
 RUN gradle build --no-daemon
 
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:25-jre-alpine
 EXPOSE 8093
 WORKDIR /app
 COPY --from=build /app/build/libs/playnite-simple-sync-server-*.jar ./app.jar
