@@ -10,7 +10,7 @@ import static pl.yalgrin.playnite.simplesync.dto.AbstractObjectDTO.Fields.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public abstract class AbstractObjectDTO extends AbstractDTO {
 
     @JsonProperty(ID)

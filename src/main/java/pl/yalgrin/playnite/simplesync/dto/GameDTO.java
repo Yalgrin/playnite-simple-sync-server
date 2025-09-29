@@ -17,7 +17,7 @@ import static pl.yalgrin.playnite.simplesync.dto.GameDTO.Fields.*;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class GameDTO extends AbstractObjectDTO {
 
     @JsonProperty(DESCRIPTION)

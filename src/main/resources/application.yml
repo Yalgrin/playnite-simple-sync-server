@@ -21,12 +21,16 @@ spring:
     url: r2dbc:postgresql://${SYNC_SERVER_DB_HOST:localhost}:${SYNC_SERVER_DB_PORT:49010}/${SYNC_SERVER_DB_NAME:playnite}
     username: ${SYNC_SERVER_DB_USER:playnite}
     password: ${SYNC_SERVER_DB_PASSWORD:playnite}
-  codec:
-    max-in-memory-size: ${SYNC_SERVER_MAX_FILE_SIZE:100MB}
+  http:
+    codecs:
+      max-in-memory-size: ${SYNC_SERVER_MAX_FILE_SIZE:100MB}
   servlet:
     multipart:
       max-file-size: ${SYNC_SERVER_MAX_FILE_SIZE:100MB}
       max-request-size: ${SYNC_SERVER_MAX_FILE_SIZE:100MB}
+  threads:
+    virtual:
+      enabled: true
 
 application:
   metadata-folder: ${SYNC_SERVER_METADATA_FOLDER:./metadata}

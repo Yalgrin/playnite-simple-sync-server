@@ -10,7 +10,7 @@ import pl.yalgrin.playnite.simplesync.utils.ToStringUtils;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class ErrorDTO {
     @JsonProperty("Message")
     private String message;

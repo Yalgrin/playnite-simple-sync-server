@@ -9,7 +9,7 @@ import pl.yalgrin.playnite.simplesync.utils.ToStringUtils;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class CategoryDTO extends AbstractObjectDTO {
     @Override
     public String toString() {

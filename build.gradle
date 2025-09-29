@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id 'groovy'
     id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.7'
     id "org.sonarqube" version "6.3.1.5724"
@@ -7,6 +8,9 @@ plugins {
 
 group = 'pl.yalgrin'
 version = '0.1.4-SNAPSHOT'
+
+def vavrVersion = '0.10.7'
+def spockVersion = '2.4-M6-groovy-4.0'
 
 java {
     toolchain {
@@ -35,20 +39,27 @@ repositories {
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
     implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
     implementation 'org.liquibase:liquibase-core'
     implementation 'org.springframework:spring-jdbc'
     implementation 'org.postgresql:postgresql'
     implementation 'org.postgresql:r2dbc-postgresql'
-    implementation 'io.vavr:vavr:0.10.6'
+    implementation "io.vavr:vavr:$vavrVersion"
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:r2dbc'
     testImplementation 'io.projectreactor:reactor-test'
-    testImplementation 'com.h2database:h2'
-    testImplementation 'io.r2dbc:r2dbc-h2'
+    testImplementation "org.spockframework:spock-core:$spockVersion"
+    testImplementation "org.spockframework:spock-spring:$spockVersion"
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-tasks.named('test') {
+test {
     useJUnitPlatform()
+
+    systemProperty "reactor.schedulers.defaultBoundedElasticOnVirtualThreads", "true"
 }

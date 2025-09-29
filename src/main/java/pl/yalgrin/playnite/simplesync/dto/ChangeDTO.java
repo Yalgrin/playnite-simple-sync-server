@@ -13,7 +13,7 @@ import pl.yalgrin.playnite.simplesync.utils.ToStringUtils;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class ChangeDTO extends AbstractDTO {
     @JsonProperty("Id")
     private Long id;

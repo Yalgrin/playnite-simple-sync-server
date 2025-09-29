@@ -17,7 +17,7 @@ import static pl.yalgrin.playnite.simplesync.dto.GameDiffDTO.Fields.*;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class GameDiffDTO extends AbstractDiffDTO {
 
     @JsonProperty(DESCRIPTION)

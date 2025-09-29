@@ -11,7 +11,7 @@ import pl.yalgrin.playnite.simplesync.utils.ToStringUtils;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class FilterPresetDTO extends AbstractObjectDTO {
     @JsonProperty("Settings")
     private FilterPresetSettingsDTO settings;

@@ -13,7 +13,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public abstract class AbstractDiffDTO extends AbstractDTO {
     @JsonProperty("Id")
     protected String id;

@@ -10,7 +10,7 @@ import pl.yalgrin.playnite.simplesync.utils.ToStringUtils;
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public class PlatformDiffDTO extends AbstractDiffDTO {
     @JsonProperty("SpecificationId")
     private String specificationId;

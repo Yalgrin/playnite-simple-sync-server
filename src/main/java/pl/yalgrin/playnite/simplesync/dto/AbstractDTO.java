@@ -8,6 +8,6 @@ import java.io.Serializable;
 
 @Data
 @NoArgsConstructor
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public abstract class AbstractDTO implements Serializable {
 }
