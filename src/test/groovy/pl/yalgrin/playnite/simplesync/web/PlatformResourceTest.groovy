@@ -1,28 +1,27 @@
 package pl.yalgrin.playnite.simplesync.web
 
-
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
-import pl.yalgrin.playnite.simplesync.domain.Category
-import pl.yalgrin.playnite.simplesync.dto.CategoryDTO
+import pl.yalgrin.playnite.simplesync.domain.Platform
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
+import pl.yalgrin.playnite.simplesync.dto.PlatformDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
-import pl.yalgrin.playnite.simplesync.repository.CategoryRepository
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.repository.PlatformRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicLong
 
-class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
+class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, PlatformDTO> {
 
     @Autowired
-    private CategoryRepository categoryRepository
+    private PlatformRepository platformRepository
 
-    def "save single category"() {
+    def "save single platform"() {
         given:
-        CategoryDTO dto = CategoryDTO.builder()
+        PlatformDTO dto = PlatformDTO.builder()
                 .id(UUID.randomUUID().toString())
                 .name("test")
                 .build()
@@ -34,7 +33,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         response.expectStatus().is2xxSuccessful()
 
         and:
-        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, CategoryDTO.class))
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, PlatformDTO.class))
                 .expectNextMatches { objectMatches(it, dto) }
                 .verifyComplete()
 
@@ -42,11 +41,11 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         assertEntityAndGetResponse(dto)
     }
 
-    def "save multiple categories"() {
+    def "save multiple platforms"() {
         given:
-        List<CategoryDTO> list = new ArrayList<>()
+        List<PlatformDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(CategoryDTO.builder()
+            list.add(PlatformDTO.builder()
                     .id("id-" + i)
                     .name("name " + i)
                     .build())
@@ -68,7 +67,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
         and:
         responses.withIndex().stream().allMatch { tuple ->
-            StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), CategoryDTO.class))
+            StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), PlatformDTO.class))
                     .expectNextMatches { objectMatches(it, list.get(tuple.getV2())) }
                     .verifyComplete()
             true
@@ -78,9 +77,9 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         list.stream().allMatch { dto -> assertEntityAndGetResponse(dto) }
     }
 
-    def "save category and then delete it"() {
+    def "save platform and then delete it"() {
         given:
-        CategoryDTO dto = CategoryDTO.builder()
+        PlatformDTO dto = PlatformDTO.builder()
                 .id(UUID.randomUUID().toString())
                 .name("to-delete")
                 .build()
@@ -99,14 +98,14 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         deleteResponse.expectStatus().is2xxSuccessful()
 
         and:
-        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, CategoryDTO.class))
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, PlatformDTO.class))
                 .verifyComplete()
         assertDeleted(dto)
     }
 
     def "save and then remove repeatedly"() {
         given:
-        CategoryDTO dto = CategoryDTO.builder()
+        PlatformDTO dto = PlatformDTO.builder()
                 .id(UUID.randomUUID().toString())
                 .name("to-delete-2")
                 .build()
@@ -127,19 +126,19 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         deleteResponse2.expectStatus().is2xxSuccessful()
 
         and:
-        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, CategoryDTO.class))
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, PlatformDTO.class))
                 .verifyComplete()
         assertDeleted(dto)
     }
 
     def "save, modify and delete and await the change stream"() {
         given:
-        CategoryDTO toSave = CategoryDTO.builder()
+        PlatformDTO toSave = PlatformDTO.builder()
                 .id(UUID.randomUUID().toString())
                 .name("new")
                 .build()
-        CategoryDTO modified = toSave.toBuilder().name("some other name").build()
-        CategoryDTO removed = modified.toBuilder().removed(true).build()
+        PlatformDTO modified = toSave.toBuilder().name("some other name").build()
+        PlatformDTO removed = modified.toBuilder().removed(true).build()
 
         when:
         def changeRequest = makeChangeStreamRequest()
@@ -154,7 +153,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
                 }
                 .expectNextMatches { change ->
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Category
+                    assert change.getType() == ObjectType.Platform
                     assert change.getClientId() == "test"
                     assert change.getObjectId() != null
                     assert !change.isForceFetch()
@@ -166,7 +165,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
                     getResponse.expectStatus().is2xxSuccessful()
 
-                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, CategoryDTO.class))
+                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PlatformDTO.class))
                             .expectNextMatches { objectMatches(it, toSave) }
                             .verifyComplete()
                 }
@@ -175,9 +174,9 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
                 }
                 .expectNextMatches { change ->
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Category
+                    assert change.getType() == ObjectType.PlatformDiff
                     assert change.getClientId() == "test"
-                    assert change.getObjectId() == newObjectId.get()
+                    assert change.getObjectId() == newObjectId.get() + 1
                     assert !change.isForceFetch()
                     true
                 }
@@ -186,7 +185,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
                     getResponse.expectStatus().is2xxSuccessful()
 
-                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, CategoryDTO.class))
+                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PlatformDTO.class))
                             .expectNextMatches { objectMatches(it, modified) }
                             .verifyComplete()
                 }
@@ -195,7 +194,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
                 }
                 .expectNextMatches { change ->
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Category
+                    assert change.getType() == ObjectType.Platform
                     assert change.getClientId() == "test"
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.isForceFetch()
@@ -206,7 +205,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
                     getResponse.expectStatus().is2xxSuccessful()
 
-                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, CategoryDTO.class))
+                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PlatformDTO.class))
                             .expectNextMatches { objectMatches(it, removed) }
                             .verifyComplete()
                 }
@@ -216,21 +215,21 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
     @Override
     protected String uri() {
-        return "/api/category"
+        return "/api/platform"
     }
 
     @Override
-    protected ObjectRepository<Category> repository() {
-        return categoryRepository
+    protected ObjectRepository<Platform> repository() {
+        return platformRepository
     }
 
     @Override
-    protected Class<? extends CategoryDTO> dtoClass() {
-        return CategoryDTO.class
+    protected Class<? extends PlatformDTO> dtoClass() {
+        return PlatformDTO.class
     }
 
     @Override
-    boolean objectMatches(CategoryDTO resultDTO, CategoryDTO expectedDTO) {
+    boolean objectMatches(PlatformDTO resultDTO, PlatformDTO expectedDTO) {
         assert resultDTO.getId() == expectedDTO.getId()
         assert resultDTO.getName() == expectedDTO.getName()
         assert resultDTO.isRemoved() == expectedDTO.isRemoved()
@@ -238,7 +237,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
     }
 
     @Override
-    boolean objectMatches(Category resultDTO, CategoryDTO expectedDTO) {
+    boolean objectMatches(Platform resultDTO, PlatformDTO expectedDTO) {
         assert resultDTO.getPlayniteId() == expectedDTO.getId()
         assert resultDTO.getName() == expectedDTO.getName()
         assert resultDTO.isRemoved() == expectedDTO.isRemoved()

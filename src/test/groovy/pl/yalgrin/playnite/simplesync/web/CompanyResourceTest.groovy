@@ -1,9 +1,7 @@
 package pl.yalgrin.playnite.simplesync.web
 
-import io.r2dbc.spi.ConnectionFactory
+
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.core.io.ClassPathResource
-import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator
 import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.domain.Company
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
@@ -14,24 +12,13 @@ import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
-import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicLong
 
 class CompanyResourceTest extends AbstractObjectTest<Company, CompanyDTO> {
 
     @Autowired
-    private ConnectionFactory connectionFactory
-    @Autowired
     private CompanyRepository companyRepository
-
-    def setup() {
-        StepVerifier.setDefaultTimeout(Duration.ofSeconds(60))
-
-        def populator = new ResourceDatabasePopulator()
-        populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
-        populator.populate(connectionFactory).block()
-    }
 
     def "save single company"() {
         given:
@@ -61,7 +48,7 @@ class CompanyResourceTest extends AbstractObjectTest<Company, CompanyDTO> {
         for (int i = 0; i < 1000; i++) {
             list.add(CompanyDTO.builder()
                     .id("id-" + i)
-                    .name("name " + i)
+                    .name(UUID.randomUUID().toString())
                     .build())
         }
 

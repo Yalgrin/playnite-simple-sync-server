@@ -65,7 +65,7 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
     protected Mono<Tuple2<DTO, ChangeDTO>> saveObjectWithoutPublishing(DTO dto, String clientId,
                                                                        Flux<FilePart> fileParts, boolean saveFiles) {
         return Mono.justOrEmpty(dto)
-                .doOnNext(d -> log.debug("saveObject > START, dto: {}, clientId: {}", dto, clientId))
+                .doOnNext(d -> log.debug("saveObject > START, dto: {}, clientId: {}", d, clientId))
                 .flatMap(this::findOrCreateEntity)
                 .map(entity -> mapper.fillEntityAndGenerateDiff(dto, entity))
                 .flatMap(tuple -> saveEntityAndFiles(fileParts, tuple, saveFiles))

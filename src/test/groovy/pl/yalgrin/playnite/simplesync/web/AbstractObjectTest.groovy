@@ -1,5 +1,10 @@
 package pl.yalgrin.playnite.simplesync.web
 
+
+import io.r2dbc.spi.ConnectionFactory
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.io.ClassPathResource
+import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator
 import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
 import pl.yalgrin.playnite.simplesync.domain.AbstractObjectEntity
@@ -10,6 +15,15 @@ import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
 abstract class AbstractObjectTest<E extends AbstractObjectEntity, D extends AbstractObjectDTO> extends SpockIntegrationTest {
+    @Autowired
+    private ConnectionFactory connectionFactory
+
+    def setup() {
+        def populator = new ResourceDatabasePopulator()
+        populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
+        populator.populate(connectionFactory).block()
+    }
+
     protected WebTestClient.ResponseSpec makeGetRequest(Long id) {
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder
