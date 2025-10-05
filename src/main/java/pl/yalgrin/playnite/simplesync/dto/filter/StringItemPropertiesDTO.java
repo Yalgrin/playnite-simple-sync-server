@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.List;
 
@@ -14,6 +15,9 @@ import java.util.List;
 @NoArgsConstructor
 @SuperBuilder
 public class StringItemPropertiesDTO implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1808659491232511772L;
+
     @JsonProperty("Values")
     private List<String> values;
 }

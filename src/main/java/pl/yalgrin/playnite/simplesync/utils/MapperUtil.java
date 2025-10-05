@@ -3,8 +3,8 @@ package pl.yalgrin.playnite.simplesync.utils;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
-import pl.yalgrin.playnite.simplesync.dto.AbstractObjectDTO;
-import pl.yalgrin.playnite.simplesync.dto.LinkDTO;
+import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
+import pl.yalgrin.playnite.simplesync.dto.objects.LinkDTO;
 
 import java.util.*;
 import java.util.stream.Collectors;

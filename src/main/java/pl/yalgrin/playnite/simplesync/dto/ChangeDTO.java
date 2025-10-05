@@ -9,12 +9,17 @@ import lombok.experimental.SuperBuilder;
 import pl.yalgrin.playnite.simplesync.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.utils.ToStringUtils;
 
+import java.io.Serial;
+
 @EqualsAndHashCode(callSuper = true)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder(toBuilder = true)
 public class ChangeDTO extends AbstractDTO {
+    @Serial
+    private static final long serialVersionUID = 6362405151054072827L;
+
     @JsonProperty("Id")
     private Long id;
     @JsonProperty("Type")

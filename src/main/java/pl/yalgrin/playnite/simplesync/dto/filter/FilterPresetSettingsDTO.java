@@ -6,6 +6,7 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 @EqualsAndHashCode
@@ -13,6 +14,9 @@ import java.io.Serializable;
 @NoArgsConstructor
 @SuperBuilder
 public class FilterPresetSettingsDTO implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1511413271560442002L;
+
     @JsonProperty("UseAndFilteringStyle")
     public boolean useAndFilteringStyle;
     @JsonProperty("IsInstalled")

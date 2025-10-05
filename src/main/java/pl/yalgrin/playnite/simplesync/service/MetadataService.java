@@ -5,33 +5,38 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.DependsOn;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.stereotype.Service;
 import pl.yalgrin.playnite.simplesync.config.Constants;
-import pl.yalgrin.playnite.simplesync.repository.GameRepository;
-import pl.yalgrin.playnite.simplesync.repository.PlatformRepository;
+import pl.yalgrin.playnite.simplesync.repository.objects.GameRepository;
+import pl.yalgrin.playnite.simplesync.repository.objects.PlatformRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 import reactor.util.function.Tuple2;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
-@DependsOn("liquibase")
+@DependsOnDatabaseInitialization
 @Slf4j
 @RequiredArgsConstructor
 public class MetadataService {
@@ -54,7 +59,9 @@ public class MetadataService {
 
         Path metadataPath = Path.of(metadataFolder);
         if (Files.exists(metadataPath)) {
-            Files.list(metadataPath).forEach(this::checkFolderAndRemoveInvalidFolders);
+            try (Stream<Path> files = Files.list(metadataPath)) {
+                files.forEach(this::checkFolderAndRemoveInvalidFolders);
+            }
         }
     }
 
@@ -63,38 +70,57 @@ public class MetadataService {
         if (!ALLOWED_FOLDERS.contains(path.getFileName().toString())) {
             log.debug("checkFolderAndRemoveInvalidFolders > deleting main folder due to unsupported type: {}", path);
             deleteDirectory(path);
-        } else if (path.getFileName().toString().equals(Constants.GAME)) {
-            Files.list(path).forEach(gamePath -> {
-                Long gameId = Try.of(() -> Long.parseLong(gamePath.getFileName().toString())).getOrNull();
-                if (gameId != null) {
-                    Boolean exists = gameRepository.existsById(gameId).block();
-                    if (!BooleanUtils.isTrue(exists)) {
+        } else if (Constants.GAME.equals(path.getFileName().toString())) {
+            Set<Long> idsToCheck = getIdsToCheck(path);
+            if (!idsToCheck.isEmpty()) {
+                Set<Long> existingIds = getExistingIds(idsToCheck, gameRepository::findIdsByIds);
+                removeInvalidSubdirectories(path, existingIds, "game");
+            }
+        } else if (Constants.PLATFORM.equals(path.getFileName().toString())) {
+            Set<Long> idsToCheck = getIdsToCheck(path);
+            if (!idsToCheck.isEmpty()) {
+                Set<Long> existingIds = getExistingIds(idsToCheck, platformRepository::findIdsByIds);
+                removeInvalidSubdirectories(path, existingIds, "platform");
+            }
+        }
+    }
+
+    @SneakyThrows
+    private static Set<Long> getIdsToCheck(Path path) {
+        Set<Long> idsToCheck;
+        try (Stream<Path> files = Files.list(path)) {
+            idsToCheck = files.map(
+                            gamePath -> Try.of(() -> Long.parseLong(gamePath.getFileName().toString())).getOrNull())
+                    .filter(Objects::nonNull).collect(Collectors.toSet());
+        }
+        return idsToCheck;
+    }
+
+    private static Set<Long> getExistingIds(Set<Long> idsToCheck, Function<Iterable<Long>, Flux<Long>> checkingMethod) {
+        return Mono.fromSupplier(() -> ListUtils.partition(new ArrayList<>(idsToCheck), 111))
+                .flatMapMany(Flux::fromIterable)
+                .flatMap(checkingMethod)
+                .collectList()
+                .map(Set::copyOf)
+                .block();
+    }
+
+    @SneakyThrows
+    private static void removeInvalidSubdirectories(Path path, Set<Long> existingIds, String objectName) {
+        try (Stream<Path> files = Files.list(path)) {
+            files.forEach(gamePath -> {
+                Long id = Try.of(() -> Long.parseLong(gamePath.getFileName().toString())).getOrNull();
+                if (id != null) {
+                    if (existingIds != null && !existingIds.contains(id)) {
                         log.debug(
-                                "checkFolderAndRemoveInvalidFolders > deleting game folder due to missing game with id: {}",
-                                gamePath);
-                        deleteDirectory(gamePath);
-                    }
-                } else {
-                    log.debug("checkFolderAndRemoveInvalidFolders > deleting game folder due to invalid game id: {}",
-                            gamePath);
-                    deleteDirectory(gamePath);
-                }
-            });
-        } else if (path.getFileName().toString().equals(Constants.PLATFORM)) {
-            Files.list(path).forEach(gamePath -> {
-                Long platformId = Try.of(() -> Long.parseLong(gamePath.getFileName().toString())).getOrNull();
-                if (platformId != null) {
-                    Boolean exists = platformRepository.existsById(platformId).block();
-                    if (!BooleanUtils.isTrue(exists)) {
-                        log.debug(
-                                "checkFolderAndRemoveInvalidFolders > deleting platform folder due to missing platform with id: {}",
-                                gamePath);
+                                "checkFolderAndRemoveInvalidFolders > deleting {} folder due to missing {} with id: {}",
+                                objectName, objectName, gamePath);
                         deleteDirectory(gamePath);
                     }
                 } else {
                     log.debug(
-                            "checkFolderAndRemoveInvalidFolders > deleting platform folder due to invalid platform id: {}",
-                            gamePath);
+                            "checkFolderAndRemoveInvalidFolders > deleting {} folder due to invalid {} id: {}",
+                            objectName, objectName, gamePath);
                     deleteDirectory(gamePath);
                 }
             });
@@ -136,7 +162,7 @@ public class MetadataService {
                 log.debug("saveMetadata > Writing file: {}", path);
                 Files.write(path, bytes);
                 return true;
-            });
+            }).subscribeOn(Schedulers.boundedElastic());
         }).doOnSuccess(d -> log.debug("saveMetadata > END"));
     }
 
@@ -172,7 +198,7 @@ public class MetadataService {
                     }
                 }
                 return null;
-            });
+            }).subscribeOn(Schedulers.boundedElastic());
         }).doOnSuccess(d -> log.debug("deleteMetadata > END"));
     }
 

@@ -24,6 +24,9 @@ public final class ToStringUtils {
     }
 
     private static final class CustomStyle extends ToStringStyle {
+        @Serial
+        private static final long serialVersionUID = -3638644891843475385L;
+
         CustomStyle() {
             setUseShortClassName(true);
             setUseIdentityHashCode(false);

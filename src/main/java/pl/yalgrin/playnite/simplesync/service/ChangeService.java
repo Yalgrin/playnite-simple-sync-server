@@ -10,17 +10,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import pl.yalgrin.playnite.simplesync.domain.Game;
-import pl.yalgrin.playnite.simplesync.dto.AbstractObjectDTO;
+import pl.yalgrin.playnite.simplesync.domain.objects.Game;
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO;
 import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO;
-import pl.yalgrin.playnite.simplesync.dto.GameDTO;
+import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
+import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO;
 import pl.yalgrin.playnite.simplesync.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.mapper.ChangeMapper;
-import pl.yalgrin.playnite.simplesync.repository.*;
+import pl.yalgrin.playnite.simplesync.repository.ChangeRepository;
+import pl.yalgrin.playnite.simplesync.repository.objects.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
 
 import java.util.*;
 

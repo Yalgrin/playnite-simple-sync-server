@@ -7,11 +7,16 @@ import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 import pl.yalgrin.playnite.simplesync.utils.ToStringUtils;
 
+import java.io.Serial;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder(toBuilder = true)
-public class ErrorDTO {
+public class ErrorDTO extends AbstractDTO {
+    @Serial
+    private static final long serialVersionUID = -1744517363772567506L;
+
     @JsonProperty("Message")
     private String message;
 

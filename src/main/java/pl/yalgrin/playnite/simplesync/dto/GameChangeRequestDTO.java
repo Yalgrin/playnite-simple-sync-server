@@ -6,13 +6,17 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.io.Serial;
 import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @SuperBuilder(toBuilder = true)
-public class GameChangeRequestDTO {
+public class GameChangeRequestDTO extends AbstractDTO {
+    @Serial
+    private static final long serialVersionUID = -2983927955354416935L;
+
     @JsonProperty("Ids")
     private List<String> ids;
     @JsonProperty("GameIds")
