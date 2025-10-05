@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class PlayniteSimpleSyncServerApplication {
 
-    static void main(String[] args) {
+    public static void main(String[] args) {
         SpringApplication.run(PlayniteSimpleSyncServerApplication.class, args);
     }
 
