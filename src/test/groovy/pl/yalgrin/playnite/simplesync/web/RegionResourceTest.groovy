@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.repository.RegionRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
+import pl.yalgrin.playnite.simplesync.util.RegionAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.RegionFactoryUtil
 import reactor.test.StepVerifier
 
 import java.util.concurrent.CompletableFuture
@@ -21,10 +23,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
 
     def "save single region"() {
         given:
-        RegionDTO dto = RegionDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        RegionDTO dto = RegionFactoryUtil.createRegion(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -45,10 +44,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
         given:
         List<RegionDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(RegionDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(RegionFactoryUtil.regionWithIndex(i))
         }
 
         when:
@@ -79,10 +75,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
 
     def "save region and then delete it"() {
         given:
-        RegionDTO dto = RegionDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        RegionDTO dto = RegionFactoryUtil.randomRegion()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -105,10 +98,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
 
     def "save and then remove repeatedly"() {
         given:
-        RegionDTO dto = RegionDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        RegionDTO dto = RegionFactoryUtil.randomRegion()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -133,10 +123,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
 
     def "save, modify and delete and await the change stream"() {
         given:
-        RegionDTO toSave = RegionDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        RegionDTO toSave = RegionFactoryUtil.randomRegion()
         RegionDTO modified = toSave.toBuilder().name("some other name").build()
         RegionDTO removed = modified.toBuilder().removed(true).build()
 
@@ -230,17 +217,11 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
 
     @Override
     boolean objectMatches(RegionDTO resultDTO, RegionDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        RegionAssertionUtil.assertRegion(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Region resultDTO, RegionDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        RegionAssertionUtil.assertRegionEntity(expectedDTO, resultDTO)
     }
 }

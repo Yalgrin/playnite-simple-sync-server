@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.dto.GenreDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.GenreRepository
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.util.GenreAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.GenreFactoryUtil
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
@@ -22,10 +24,7 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
 
     def "save single genre"() {
         given:
-        GenreDTO dto = GenreDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        GenreDTO dto = GenreFactoryUtil.createGenre(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -46,10 +45,7 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
         given:
         List<GenreDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(GenreDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(GenreFactoryUtil.genreWithIndex(i))
         }
 
         when:
@@ -80,10 +76,7 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
 
     def "save genre and then delete it"() {
         given:
-        GenreDTO dto = GenreDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        GenreDTO dto = GenreFactoryUtil.randomGenre()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -106,10 +99,7 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
 
     def "save and then remove repeatedly"() {
         given:
-        GenreDTO dto = GenreDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        GenreDTO dto = GenreFactoryUtil.randomGenre()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -134,10 +124,7 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
 
     def "save, modify and delete and await the change stream"() {
         given:
-        GenreDTO toSave = GenreDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        GenreDTO toSave = GenreFactoryUtil.randomGenre()
         GenreDTO modified = toSave.toBuilder().name("some other name").build()
         GenreDTO removed = modified.toBuilder().removed(true).build()
 
@@ -231,17 +218,11 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
 
     @Override
     boolean objectMatches(GenreDTO resultDTO, GenreDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        GenreAssertionUtil.assertGenre(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Genre resultDTO, GenreDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        GenreAssertionUtil.assertGenreEntity(expectedDTO, resultDTO)
     }
 }

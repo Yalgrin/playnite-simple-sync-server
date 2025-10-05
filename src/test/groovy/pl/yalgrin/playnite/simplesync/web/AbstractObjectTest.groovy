@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.web
 
-
 import io.r2dbc.spi.ConnectionFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.core.io.ClassPathResource
@@ -9,7 +8,6 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
 import pl.yalgrin.playnite.simplesync.domain.AbstractObjectEntity
 import pl.yalgrin.playnite.simplesync.dto.AbstractObjectDTO
-import pl.yalgrin.playnite.simplesync.dto.AgeRatingDTO
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
@@ -92,7 +90,7 @@ abstract class AbstractObjectTest<E extends AbstractObjectEntity, D extends Abst
 
             getResponse.expectStatus().is2xxSuccessful()
 
-            StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, AgeRatingDTO.class))
+            StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, dtoClass()))
                     .expectNextMatches {
                         assert it.isRemoved()
                         true

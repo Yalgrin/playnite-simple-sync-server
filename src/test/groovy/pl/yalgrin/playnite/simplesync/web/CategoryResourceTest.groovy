@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.CategoryRepository
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.util.CategoryAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.CategoryFactoryUtil
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
@@ -22,10 +24,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
     def "save single category"() {
         given:
-        CategoryDTO dto = CategoryDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        CategoryDTO dto = CategoryFactoryUtil.createCategory(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -46,10 +45,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         given:
         List<CategoryDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(CategoryDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(CategoryFactoryUtil.categoryWithIndex(i))
         }
 
         when:
@@ -80,10 +76,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
     def "save category and then delete it"() {
         given:
-        CategoryDTO dto = CategoryDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        CategoryDTO dto = CategoryFactoryUtil.randomCategory()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -106,10 +99,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
     def "save and then remove repeatedly"() {
         given:
-        CategoryDTO dto = CategoryDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        CategoryDTO dto = CategoryFactoryUtil.randomCategory()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -134,10 +124,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
     def "save, modify and delete and await the change stream"() {
         given:
-        CategoryDTO toSave = CategoryDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        CategoryDTO toSave = CategoryFactoryUtil.randomCategory()
         CategoryDTO modified = toSave.toBuilder().name("some other name").build()
         CategoryDTO removed = modified.toBuilder().removed(true).build()
 
@@ -231,17 +218,11 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
     @Override
     boolean objectMatches(CategoryDTO resultDTO, CategoryDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        CategoryAssertionUtil.assertCategory(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Category resultDTO, CategoryDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        CategoryAssertionUtil.assertCategoryEntity(expectedDTO, resultDTO)
     }
 }

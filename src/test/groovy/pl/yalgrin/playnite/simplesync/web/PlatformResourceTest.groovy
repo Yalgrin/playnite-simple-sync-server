@@ -1,14 +1,23 @@
 package pl.yalgrin.playnite.simplesync.web
 
+import io.vavr.Tuple
+import io.vavr.Tuple2
+import org.apache.commons.io.FilenameUtils
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.http.MediaType
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.domain.Platform
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.dto.PlatformDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.repository.PlatformRepository
+import pl.yalgrin.playnite.simplesync.service.MetadataService
+import pl.yalgrin.playnite.simplesync.util.GameFactoryUtil
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
+import pl.yalgrin.playnite.simplesync.util.PlatformAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.PlatformFactoryUtil
 import reactor.test.StepVerifier
 
 import java.util.concurrent.CompletableFuture
@@ -21,13 +30,14 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
 
     def "save single platform"() {
         given:
-        PlatformDTO dto = PlatformDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        PlatformDTO dto = PlatformFactoryUtil.createPlatform(UUID.randomUUID().toString(), "test")
+        def icon = GameFactoryUtil.randomFile("Icon.png", 2048)
+        def coverImage = GameFactoryUtil.randomFile("CoverImage.jpeg", 2048)
+        def backgroundImage = GameFactoryUtil.randomFile("BackgroundImage.tif", 2048)
+        def files = List.of(backgroundImage, coverImage, icon)
 
         when:
-        def response = makeSaveRequest(dto)
+        def response = makeSaveRequest(dto, files)
 
         then:
         response.expectStatus().is2xxSuccessful()
@@ -38,22 +48,19 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, files)
     }
 
     def "save multiple platforms"() {
         given:
-        List<PlatformDTO> list = new ArrayList<>()
+        List<Tuple2<PlatformDTO, List<MultipartFile>>> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(PlatformDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(Tuple.of(PlatformFactoryUtil.platformWithIndex(i), PlatformFactoryUtil.randomFiles()))
         }
 
         when:
         List<CompletableFuture<WebTestClient.ResponseSpec>> futures = list.stream()
-                .map { dto -> CompletableFuture.supplyAsync({ makeSaveRequest(dto) }) }
+                .map { tuple -> CompletableFuture.supplyAsync({ makeSaveRequest(tuple._1(), tuple._2()) }) }
                 .toList()
         List<WebTestClient.ResponseSpec> responses = futures.stream()
                 .map(CompletableFuture::join)
@@ -68,28 +75,26 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         and:
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), PlatformDTO.class))
-                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())) }
+                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())._1()) }
                     .verifyComplete()
             true
         }
 
         and:
-        list.stream().allMatch { dto -> assertEntityAndGetResponse(dto) }
+        list.stream().allMatch { tuple -> assertEntityAndGetResponse(tuple._1(), tuple._2()) }
     }
 
     def "save platform and then delete it"() {
         given:
-        PlatformDTO dto = PlatformDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        PlatformDTO dto = PlatformFactoryUtil.randomPlatform()
+        def files = PlatformFactoryUtil.randomFiles()
 
         when:
-        def saveResponse = makeSaveRequest(dto)
+        def saveResponse = makeSaveRequest(dto, files)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, files)
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -105,17 +110,15 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
 
     def "save and then remove repeatedly"() {
         given:
-        PlatformDTO dto = PlatformDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        PlatformDTO dto = PlatformFactoryUtil.randomPlatform()
+        def files = PlatformFactoryUtil.randomFiles()
 
         when:
-        def saveResponse = makeSaveRequest(dto)
+        def saveResponse = makeSaveRequest(dto, files)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, files)
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -133,10 +136,8 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
 
     def "save, modify and delete and await the change stream"() {
         given:
-        PlatformDTO toSave = PlatformDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        PlatformDTO toSave = PlatformFactoryUtil.randomPlatform()
+        def files = PlatformFactoryUtil.randomFiles()
         PlatformDTO modified = toSave.toBuilder().name("some other name").build()
         PlatformDTO removed = modified.toBuilder().removed(true).build()
 
@@ -149,7 +150,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         StepVerifier.create(responseFlux)
                 .expectSubscription()
                 .then {
-                    makeSaveRequest(toSave).expectStatus().is2xxSuccessful()
+                    makeSaveRequest(toSave, files).expectStatus().is2xxSuccessful()
                 }
                 .expectNextMatches { change ->
                     assert change.getId() != null
@@ -230,17 +231,56 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
 
     @Override
     boolean objectMatches(PlatformDTO resultDTO, PlatformDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        PlatformAssertionUtil.assertPlatform(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Platform resultDTO, PlatformDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
+        PlatformAssertionUtil.assertPlatformEntity(expectedDTO, resultDTO)
+    }
+
+    protected assertEntityAndGetResponse(PlatformDTO dto, List<MultipartFile> files) {
+        def savedEntities = repository().findByPlayniteId(dto.id).collectList().block()
+        assert savedEntities.size() == 1
+
+        def savedEntity = savedEntities[0]
+        assert objectMatches(savedEntity, dto)
+
+        def getResponse = makeGetRequest(savedEntity.getId())
+
+        getResponse.expectStatus().is2xxSuccessful()
+
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, dtoClass()))
+                .expectNextMatches { objectMatches(it, dto) }
+                .verifyComplete()
+
+        Map<String, MultipartFile> expectedFileMap = new HashMap<>()
+        for (final def file in files) {
+            expectedFileMap.put(FilenameUtils.getBaseName(file.getName()), file)
+        }
+        for (final def filename in MetadataService.ALLOWED_FILE_NAMES) {
+            def expectedFile = expectedFileMap.get(filename)
+            def metadataRequest = makeGetMetadataRequest(savedEntity.getId(), filename)
+            if (expectedFile != null) {
+                metadataRequest.expectStatus().is2xxSuccessful()
+
+                def response = metadataRequest.expectBody().returnResult()
+                assert response.getResponseBody() != null
+                assert response.getResponseBody() == expectedFile.getBytes()
+                assert response.getResponseHeaders().getContentType() == MediaType.parseMediaType(expectedFile.getContentType())
+            } else {
+                metadataRequest.expectStatus().isNotFound()
+            }
+        }
+
         true
+    }
+
+    protected WebTestClient.ResponseSpec makeGetMetadataRequest(Long id, String metadataName) {
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/platform-metadata/$id/$metadataName")
+                        .build())
+                .exchange()
     }
 }

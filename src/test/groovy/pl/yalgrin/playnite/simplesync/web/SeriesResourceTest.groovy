@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.repository.SeriesRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
+import pl.yalgrin.playnite.simplesync.util.SeriesAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.SeriesFactoryUtil
 import reactor.test.StepVerifier
 
 import java.util.concurrent.CompletableFuture
@@ -21,10 +23,7 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
 
     def "save single series"() {
         given:
-        SeriesDTO dto = SeriesDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        SeriesDTO dto = SeriesFactoryUtil.createSeries(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -45,10 +44,7 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
         given:
         List<SeriesDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(SeriesDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(SeriesFactoryUtil.seriesWithIndex(i))
         }
 
         when:
@@ -79,10 +75,7 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
 
     def "save series and then delete it"() {
         given:
-        SeriesDTO dto = SeriesDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        SeriesDTO dto = SeriesFactoryUtil.randomSeries()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -105,10 +98,7 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
 
     def "save and then remove repeatedly"() {
         given:
-        SeriesDTO dto = SeriesDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        SeriesDTO dto = SeriesFactoryUtil.randomSeries()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -133,10 +123,7 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
 
     def "save, modify and delete and await the change stream"() {
         given:
-        SeriesDTO toSave = SeriesDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        SeriesDTO toSave = SeriesFactoryUtil.randomSeries()
         SeriesDTO modified = toSave.toBuilder().name("some other name").build()
         SeriesDTO removed = modified.toBuilder().removed(true).build()
 
@@ -230,17 +217,11 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
 
     @Override
     boolean objectMatches(SeriesDTO resultDTO, SeriesDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        SeriesAssertionUtil.assertSeries(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Series resultDTO, SeriesDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        SeriesAssertionUtil.assertSeriesEntity(expectedDTO, resultDTO)
     }
 }

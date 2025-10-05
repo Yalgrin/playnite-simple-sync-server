@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.dto.CompletionStatusDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.CompletionStatusRepository
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.util.CompletionStatusAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.CompletionStatusFactoryUtil
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
@@ -22,10 +24,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
 
     def "save single completion status"() {
         given:
-        CompletionStatusDTO dto = CompletionStatusDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        CompletionStatusDTO dto = CompletionStatusFactoryUtil.createCompletionStatus(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -46,10 +45,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
         given:
         List<CompletionStatusDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(CompletionStatusDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(CompletionStatusFactoryUtil.completionStatusWithIndex(i))
         }
 
         when:
@@ -80,10 +76,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
 
     def "save completion status and then delete it"() {
         given:
-        CompletionStatusDTO dto = CompletionStatusDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        CompletionStatusDTO dto = CompletionStatusFactoryUtil.randomCompletionStatus()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -106,10 +99,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
 
     def "save and then remove repeatedly"() {
         given:
-        CompletionStatusDTO dto = CompletionStatusDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        CompletionStatusDTO dto = CompletionStatusFactoryUtil.randomCompletionStatus()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -134,10 +124,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
 
     def "save, modify and delete and await the change stream"() {
         given:
-        CompletionStatusDTO toSave = CompletionStatusDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        CompletionStatusDTO toSave = CompletionStatusFactoryUtil.randomCompletionStatus()
         CompletionStatusDTO modified = toSave.toBuilder().name("some other name").build()
         CompletionStatusDTO removed = modified.toBuilder().removed(true).build()
 
@@ -231,17 +218,11 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
 
     @Override
     boolean objectMatches(CompletionStatusDTO resultDTO, CompletionStatusDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        CompletionStatusAssertionUtil.assertCompletionStatus(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(CompletionStatus resultDTO, CompletionStatusDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        CompletionStatusAssertionUtil.assertCompletionStatusEntity(expectedDTO, resultDTO)
     }
 }

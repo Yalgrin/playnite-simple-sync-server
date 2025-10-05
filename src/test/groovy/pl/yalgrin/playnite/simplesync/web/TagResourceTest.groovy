@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.repository.TagRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
+import pl.yalgrin.playnite.simplesync.util.TagAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.TagFactoryUtil
 import reactor.test.StepVerifier
 
 import java.util.concurrent.CompletableFuture
@@ -21,10 +23,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
 
     def "save single tag"() {
         given:
-        TagDTO dto = TagDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        TagDTO dto = TagFactoryUtil.createTag(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -45,10 +44,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
         given:
         List<TagDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(TagDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(TagFactoryUtil.tagWithIndex(i))
         }
 
         when:
@@ -79,10 +75,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
 
     def "save tag and then delete it"() {
         given:
-        TagDTO dto = TagDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        TagDTO dto = TagFactoryUtil.randomTag()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -105,10 +98,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
 
     def "save and then remove repeatedly"() {
         given:
-        TagDTO dto = TagDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        TagDTO dto = TagFactoryUtil.randomTag()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -133,10 +123,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
 
     def "save, modify and delete and await the change stream"() {
         given:
-        TagDTO toSave = TagDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        TagDTO toSave = TagFactoryUtil.randomTag()
         TagDTO modified = toSave.toBuilder().name("some other name").build()
         TagDTO removed = modified.toBuilder().removed(true).build()
 
@@ -230,17 +217,11 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
 
     @Override
     boolean objectMatches(TagDTO resultDTO, TagDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        TagAssertionUtil.assertTag(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Tag resultDTO, TagDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        TagAssertionUtil.assertTagEntity(expectedDTO, resultDTO)
     }
 }

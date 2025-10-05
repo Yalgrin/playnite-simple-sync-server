@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.AgeRatingRepository
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.util.AgeRatingAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.AgeRatingFactoryUtil
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
@@ -22,10 +24,7 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
 
     def "save single age rating"() {
         given:
-        AgeRatingDTO dto = AgeRatingDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        AgeRatingDTO dto = AgeRatingFactoryUtil.createAgeRating(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -46,10 +45,7 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
         given:
         List<AgeRatingDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(AgeRatingDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(AgeRatingFactoryUtil.ageRatingWithIndex(i))
         }
 
         when:
@@ -80,10 +76,7 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
 
     def "save age rating and then delete it"() {
         given:
-        AgeRatingDTO dto = AgeRatingDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        AgeRatingDTO dto = AgeRatingFactoryUtil.randomAgeRating()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -106,10 +99,7 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
 
     def "save and then remove repeatedly"() {
         given:
-        AgeRatingDTO dto = AgeRatingDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        AgeRatingDTO dto = AgeRatingFactoryUtil.randomAgeRating()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -134,10 +124,7 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
 
     def "save, modify and delete and await the change stream"() {
         given:
-        AgeRatingDTO toSave = AgeRatingDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        AgeRatingDTO toSave = AgeRatingFactoryUtil.randomAgeRating()
         AgeRatingDTO modified = toSave.toBuilder().name("some other name").build()
         AgeRatingDTO removed = modified.toBuilder().removed(true).build()
 
@@ -231,17 +218,11 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
 
     @Override
     boolean objectMatches(AgeRatingDTO resultDTO, AgeRatingDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        AgeRatingAssertionUtil.assertAgeRating(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(AgeRating resultDTO, AgeRatingDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        AgeRatingAssertionUtil.assertAgeRatingEntity(expectedDTO, resultDTO)
     }
 }

@@ -37,7 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class MetadataService {
 
     private static final Set<String> ALLOWED_FOLDERS = Set.of(Constants.PLATFORM, Constants.GAME);
-    private static final Set<String> ALLOWED_FILE_NAMES = Set.of(Constants.ICON, Constants.COVER_IMAGE,
+    public static final Set<String> ALLOWED_FILE_NAMES = Set.of(Constants.ICON, Constants.COVER_IMAGE,
             Constants.BACKGROUND_IMAGE);
 
     @Value("${application.metadata-folder}")

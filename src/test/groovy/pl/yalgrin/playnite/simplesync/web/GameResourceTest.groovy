@@ -1,21 +1,25 @@
 package pl.yalgrin.playnite.simplesync.web
 
-
+import io.vavr.Tuple
+import io.vavr.Tuple2
+import org.apache.commons.io.FilenameUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.MediaType
-import org.springframework.mock.web.MockMultipartFile
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.domain.Game
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.GameRepository
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.service.MetadataService
+import pl.yalgrin.playnite.simplesync.util.GameAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.GameFactoryUtil
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicLong
 
 class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
@@ -25,21 +29,14 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
     def "save single game"() {
         given:
-        GameDTO dto = GameDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .gameId(UUID.randomUUID().toString())
-                .pluginId(UUID.randomUUID().toString())
-                .name("test")
-                .build()
-        byte[] iconBytes = new byte[2048]
-        byte[] coverImageBytes = new byte[4096]
-        byte[] backgroundImageBytes = new byte[8192]
+        GameDTO dto = GameFactoryUtil.createGame(UUID.randomUUID().toString(), "test")
+        def icon = GameFactoryUtil.randomFile("Icon.png", 2048)
+        def coverImage = GameFactoryUtil.randomFile("CoverImage.jpeg", 2048)
+        def backgroundImage = GameFactoryUtil.randomFile("BackgroundImage.tif", 2048)
+        def files = List.of(icon, coverImage, backgroundImage)
 
-        ThreadLocalRandom.current().nextBytes(iconBytes)
-        ThreadLocalRandom.current().nextBytes(coverImageBytes)
-        ThreadLocalRandom.current().nextBytes(backgroundImageBytes)
         when:
-        def response = makeSaveRequest(dto, List.of(new MockMultipartFile("Icon.png", "Icon.png", MediaType.APPLICATION_OCTET_STREAM_VALUE, iconBytes), new MockMultipartFile("CoverImage.jpeg", "CoverImage.jpeg", MediaType.APPLICATION_OCTET_STREAM_VALUE, coverImageBytes), new MockMultipartFile("BackgroundImage.tif", "BackgroundImage.tif", MediaType.APPLICATION_OCTET_STREAM_VALUE, backgroundImageBytes)))
+        def response = makeSaveRequest(dto, files)
 
         then:
         response.expectStatus().is2xxSuccessful()
@@ -50,24 +47,19 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, files)
     }
 
     def "save multiple games"() {
         given:
-        List<GameDTO> list = new ArrayList<>()
+        List<Tuple2<GameDTO, List<MultipartFile>>> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(GameDTO.builder()
-                    .id("id-" + i)
-                    .gameId(UUID.randomUUID().toString())
-                    .pluginId(UUID.randomUUID().toString())
-                    .name("name " + i)
-                    .build())
+            list.add(Tuple.of(GameFactoryUtil.gameWithIndex(i), GameFactoryUtil.randomFiles()))
         }
 
         when:
         List<CompletableFuture<WebTestClient.ResponseSpec>> futures = list.stream()
-                .map { dto -> CompletableFuture.supplyAsync({ makeSaveRequest(dto) }) }
+                .map { tuple -> CompletableFuture.supplyAsync({ makeSaveRequest(tuple._1, tuple._2) }) }
                 .toList()
         List<WebTestClient.ResponseSpec> responses = futures.stream()
                 .map(CompletableFuture::join)
@@ -82,30 +74,26 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         and:
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), GameDTO.class))
-                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())) }
+                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())._1()) }
                     .verifyComplete()
             true
         }
 
         and:
-        list.stream().allMatch { dto -> assertEntityAndGetResponse(dto) }
+        list.stream().allMatch { tuple -> assertEntityAndGetResponse(tuple._1(), tuple._2()) }
     }
 
     def "save game and then delete it"() {
         given:
-        GameDTO dto = GameDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .gameId(UUID.randomUUID().toString())
-                .pluginId(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        GameDTO dto = GameFactoryUtil.randomGame()
+        def files = GameFactoryUtil.randomFiles()
 
         when:
-        def saveResponse = makeSaveRequest(dto)
+        def saveResponse = makeSaveRequest(dto, files)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, files)
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -121,19 +109,15 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
     def "save and then remove repeatedly"() {
         given:
-        GameDTO dto = GameDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .gameId(UUID.randomUUID().toString())
-                .pluginId(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        GameDTO dto = GameFactoryUtil.randomGame()
+        def files = GameFactoryUtil.randomFiles()
 
         when:
-        def saveResponse = makeSaveRequest(dto)
+        def saveResponse = makeSaveRequest(dto, files)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, files)
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -151,12 +135,8 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
     def "save, modify and delete and await the change stream"() {
         given:
-        GameDTO toSave = GameDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .gameId(UUID.randomUUID().toString())
-                .pluginId(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        GameDTO toSave = GameFactoryUtil.randomGame()
+        def files = GameFactoryUtil.randomFiles()
         GameDTO modified = toSave.toBuilder().name("some other name").build()
         GameDTO removed = modified.toBuilder().removed(true).build()
 
@@ -169,7 +149,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         StepVerifier.create(responseFlux)
                 .expectSubscription()
                 .then {
-                    makeSaveRequest(toSave).expectStatus().is2xxSuccessful()
+                    makeSaveRequest(toSave, files).expectStatus().is2xxSuccessful()
+                }
+                .thenConsumeWhile { change ->
+                    change.getType() != ObjectType.Game
                 }
                 .expectNextMatches { change ->
                     assert change.getId() != null
@@ -250,17 +233,56 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
     @Override
     boolean objectMatches(GameDTO resultDTO, GameDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        GameAssertionUtil.assertGame(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Game resultDTO, GameDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
+        GameAssertionUtil.assertGameEntity(expectedDTO, resultDTO)
+    }
+
+    protected assertEntityAndGetResponse(GameDTO dto, List<MultipartFile> files) {
+        def savedEntities = repository().findByPlayniteId(dto.id).collectList().block()
+        assert savedEntities.size() == 1
+
+        def savedEntity = savedEntities[0]
+        assert objectMatches(savedEntity, dto)
+
+        def getResponse = makeGetRequest(savedEntity.getId())
+
+        getResponse.expectStatus().is2xxSuccessful()
+
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, dtoClass()))
+                .expectNextMatches { objectMatches(it, dto) }
+                .verifyComplete()
+
+        Map<String, MultipartFile> expectedFileMap = new HashMap<>()
+        for (final def file in files) {
+            expectedFileMap.put(FilenameUtils.getBaseName(file.getName()), file)
+        }
+        for (final def filename in MetadataService.ALLOWED_FILE_NAMES) {
+            def expectedFile = expectedFileMap.get(filename)
+            def metadataRequest = makeGetMetadataRequest(savedEntity.getId(), filename)
+            if (expectedFile != null) {
+                metadataRequest.expectStatus().is2xxSuccessful()
+
+                def response = metadataRequest.expectBody().returnResult()
+                assert response.getResponseBody() != null
+                assert response.getResponseBody() == expectedFile.getBytes()
+                assert response.getResponseHeaders().getContentType() == MediaType.parseMediaType(expectedFile.getContentType())
+            } else {
+                metadataRequest.expectStatus().isNotFound()
+            }
+        }
+
         true
+    }
+
+    protected WebTestClient.ResponseSpec makeGetMetadataRequest(Long id, String metadataName) {
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/game-metadata/$id/$metadataName")
+                        .build())
+                .exchange()
     }
 }

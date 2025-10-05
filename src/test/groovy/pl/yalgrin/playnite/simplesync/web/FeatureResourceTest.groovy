@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.dto.FeatureDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.FeatureRepository
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.util.FeatureAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.FeatureFactoryUtil
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
@@ -22,10 +24,7 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
 
     def "save single feature"() {
         given:
-        FeatureDTO dto = FeatureDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        FeatureDTO dto = FeatureFactoryUtil.createFeature(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -46,10 +45,7 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
         given:
         List<FeatureDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(FeatureDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(FeatureFactoryUtil.featureWithIndex(i))
         }
 
         when:
@@ -80,10 +76,7 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
 
     def "save feature and then delete it"() {
         given:
-        FeatureDTO dto = FeatureDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        FeatureDTO dto = FeatureFactoryUtil.randomFeature()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -106,10 +99,7 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
 
     def "save and then remove repeatedly"() {
         given:
-        FeatureDTO dto = FeatureDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        FeatureDTO dto = FeatureFactoryUtil.randomFeature()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -134,10 +124,7 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
 
     def "save, modify and delete and await the change stream"() {
         given:
-        FeatureDTO toSave = FeatureDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        FeatureDTO toSave = FeatureFactoryUtil.randomFeature()
         FeatureDTO modified = toSave.toBuilder().name("some other name").build()
         FeatureDTO removed = modified.toBuilder().removed(true).build()
 
@@ -231,17 +218,11 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
 
     @Override
     boolean objectMatches(FeatureDTO resultDTO, FeatureDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        FeatureAssertionUtil.assertFeature(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Feature resultDTO, FeatureDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        FeatureAssertionUtil.assertFeatureEntity(expectedDTO, resultDTO)
     }
 }

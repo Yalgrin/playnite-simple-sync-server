@@ -1,6 +1,6 @@
 package pl.yalgrin.playnite.simplesync.web
 
-
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.domain.FilterPreset
@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.dto.FilterPresetDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.FilterPresetRepository
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.util.FilterPresetAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.FilterPresetFactoryUtil
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
@@ -19,13 +21,12 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
 
     @Autowired
     private FilterPresetRepository filterPresetRepository
+    @Autowired
+    private ObjectMapper objectMapper
 
     def "save single filter preset"() {
         given:
-        FilterPresetDTO dto = FilterPresetDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        FilterPresetDTO dto = FilterPresetFactoryUtil.createFilterPreset(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -46,10 +47,7 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
         given:
         List<FilterPresetDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(FilterPresetDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(FilterPresetFactoryUtil.filterPresetWithIndex(i))
         }
 
         when:
@@ -78,12 +76,9 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
         list.stream().allMatch { dto -> assertEntityAndGetResponse(dto) }
     }
 
-    def "save filterPreset and then delete it"() {
+    def "save filter preset and then delete it"() {
         given:
-        FilterPresetDTO dto = FilterPresetDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        FilterPresetDTO dto = FilterPresetFactoryUtil.randomFilterPreset()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -106,10 +101,7 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
 
     def "save and then remove repeatedly"() {
         given:
-        FilterPresetDTO dto = FilterPresetDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        FilterPresetDTO dto = FilterPresetFactoryUtil.randomFilterPreset()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -134,10 +126,7 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
 
     def "save, modify and delete and await the change stream"() {
         given:
-        FilterPresetDTO toSave = FilterPresetDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        FilterPresetDTO toSave = FilterPresetFactoryUtil.randomFilterPreset()
         FilterPresetDTO modified = toSave.toBuilder().name("some other name").build()
         FilterPresetDTO removed = modified.toBuilder().removed(true).build()
 
@@ -231,17 +220,11 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
 
     @Override
     boolean objectMatches(FilterPresetDTO resultDTO, FilterPresetDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        FilterPresetAssertionUtil.assertFilterPreset(expectedDTO, resultDTO)
     }
 
     @Override
-    boolean objectMatches(FilterPreset resultDTO, FilterPresetDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+    boolean objectMatches(FilterPreset resultEntity, FilterPresetDTO expectedDTO) {
+        FilterPresetAssertionUtil.assertFilterPresetEntity(expectedDTO, resultEntity)
     }
 }

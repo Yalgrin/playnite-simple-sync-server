@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.repository.SourceRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
+import pl.yalgrin.playnite.simplesync.util.SourceAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.SourceFactoryUtil
 import reactor.test.StepVerifier
 
 import java.util.concurrent.CompletableFuture
@@ -21,10 +23,7 @@ class SourceResourceTest extends AbstractObjectTest<Source, SourceDTO> {
 
     def "save single source"() {
         given:
-        SourceDTO dto = SourceDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        SourceDTO dto = SourceFactoryUtil.createSource(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -45,10 +44,7 @@ class SourceResourceTest extends AbstractObjectTest<Source, SourceDTO> {
         given:
         List<SourceDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(SourceDTO.builder()
-                    .id("id-" + i)
-                    .name("name " + i)
-                    .build())
+            list.add(SourceFactoryUtil.sourceWithIndex(i))
         }
 
         when:
@@ -79,10 +75,7 @@ class SourceResourceTest extends AbstractObjectTest<Source, SourceDTO> {
 
     def "save source and then delete it"() {
         given:
-        SourceDTO dto = SourceDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        SourceDTO dto = SourceFactoryUtil.randomSource()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -105,10 +98,7 @@ class SourceResourceTest extends AbstractObjectTest<Source, SourceDTO> {
 
     def "save and then remove repeatedly"() {
         given:
-        SourceDTO dto = SourceDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        SourceDTO dto = SourceFactoryUtil.randomSource()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -133,10 +123,7 @@ class SourceResourceTest extends AbstractObjectTest<Source, SourceDTO> {
 
     def "save, modify and delete and await the change stream"() {
         given:
-        SourceDTO toSave = SourceDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        SourceDTO toSave = SourceFactoryUtil.randomSource()
         SourceDTO modified = toSave.toBuilder().name("some other name").build()
         SourceDTO removed = modified.toBuilder().removed(true).build()
 
@@ -230,17 +217,11 @@ class SourceResourceTest extends AbstractObjectTest<Source, SourceDTO> {
 
     @Override
     boolean objectMatches(SourceDTO resultDTO, SourceDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        SourceAssertionUtil.assertSource(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Source resultDTO, SourceDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        SourceAssertionUtil.assertSourceEntity(expectedDTO, resultDTO)
     }
 }

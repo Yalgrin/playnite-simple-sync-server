@@ -9,6 +9,8 @@ import pl.yalgrin.playnite.simplesync.dto.CompanyDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.CompanyRepository
 import pl.yalgrin.playnite.simplesync.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.util.CompanyAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.CompanyFactoryUtil
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
@@ -22,10 +24,7 @@ class CompanyResourceTest extends AbstractObjectTest<Company, CompanyDTO> {
 
     def "save single company"() {
         given:
-        CompanyDTO dto = CompanyDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("test")
-                .build()
+        CompanyDTO dto = CompanyFactoryUtil.createCompany(UUID.randomUUID().toString(), "test")
 
         when:
         def response = makeSaveRequest(dto)
@@ -46,10 +45,7 @@ class CompanyResourceTest extends AbstractObjectTest<Company, CompanyDTO> {
         given:
         List<CompanyDTO> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(CompanyDTO.builder()
-                    .id("id-" + i)
-                    .name(UUID.randomUUID().toString())
-                    .build())
+            list.add(CompanyFactoryUtil.companyWithIndex(i))
         }
 
         when:
@@ -80,10 +76,7 @@ class CompanyResourceTest extends AbstractObjectTest<Company, CompanyDTO> {
 
     def "save company and then delete it"() {
         given:
-        CompanyDTO dto = CompanyDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete")
-                .build()
+        CompanyDTO dto = CompanyFactoryUtil.randomCompany()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -106,10 +99,7 @@ class CompanyResourceTest extends AbstractObjectTest<Company, CompanyDTO> {
 
     def "save and then remove repeatedly"() {
         given:
-        CompanyDTO dto = CompanyDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("to-delete-2")
-                .build()
+        CompanyDTO dto = CompanyFactoryUtil.randomCompany()
 
         when:
         def saveResponse = makeSaveRequest(dto)
@@ -134,10 +124,7 @@ class CompanyResourceTest extends AbstractObjectTest<Company, CompanyDTO> {
 
     def "save, modify and delete and await the change stream"() {
         given:
-        CompanyDTO toSave = CompanyDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name("new")
-                .build()
+        CompanyDTO toSave = CompanyFactoryUtil.randomCompany()
         CompanyDTO modified = toSave.toBuilder().name("some other name").build()
         CompanyDTO removed = modified.toBuilder().removed(true).build()
 
@@ -231,17 +218,11 @@ class CompanyResourceTest extends AbstractObjectTest<Company, CompanyDTO> {
 
     @Override
     boolean objectMatches(CompanyDTO resultDTO, CompanyDTO expectedDTO) {
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        CompanyAssertionUtil.assertCompany(expectedDTO, resultDTO)
     }
 
     @Override
     boolean objectMatches(Company resultDTO, CompanyDTO expectedDTO) {
-        assert resultDTO.getPlayniteId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
-        true
+        CompanyAssertionUtil.assertCompanyEntity(expectedDTO, resultDTO)
     }
 }
