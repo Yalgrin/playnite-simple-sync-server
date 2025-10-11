@@ -9,7 +9,7 @@ import reactor.core.publisher.Mono;
 
 @Repository
 public interface ChangeRepository extends R2dbcRepository<Change, Long> {
-    @Query("select c.* from playnite_change c where c.id > :lastId order by c.id asc")
+    @Query("select c.* from playnite_change c where (:lastId is null or c.id > :lastId) order by c.id asc")
     Flux<Change> findFromLastId(Long lastId);
 
     @Query("select max(c.id) from playnite_change c")

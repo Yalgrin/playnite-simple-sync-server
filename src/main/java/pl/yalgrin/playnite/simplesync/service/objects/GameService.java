@@ -76,8 +76,8 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
     @Override
     public Mono<GameDTO> saveObject(GameDTO dto, String clientId, Flux<FilePart> fileParts, boolean saveFiles) {
         List<ChangeDTO> changes = Collections.synchronizedList(new ArrayList<>());
-        return saveGameWithDependencies(dto, clientId, fileParts, saveFiles, changes).as(
-                        transactionalOperator::transactional)
+        return saveGameWithDependencies(dto, clientId, fileParts, saveFiles, changes)
+                .as(transactionalOperator::transactional)
                 .flatMap(
                         g -> Mono.defer(() -> changeListenerService.publishChanges(changes)).then(Mono.justOrEmpty(g)));
     }
@@ -163,7 +163,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
                                                                                        Function<GameDTO, List<T>> dtoGetter,
                                                                                        BiConsumer<GameDTO, List<T>> dtoSetter,
                                                                                        ObjectSaveService<T> service) {
-        return Mono.justOrEmpty(dtoGetter.apply(dto))
+        return Mono.fromSupplier(() -> dtoGetter.apply(dto))
                 .flatMapMany(Flux::fromIterable)
                 .concatMap(d -> service.saveObjectWithoutPublishing(d, clientId).switchIfEmpty(Mono.justOrEmpty(
                         Tuple.of(d, null)))).collectList()
@@ -220,7 +220,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
         if (dto.getChangedFields() == null || !dto.getChangedFields().contains(fieldName)) {
             return Mono.empty();
         }
-        return Mono.justOrEmpty(dtoGetter.apply(dto))
+        return Mono.fromSupplier(() -> dtoGetter.apply(dto))
                 .flatMapMany(Flux::fromIterable)
                 .concatMap(d -> service.saveObjectWithoutPublishing(d, clientId).switchIfEmpty(Mono.justOrEmpty(
                         Tuple.of(d, null)))).collectList()
@@ -316,8 +316,10 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
 
     @Override
     protected Mono<Game> findOrCreateEntity(GameDTO dto) {
-        return toMono(gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId())).doOnNext(e -> {
-                    log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}", e.getId(),
+        return toMono(gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId()))
+                .doOnNext(e -> {
+                    log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
+                            e.getId(),
                             dto.getGameId(), dto.getPluginId());
                     if (!e.isRemoved() && !StringUtils.equals(e.getPlayniteId(), dto.getId())) {
                         throw new ForceFetchRequiredException();
@@ -329,8 +331,10 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
 
     @Override
     protected Mono<Game> findOrCreateEntity(GameDiffDTO dto) {
-        return toMono(gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId())).doOnNext(e -> {
-                    log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}", e.getId(),
+        return toMono(gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId()))
+                .doOnNext(e -> {
+                    log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
+                            e.getId(),
                             dto.getGameId(), dto.getPluginId());
                     if (e.isRemoved()) {
                         throw new ManualSynchronizationRequiredException("Manual synchronization required!");

@@ -1,6 +1,11 @@
 package pl.yalgrin.playnite.simplesync.exception;
 
+import java.io.Serial;
+
 public class ManualSynchronizationRequiredException extends RuntimeException {
+
+    @Serial
+    private static final long serialVersionUID = -6189953396806395343L;
 
     public ManualSynchronizationRequiredException() {
     }

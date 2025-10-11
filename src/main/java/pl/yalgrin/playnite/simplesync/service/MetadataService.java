@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -44,6 +45,7 @@ public class MetadataService {
     private static final Set<String> ALLOWED_FOLDERS = Set.of(Constants.PLATFORM, Constants.GAME);
     public static final Set<String> ALLOWED_FILE_NAMES = Set.of(Constants.ICON, Constants.COVER_IMAGE,
             Constants.BACKGROUND_IMAGE);
+    public static final int PARTITION_SIZE = 990;
 
     @Value("${application.metadata-folder}")
     private String metadataFolder;
@@ -89,15 +91,14 @@ public class MetadataService {
     private static Set<Long> getIdsToCheck(Path path) {
         Set<Long> idsToCheck;
         try (Stream<Path> files = Files.list(path)) {
-            idsToCheck = files.map(
-                            gamePath -> Try.of(() -> Long.parseLong(gamePath.getFileName().toString())).getOrNull())
+            idsToCheck = files.map(MetadataService::pathToLong)
                     .filter(Objects::nonNull).collect(Collectors.toSet());
         }
         return idsToCheck;
     }
 
     private static Set<Long> getExistingIds(Set<Long> idsToCheck, Function<Iterable<Long>, Flux<Long>> checkingMethod) {
-        return Mono.fromSupplier(() -> ListUtils.partition(new ArrayList<>(idsToCheck), 111))
+        return Mono.fromSupplier(() -> ListUtils.partition(new ArrayList<>(idsToCheck), PARTITION_SIZE))
                 .flatMapMany(Flux::fromIterable)
                 .flatMap(checkingMethod)
                 .collectList()
@@ -109,7 +110,7 @@ public class MetadataService {
     private static void removeInvalidSubdirectories(Path path, Set<Long> existingIds, String objectName) {
         try (Stream<Path> files = Files.list(path)) {
             files.forEach(gamePath -> {
-                Long id = Try.of(() -> Long.parseLong(gamePath.getFileName().toString())).getOrNull();
+                Long id = pathToLong(gamePath);
                 if (id != null) {
                     if (existingIds != null && !existingIds.contains(id)) {
                         log.debug(
@@ -133,73 +134,83 @@ public class MetadataService {
     }
 
     public Mono<Boolean> saveMetadata(String folder, String idPart, String filename, byte[] bytes, String fieldName) {
-        return Mono.defer(() -> {
-            log.debug("saveMetadata > START, folder: {}, idPart: {}, filename: {}, fieldName: {}", folder, idPart,
-                    filename, fieldName);
-
+        return Mono.fromCallable(() -> {
             if (StringUtils.isBlank(metadataFolder)) {
-                log.debug("saveMetadata > ERROR, metadata folder is not specified!");
-                return Mono.error(new IllegalStateException("No metadata folder set!"));
+                log.error("saveMetadata > ERROR, metadata folder is not specified!");
+                throw new IllegalStateException("No metadata folder set!");
             }
             if (!ALLOWED_FILE_NAMES.contains(fieldName)) {
-                log.debug("saveMetadata > ERROR, invalid field name: {}!", fieldName);
-                return Mono.error(new IllegalArgumentException("Invalid file name!"));
+                log.warn("saveMetadata > ERROR, invalid field name: {}!", fieldName);
+                throw new IllegalArgumentException("Invalid file name!");
             }
-            Path dir = Path.of(metadataFolder, folder, idPart);
-            String dirStr = dir.toString();
-            return Mono.fromCallable(() -> {
-                Files.createDirectories(dir);
-                Files.list(dir).forEach(path -> {
-                    String existingFileExtension = FilenameUtils.getExtension(path.toString());
-                    String baseName = FilenameUtils.getBaseName(path.toString());
-                    if (existingFileExtension.equalsIgnoreCase("tmp") || (baseName != null && baseName.startsWith(
-                            fieldName + "."))) {
-                        deleteIfExists(path);
-                    }
-                });
-                Path path = Path.of(dirStr, filename);
-                deleteIfExists(path);
-                log.debug("saveMetadata > Writing file: {}", path);
-                Files.write(path, bytes);
-                return true;
-            }).subscribeOn(Schedulers.boundedElastic());
-        }).doOnSuccess(d -> log.debug("saveMetadata > END"));
+
+            doSaveMetadata(folder, idPart, filename, bytes, fieldName);
+            return true;
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private void doSaveMetadata(String folder, String idPart, String filename, byte[] bytes, String fieldName) throws
+            IOException {
+        Path dir = Path.of(metadataFolder, folder, idPart);
+        String dirStr = dir.toString();
+
+        Files.createDirectories(dir);
+        deleteExistingMetadata(fieldName, dir);
+        Path path = Path.of(dirStr, filename);
+        deleteIfExists(path);
+        log.debug("saveMetadata > Writing file: {}", path);
+        Files.write(path, bytes);
+    }
+
+    private static void deleteExistingMetadata(String fieldName, Path dir) throws IOException {
+        try (Stream<Path> files = Files.list(dir)) {
+            files.forEach(path -> {
+                String existingFileExtension = FilenameUtils.getExtension(path.toString());
+                String baseName = FilenameUtils.getBaseName(path.toString());
+                if (existingFileExtension.equalsIgnoreCase("tmp")
+                        || (baseName != null && baseName.equals(fieldName))) {
+                    log.debug("deleteExistingMetadata > found same existing metadata, will try to remove: {}", path);
+                    deleteIfExists(path);
+                }
+            });
+        }
     }
 
     public Mono<Boolean> deleteMetadata(String folder, String idPart, String fieldName) {
-        return Mono.defer(() -> {
-            log.debug("deleteMetadata > START, folder: {}, idPart: {}, fieldName: {}", folder, idPart, fieldName);
-
+        return Mono.fromCallable(() -> {
             if (StringUtils.isBlank(metadataFolder)) {
-                log.debug("deleteMetadata > ERROR, metadata folder is not specified!");
-                return Mono.error(new IllegalStateException("No metadata folder set!"));
+                log.error("deleteMetadata > ERROR, metadata folder is not specified!");
+                throw new IllegalStateException("No metadata folder set!");
             }
             if (!ALLOWED_FILE_NAMES.contains(fieldName)) {
-                log.debug("deleteMetadata > ERROR, invalid field name: {}!", fieldName);
-                return Mono.error(new IllegalArgumentException("Invalid file name!"));
+                log.warn("deleteMetadata > ERROR, invalid field name: {}!", fieldName);
+                throw new IllegalArgumentException("Invalid file name!");
             }
             Path dir = Path.of(metadataFolder, folder, idPart);
-            return Mono.fromCallable(() -> {
-                if (Files.exists(dir)) {
-                    AtomicBoolean deletedAnything = new AtomicBoolean(false);
-                    Files.list(dir).forEach(path -> {
-                        String existingFileExtension = FilenameUtils.getExtension(path.toString());
-                        String baseName = FilenameUtils.getBaseName(path.toString());
-                        if (existingFileExtension.equalsIgnoreCase("tmp") || (baseName != null && baseName.equals(
-                                fieldName))) {
-                            boolean result = deleteIfExists(path);
-                            if (result) {
-                                deletedAnything.set(true);
-                            }
-                        }
-                    });
-                    if (deletedAnything.get()) {
-                        return true;
+            if (Files.exists(dir)) {
+                return deleteExisting(fieldName, dir);
+            }
+            return false;
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    @SneakyThrows
+    private static boolean deleteExisting(String fieldName, Path dir) {
+        AtomicBoolean deletedAnything = new AtomicBoolean(false);
+        try (Stream<Path> files = Files.list(dir)) {
+            files.forEach(path -> {
+                String existingFileExtension = FilenameUtils.getExtension(path.toString());
+                String baseName = FilenameUtils.getBaseName(path.toString());
+                if (existingFileExtension.equalsIgnoreCase(
+                        "tmp") || (baseName != null && baseName.equals(fieldName))) {
+                    boolean result = deleteIfExists(path);
+                    if (result) {
+                        deletedAnything.set(true);
                     }
                 }
-                return null;
-            }).subscribeOn(Schedulers.boundedElastic());
-        }).doOnSuccess(d -> log.debug("deleteMetadata > END"));
+            });
+        }
+        return deletedAnything.get();
     }
 
 
@@ -210,13 +221,41 @@ public class MetadataService {
     }
 
     public Mono<Tuple2<String, Flux<DataBuffer>>> getMetadata(String folder, String id, String filename) {
-        return Mono.fromCallable(() -> {
-            Path directory = Path.of(metadataFolder, folder, id);
-            return Files.list(directory).filter(path -> {
+        return Mono.fromCallable(() -> findMetadataPath(folder, id, filename))
+                .subscribeOn(Schedulers.boundedElastic())
+                .filter(Objects::nonNull)
+                .flatMap(path ->
+                        getFileName(path).zipWith(readFile(path))
+                );
+    }
+
+    @SneakyThrows
+    private Path findMetadataPath(String folder, String id, String filename) {
+        Path directory = Path.of(metadataFolder, folder, id);
+        try (Stream<Path> list = Files.list(directory)) {
+            List<Path> matchingFiles = list.filter(path -> {
                 String baseName = FilenameUtils.getBaseName(path.toString());
                 return baseName != null && StringUtils.equals(baseName, filename);
-            }).findFirst().orElse(null);
-        }).filter(Objects::nonNull).flatMap(path -> Mono.justOrEmpty(path).map(Path::getFileName).map(Path::toString)
-                .zipWith(Mono.fromCallable(() -> DataBufferUtils.read(path, new DefaultDataBufferFactory(), 4096))));
+            }).toList();
+            if (matchingFiles.size() > 1) {
+                log.warn("findMetadataPath > found multiple matching files for directory {} - {}!", directory,
+                        matchingFiles);
+            }
+            return matchingFiles.stream().findFirst().orElse(null);
+        }
+    }
+
+    private static Mono<String> getFileName(Path path) {
+        return Mono.justOrEmpty(path).map(Path::getFileName).map(Path::toString);
+    }
+
+    private static Mono<Flux<DataBuffer>> readFile(Path path) {
+        return Mono.fromCallable(
+                        () -> DataBufferUtils.read(path, new DefaultDataBufferFactory(), 4096))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private static Long pathToLong(Path gamePath) {
+        return Try.of(() -> Long.parseLong(gamePath.getFileName().toString())).getOrNull();
     }
 }

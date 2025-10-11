@@ -68,14 +68,12 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
     protected Mono<Tuple2<DTO, ChangeDTO>> saveObjectWithoutPublishing(DTO dto, String clientId,
                                                                        Flux<FilePart> fileParts, boolean saveFiles) {
         return Mono.justOrEmpty(dto)
-                .doOnNext(d -> log.debug("saveObject > START, dto: {}, clientId: {}", d, clientId))
                 .flatMap(this::findOrCreateEntity)
                 .map(entity -> mapper.fillEntityAndGenerateDiff(dto, entity))
                 .flatMap(tuple -> saveEntityAndFiles(fileParts, tuple, saveFiles))
                 .flatMap(this::saveDiffIfNeeded)
                 .flatMap(c -> saveChange(clientId, c))
-                .map(t -> Tuple.of(mapper.toDTO(t._1._1), t._2))
-                .doOnSuccess(d -> log.debug("saveObject > END, dto: {}", d));
+                .map(t -> Tuple.of(mapper.toDTO(t._1._1), t._2));
     }
 
     protected Mono<E> findOrCreateEntity(DTO dto) {
@@ -111,7 +109,7 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
                         if (shouldSaveMetadata(e, t.getBytes(), t.getMd5(), t.getFieldName())) {
                             return metadataService.saveMetadata(getMetadataFolder(), getIdPart(e), t.getFilename(),
                                             t.getBytes(), t.getFieldName())
-                                    .doOnNext(md5 -> {
+                                    .doOnNext(_ -> {
                                         setHex(e, t.getFieldName(), t.getMd5());
                                         tuple._2.getChangedFields().add(t.getFieldName());
                                     });
@@ -121,7 +119,7 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
                         }
                     } else {
                         return metadataService.deleteMetadata(getMetadataFolder(), getIdPart(e), t.getFieldName())
-                                .doOnNext(md5 -> {
+                                .doOnNext(_ -> {
                                     setHex(e, t.getFieldName(), t.getMd5());
                                     tuple._2.getChangedFields().add(t.getFieldName());
                                 });
@@ -224,18 +222,18 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
                         if (shouldSaveMetadata(e, t.getBytes(), t.getMd5(), t.getFieldName())) {
                             return metadataService.saveMetadata(getMetadataFolder(), getIdPart(e), t.getFilename(),
                                             t.getBytes(), t.getFieldName())
-                                    .doOnNext(md5 -> {
+                                    .doOnNext(_ -> {
                                         setHex(e, t.getFieldName(), t.getMd5());
                                         tuple._2.getChangedFields().add(t.getFieldName());
                                     });
                         } else {
                             return Mono.just(true)
-                                    .doOnNext(b -> log.debug("saveEntityAndFilesFromDiff > skipping file: {}",
+                                    .doOnNext(_ -> log.debug("saveEntityAndFilesFromDiff > skipping file: {}",
                                             t.getFieldName()));
                         }
                     } else {
                         return metadataService.deleteMetadata(getMetadataFolder(), getIdPart(e), t.getFieldName())
-                                .doOnSuccess(str -> {
+                                .doOnSuccess(_ -> {
                                     setHex(e, t.getFieldName(), t.getMd5());
                                     tuple._2.getChangedFields().add(t.getFieldName());
                                 });

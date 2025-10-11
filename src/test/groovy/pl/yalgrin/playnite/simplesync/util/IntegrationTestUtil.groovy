@@ -1,6 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util
 
 import org.springframework.test.web.reactive.server.WebTestClient
+import pl.yalgrin.playnite.simplesync.utils.ReactorUtils
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
@@ -10,7 +11,6 @@ class IntegrationTestUtil {
     }
 
     static <T> Mono<T> getReturnMono(WebTestClient.ResponseSpec response, Class<T> clazz) {
-        return getReturnFlux(response, clazz).take(1).next()
+        return ReactorUtils.toMono(getReturnFlux(response, clazz))
     }
-
 }

@@ -4,9 +4,9 @@ import org.apache.commons.lang3.StringUtils;
 import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectEntity;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
 
-public abstract class AbstractObjectMapper<E extends AbstractObjectEntity, DTO extends AbstractObjectDTO> {
+public abstract class AbstractObjectMapper<E extends AbstractObjectEntity, D extends AbstractObjectDTO> {
 
-    public E fillEntity(DTO dto, E target) {
+    public E fillEntity(D dto, E target) {
         target.setChanged(hasChanged(dto, target));
         target.setName(dto.getName());
         target.setRemoved(false);
@@ -14,15 +14,15 @@ public abstract class AbstractObjectMapper<E extends AbstractObjectEntity, DTO e
         return target;
     }
 
-    protected void fillOtherFields(E entity, DTO dto) {
+    protected void fillOtherFields(E entity, D dto) {
 
     }
 
-    protected boolean hasChanged(DTO dto, E target) {
+    protected boolean hasChanged(D dto, E target) {
         return !StringUtils.equals(target.getName(), dto.getName()) || target.isRemoved();
     }
 
-    public DTO toDTO(E entity) {
+    public D toDTO(E entity) {
         var dto = createDTO();
         dto.setId(entity.getPlayniteId());
         dto.setName(entity.getName());
@@ -31,9 +31,9 @@ public abstract class AbstractObjectMapper<E extends AbstractObjectEntity, DTO e
         return dto;
     }
 
-    protected void fillDtoFields(DTO dto, E entity) {
+    protected void fillDtoFields(D dto, E entity) {
 
     }
 
-    protected abstract DTO createDTO();
+    protected abstract D createDTO();
 }

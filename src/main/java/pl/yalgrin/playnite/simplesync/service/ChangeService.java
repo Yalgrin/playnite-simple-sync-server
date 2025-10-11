@@ -5,7 +5,6 @@ import io.vavr.control.Try;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
@@ -23,28 +22,45 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.util.function.Function;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class ChangeService {
     private final ChangeRepository repository;
     private final ChangeMapper mapper;
     private final ObjectMapper objectMapper;
 
-    private final CategoryRepository categoryRepository;
-    private final GenreRepository genreRepository;
-    private final PlatformRepository platformRepository;
-    private final CompanyRepository companyRepository;
-    private final FeatureRepository featureRepository;
-    private final TagRepository tagRepository;
-    private final SeriesRepository seriesRepository;
-    private final AgeRatingRepository ageRatingRepository;
-    private final RegionRepository regionRepository;
-    private final SourceRepository sourceRepository;
-    private final CompletionStatusRepository completionStatusRepository;
-    private final FilterPresetRepository filterPresetRepository;
     private final GameRepository gameRepository;
+    private final Map<ObjectType, ObjectRepository<?>> relatedObjectRepositories;
+
+    public ChangeService(ChangeRepository repository, ChangeMapper mapper, ObjectMapper objectMapper,
+                         CategoryRepository categoryRepository, GenreRepository genreRepository,
+                         PlatformRepository platformRepository, CompanyRepository companyRepository,
+                         FeatureRepository featureRepository, TagRepository tagRepository,
+                         SeriesRepository seriesRepository, AgeRatingRepository ageRatingRepository,
+                         RegionRepository regionRepository, SourceRepository sourceRepository,
+                         CompletionStatusRepository completionStatusRepository,
+                         FilterPresetRepository filterPresetRepository, GameRepository gameRepository) {
+        this.repository = repository;
+        this.mapper = mapper;
+        this.objectMapper = objectMapper;
+        this.gameRepository = gameRepository;
+        Map<ObjectType, ObjectRepository<?>> repositoryMap = new LinkedHashMap<>();
+        repositoryMap.put(ObjectType.Category, categoryRepository);
+        repositoryMap.put(ObjectType.Genre, genreRepository);
+        repositoryMap.put(ObjectType.Platform, platformRepository);
+        repositoryMap.put(ObjectType.Company, companyRepository);
+        repositoryMap.put(ObjectType.Feature, featureRepository);
+        repositoryMap.put(ObjectType.Tag, tagRepository);
+        repositoryMap.put(ObjectType.Series, seriesRepository);
+        repositoryMap.put(ObjectType.AgeRating, ageRatingRepository);
+        repositoryMap.put(ObjectType.Region, regionRepository);
+        repositoryMap.put(ObjectType.Source, sourceRepository);
+        repositoryMap.put(ObjectType.CompletionStatus, completionStatusRepository);
+        repositoryMap.put(ObjectType.FilterPreset, filterPresetRepository);
+        this.relatedObjectRepositories = repositoryMap;
+    }
 
     @Transactional(readOnly = true)
     public Flux<ChangeDTO> findFromLastId(Long lastId) {
@@ -52,39 +68,35 @@ public class ChangeService {
     }
 
     public Flux<ChangeDTO> generateChangesForAllObjects() {
-        return repository.findMaxId().switchIfEmpty(Mono.justOrEmpty(0L)).flatMapMany(maxId -> Flux.mergeSequential(
-                categoryRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Category).objectId(id).build()),
-                genreRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Genre).objectId(id).build()),
-                platformRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Platform).objectId(id).build()),
-                companyRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Company).objectId(id).build()),
-                featureRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Feature).objectId(id).build()),
-                tagRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Tag).objectId(id).build()),
-                seriesRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Series).objectId(id).build()),
-                ageRatingRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.AgeRating).objectId(id).build()),
-                regionRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Region).objectId(id).build()),
-                sourceRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Source).objectId(id).build()),
-                completionStatusRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.CompletionStatus).objectId(id)
-                                .build()), filterPresetRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.FilterPreset).objectId(id).build()),
-                gameRepository.findAllIds()
-                        .map(id -> ChangeDTO.builder().id(maxId).type(ObjectType.Game).objectId(id).build())));
+        return findMaxId()
+                .flatMapMany(maxId ->
+                        Flux.mergeSequential(Flux.fromIterable(relatedObjectRepositories.entrySet())
+                                        .flatMapSequential(
+                                                entry -> findChangesForObjectType(entry.getValue().findAllIds(), maxId,
+                                                        entry.getKey())),
+                                findChangesForObjectType(gameRepository.findAllIds(), maxId, ObjectType.Game))
+                );
+    }
+
+    private Mono<Long> findMaxId() {
+        return repository.findMaxId().switchIfEmpty(Mono.justOrEmpty(0L));
+    }
+
+    private Flux<ChangeDTO> findChangesForObjectType(Flux<Long> ids, Long maxId, ObjectType type) {
+        return ids
+                .map(id -> ChangeDTO.builder()
+                        .id(maxId)
+                        .type(type)
+                        .objectId(id)
+                        .build()
+                );
     }
 
     public Mono<ChangeDTO> saveChange(ChangeDTO changeDTO) {
-        return Mono.justOrEmpty(changeDTO).doOnNext(dto -> log.debug("saveChange > START, changeDTO: {}", dto))
-                .map(mapper::toEntity).flatMap(repository::save).map(mapper::toDTO)
-                .doOnSuccess(dto -> log.debug("saveChange > END, changeDTO: {}", dto));
+        return Mono.justOrEmpty(changeDTO)
+                .map(mapper::toEntity)
+                .flatMap(repository::save)
+                .map(mapper::toDTO);
     }
 
     public Flux<ChangeDTO> generateChangesForGames(GameChangeRequestDTO dto) {
@@ -94,115 +106,102 @@ public class ChangeService {
                     CollectedIds collectedIds = new CollectedIds();
                     return fetchGames(d)
                             .doOnNext(game -> {
-                                GameDTO targetDto = Try.of(
-                                                () -> objectMapper.readValue(game.getSavedData().asArray(), GameDTO.class))
-                                        .getOrElse(GameDTO::new);
-                                if (targetDto.getCategories() != null) {
-                                    targetDto.getCategories().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getCategoryUuids()::add);
-                                }
-                                if (targetDto.getGenres() != null) {
-                                    targetDto.getGenres().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getGenreUuids()::add);
-                                }
-                                if (targetDto.getPlatforms() != null) {
-                                    targetDto.getPlatforms().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getPlatformUuids()::add);
-                                }
-                                if (targetDto.getDevelopers() != null) {
-                                    targetDto.getDevelopers().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getCompanyUuids()::add);
-                                }
-                                if (targetDto.getPublishers() != null) {
-                                    targetDto.getPublishers().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getCompanyUuids()::add);
-                                }
-                                if (targetDto.getFeatures() != null) {
-                                    targetDto.getFeatures().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getFeatureUuids()::add);
-                                }
-                                if (targetDto.getTags() != null) {
-                                    targetDto.getTags().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getTagUuids()::add);
-                                }
-                                if (targetDto.getSeries() != null) {
-                                    targetDto.getSeries().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getSeriesUuids()::add);
-                                }
-                                if (targetDto.getAgeRatings() != null) {
-                                    targetDto.getAgeRatings().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getAgeRatingUuids()::add);
-                                }
-                                if (targetDto.getRegions() != null) {
-                                    targetDto.getRegions().stream().map(AbstractObjectDTO::getId)
-                                            .forEach(collectedIds.getRegionUuids()::add);
-                                }
-                                if (targetDto.getSource() != null) {
-                                    Optional.ofNullable(targetDto.getSource()).map(AbstractObjectDTO::getId)
-                                            .ifPresent(id -> collectedIds.getSourceUuids().add(id));
-                                }
-                                if (targetDto.getCompletionStatus() != null) {
-                                    Optional.ofNullable(targetDto.getCompletionStatus()).map(AbstractObjectDTO::getId)
-                                            .ifPresent(id -> collectedIds.getCompletionStatusUuids().add(id));
-                                }
+                                extractObjectUuids(game, collectedIds);
                                 collectedIds.getGameIds().add(game.getId());
-                            }).then(Mono.when(findCategories(collectedIds), findGenres(collectedIds),
-                                    findPlatforms(collectedIds), findCompanies(collectedIds),
-                                    findFeatures(collectedIds),
-                                    findTags(collectedIds), findSeries(collectedIds), findAgeRatings(collectedIds),
-                                    findRegions(collectedIds), findSources(collectedIds),
-                                    findCompletionStatuses(collectedIds)))
+                            }).then(findIdsForUuids(collectedIds))
                             .thenMany(Flux.mergeSequential(
-                                    Flux.fromIterable(collectedIds.getCategoryIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Category)
-                                                    .objectId(id).build()),
-                                    Flux.fromIterable(collectedIds.getGenreIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Genre).objectId(id)
-                                                    .build()),
-                                    Flux.fromIterable(collectedIds.getPlatformIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Platform)
-                                                    .objectId(id).build()),
-                                    Flux.fromIterable(collectedIds.getCompanyIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Company)
-                                                    .objectId(id).build()),
-                                    Flux.fromIterable(collectedIds.getFeatureIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Feature)
-                                                    .objectId(id).build()),
-                                    Flux.fromIterable(collectedIds.getTagIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Tag).objectId(id)
-                                                    .build()),
-                                    Flux.fromIterable(collectedIds.getSeriesIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Series).objectId(id)
-                                                    .build()),
-                                    Flux.fromIterable(collectedIds.getAgeRatingIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.AgeRating)
-                                                    .objectId(id).build()),
-                                    Flux.fromIterable(collectedIds.getRegionIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Region).objectId(id)
-                                                    .build()),
-                                    Flux.fromIterable(collectedIds.getSourceIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Source).objectId(id)
-                                                    .build()),
-                                    Flux.fromIterable(collectedIds.getCompletionStatusIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.CompletionStatus)
-                                                    .objectId(id).build()),
-                                    Flux.fromIterable(collectedIds.getGameIds())
-                                            .sort()
-                                            .map(id -> ChangeDTO.builder().id(null).type(ObjectType.Game).objectId(id)
-                                                    .build())
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getCategoryIds())
+                                            .sort(), null, ObjectType.Category),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getGenreIds())
+                                            .sort(), null, ObjectType.Genre),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getPlatformIds())
+                                            .sort(), null, ObjectType.Platform),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getCompanyIds())
+                                            .sort(), null, ObjectType.Company),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getFeatureIds())
+                                            .sort(), null, ObjectType.Feature),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getTagIds())
+                                            .sort(), null, ObjectType.Tag),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getSeriesIds())
+                                            .sort(), null, ObjectType.Series),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getAgeRatingIds())
+                                            .sort(), null, ObjectType.AgeRating),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getRegionIds())
+                                            .sort(), null, ObjectType.Region),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getSourceIds())
+                                            .sort(), null, ObjectType.Source),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getCompletionStatusIds())
+                                            .sort(), null, ObjectType.CompletionStatus),
+                                    findChangesForObjectType(Flux.fromIterable(collectedIds.getGameIds())
+                                            .sort(), null, ObjectType.Game)
                             ));
                 });
+    }
+
+    private void extractObjectUuids(Game game, CollectedIds collectedIds) {
+        GameDTO targetDto = Try.of(
+                        () -> objectMapper.readValue(game.getSavedData().asArray(), GameDTO.class))
+                .getOrElse(GameDTO::new);
+        if (targetDto.getCategories() != null) {
+            targetDto.getCategories().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getCategoryUuids()::add);
+        }
+        if (targetDto.getGenres() != null) {
+            targetDto.getGenres().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getGenreUuids()::add);
+        }
+        if (targetDto.getPlatforms() != null) {
+            targetDto.getPlatforms().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getPlatformUuids()::add);
+        }
+        if (targetDto.getDevelopers() != null) {
+            targetDto.getDevelopers().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getCompanyUuids()::add);
+        }
+        if (targetDto.getPublishers() != null) {
+            targetDto.getPublishers().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getCompanyUuids()::add);
+        }
+        if (targetDto.getFeatures() != null) {
+            targetDto.getFeatures().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getFeatureUuids()::add);
+        }
+        if (targetDto.getTags() != null) {
+            targetDto.getTags().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getTagUuids()::add);
+        }
+        if (targetDto.getSeries() != null) {
+            targetDto.getSeries().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getSeriesUuids()::add);
+        }
+        if (targetDto.getAgeRatings() != null) {
+            targetDto.getAgeRatings().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getAgeRatingUuids()::add);
+        }
+        if (targetDto.getRegions() != null) {
+            targetDto.getRegions().stream().map(AbstractObjectDTO::getId)
+                    .forEach(collectedIds.getRegionUuids()::add);
+        }
+        Optional.ofNullable(targetDto.getSource())
+                .map(AbstractObjectDTO::getId)
+                .ifPresent(id -> collectedIds.getSourceUuids().add(id));
+        Optional.ofNullable(targetDto.getCompletionStatus())
+                .map(AbstractObjectDTO::getId)
+                .ifPresent(id -> collectedIds.getCompletionStatusUuids().add(id));
+    }
+
+    private Mono<Void> findIdsForUuids(CollectedIds collectedIds) {
+        return Mono.when(findCategories(collectedIds),
+                findGenres(collectedIds),
+                findPlatforms(collectedIds),
+                findCompanies(collectedIds),
+                findFeatures(collectedIds),
+                findTags(collectedIds),
+                findSeries(collectedIds),
+                findAgeRatings(collectedIds),
+                findRegions(collectedIds),
+                findSources(collectedIds),
+                findCompletionStatuses(collectedIds));
     }
 
     private Flux<Game> fetchGames(GameChangeRequestDTO dto) {
@@ -231,69 +230,69 @@ public class ChangeService {
     }
 
     private Mono<Void> findCategories(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getCategoryUuids()).buffer(100)
-                .flatMap(categoryRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getCategoryIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getCategoryUuids, CollectedIds::getCategoryIds,
+                ObjectType.Category);
     }
 
     private Mono<Void> findGenres(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getGenreUuids()).buffer(100)
-                .flatMap(genreRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getGenreIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getGenreUuids, CollectedIds::getGenreIds,
+                ObjectType.Genre);
     }
 
     private Mono<Void> findPlatforms(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getPlatformUuids()).buffer(100)
-                .flatMap(platformRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getPlatformIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getPlatformUuids, CollectedIds::getPlatformIds,
+                ObjectType.Platform);
     }
 
     private Mono<Void> findCompanies(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getCompanyUuids()).buffer(100)
-                .flatMap(companyRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getCompanyIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getCompanyUuids, CollectedIds::getCompanyIds,
+                ObjectType.Company);
     }
 
     private Mono<Void> findFeatures(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getFeatureUuids()).buffer(100)
-                .flatMap(featureRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getFeatureIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getFeatureUuids, CollectedIds::getFeatureIds,
+                ObjectType.Feature);
     }
 
     private Mono<Void> findTags(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getTagUuids()).buffer(100)
-                .flatMap(tagRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getTagIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getTagUuids, CollectedIds::getTagIds,
+                ObjectType.Tag);
     }
 
     private Mono<Void> findSeries(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getSeriesUuids()).buffer(100)
-                .flatMap(seriesRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getSeriesIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getSeriesUuids, CollectedIds::getSeriesIds,
+                ObjectType.Series);
     }
 
     private Mono<Void> findAgeRatings(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getAgeRatingUuids()).buffer(100)
-                .flatMap(ageRatingRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getAgeRatingIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getAgeRatingUuids, CollectedIds::getAgeRatingIds,
+                ObjectType.AgeRating);
     }
 
     private Mono<Void> findRegions(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getRegionUuids()).buffer(100)
-                .flatMap(regionRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getRegionIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getRegionUuids, CollectedIds::getRegionIds,
+                ObjectType.Region);
     }
 
     private Mono<Void> findSources(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getSourceUuids()).buffer(100)
-                .flatMap(sourceRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getSourceIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getSourceUuids, CollectedIds::getSourceIds,
+                ObjectType.Source);
     }
 
     private Mono<Void> findCompletionStatuses(CollectedIds collectedIds) {
-        return Mono.just(collectedIds).flatMapMany(c -> Flux.fromIterable(c.getCompletionStatusUuids()).buffer(100)
-                .flatMap(completionStatusRepository::findIdsByPlayniteIdIn)
-                .doOnNext(id -> collectedIds.getCompletionStatusIds().add(id))).then();
+        return findIdsForUuidsForObject(collectedIds, CollectedIds::getCompletionStatusUuids,
+                CollectedIds::getCompletionStatusIds, ObjectType.CompletionStatus);
+    }
+
+    private Mono<Void> findIdsForUuidsForObject(CollectedIds collectedIds,
+                                                Function<CollectedIds, Set<String>> uuidExtractor,
+                                                Function<CollectedIds, Set<Long>> idExtractor, ObjectType objectType) {
+        return Mono.just(collectedIds)
+                .map(uuidExtractor)
+                .flatMapMany(Flux::fromIterable)
+                .buffer(100)
+                .flatMap(ids -> relatedObjectRepositories.get(objectType).findIdsByPlayniteIdIn(ids))
+                .doOnNext(id -> idExtractor.apply(collectedIds).add(id)).then();
     }
 
     @Data

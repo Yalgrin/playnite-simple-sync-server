@@ -1,5 +1,6 @@
 package pl.yalgrin.playnite.simplesync.helper;
 
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -14,10 +15,14 @@ import java.util.concurrent.Executors;
 public class SingleExecutorHelper {
     private final ExecutorService asyncExecutor = Executors.newSingleThreadExecutor();
 
+    @PreDestroy
+    public void shutdown() {
+        asyncExecutor.shutdown();
+    }
+
     public <T> Mono<T> runOnExecutor(Mono<T> mono) {
-        return Mono.fromCallable(() -> mono.subscribeOn(Schedulers.immediate()).block())
-                .subscribeOn(Schedulers.fromExecutorService(asyncExecutor))
-                .publishOn(Schedulers.fromExecutorService(asyncExecutor));
+        return Mono.fromCallable(mono::block)
+                .subscribeOn(Schedulers.fromExecutorService(asyncExecutor));
     }
 
     public <T> Flux<T> runOnExecutor(Flux<T> flux) {

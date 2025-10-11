@@ -1,6 +1,11 @@
 package pl.yalgrin.playnite.simplesync.exception;
 
+import java.io.Serial;
+
 public class ForceFetchRequiredException extends RuntimeException {
+
+    @Serial
+    private static final long serialVersionUID = 8262781282909716606L;
 
     public ForceFetchRequiredException() {
     }

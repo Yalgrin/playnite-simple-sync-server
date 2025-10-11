@@ -6,6 +6,8 @@ import pl.yalgrin.playnite.simplesync.dto.ChangeDTO;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.Sinks;
+import reactor.core.scheduler.Scheduler;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 
@@ -13,12 +15,13 @@ import java.util.List;
 @Slf4j
 public class ChangeListenerService {
     private final Sinks.Many<ChangeDTO> sink = Sinks.many().multicast().directBestEffort();
+    private final Scheduler scheduler = Schedulers.newSingle("change-emitter");
 
     public Mono<Void> publishChange(ChangeDTO dto) {
         return Mono.fromRunnable(() -> {
             log.debug("publishing {}", dto);
             sink.tryEmitNext(dto);
-        });
+        }).subscribeOn(scheduler).then();
     }
 
     public Mono<Void> publishChanges(List<ChangeDTO> dtoList) {
