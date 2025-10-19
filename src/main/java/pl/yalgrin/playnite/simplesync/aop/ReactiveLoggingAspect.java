@@ -46,7 +46,8 @@ public class ReactiveLoggingAspect {
                                 _ -> logger.debug("{} > START, uuid: {}, args: {}", name, uuid, formatArgs(args)))
                         .doOnSuccess(result -> logger.debug("{} > END, uuid: {}, result: {}", name, uuid,
                                 formatResult(result)))
-                        .doOnError(th -> logger.error("{} > ERROR, uuid: {}", name, uuid, th));
+                        .doOnError(th -> logger.error("{} > ERROR, uuid: {}", name, uuid, th))
+                        .doOnCancel(() -> logger.debug("{} > CANCEL, uuid: {}", name, uuid));
             }
             if (returnValue instanceof Flux<?> flux) {
                 UUID uuid = UUID.randomUUID();
@@ -57,7 +58,8 @@ public class ReactiveLoggingAspect {
                         .doOnNext(_ -> counter.incrementAndGet())
                         .doOnComplete(
                                 () -> logger.debug("{} > END, uuid: {}, result.size(): {}", name, uuid, counter.get()))
-                        .doOnError(th -> logger.error("{} > ERROR, uuid: {}", name, uuid, th));
+                        .doOnError(th -> logger.error("{} > ERROR, uuid: {}", name, uuid, th))
+                        .doOnCancel(() -> logger.debug("{} > CANCEL, uuid: {}", name, uuid));
             }
         }
         return returnValue;

@@ -115,7 +115,9 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
                                     });
                         } else {
                             return Mono.justOrEmpty(true).doOnNext(
-                                    b -> log.debug("saveOrDeleteMetadataFiles > skipping file: {}", t.getFieldName()));
+                                            b -> log.debug("saveOrDeleteMetadataFiles > skipping file: {}", t.getFieldName()))
+                                    .then(metadataService.deleteExcessiveMetadata(getMetadataFolder(), getIdPart(e),
+                                            t.getFilename(), t.getFieldName()));
                         }
                     } else {
                         return metadataService.deleteMetadata(getMetadataFolder(), getIdPart(e), t.getFieldName())
@@ -229,7 +231,9 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
                         } else {
                             return Mono.just(true)
                                     .doOnNext(_ -> log.debug("saveEntityAndFilesFromDiff > skipping file: {}",
-                                            t.getFieldName()));
+                                            t.getFieldName()))
+                                    .then(metadataService.deleteExcessiveMetadata(getMetadataFolder(), getIdPart(e),
+                                            t.getFilename(), t.getFieldName()));
                         }
                     } else {
                         return metadataService.deleteMetadata(getMetadataFolder(), getIdPart(e), t.getFieldName())

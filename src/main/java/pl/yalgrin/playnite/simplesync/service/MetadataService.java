@@ -220,6 +220,40 @@ public class MetadataService {
         return Files.deleteIfExists(path);
     }
 
+    public Mono<Boolean> deleteExcessiveMetadata(String folder, String idPart, String filename,
+                                                 String fieldName) {
+        return Mono.fromCallable(() -> {
+            if (StringUtils.isBlank(metadataFolder)) {
+                log.error("deleteExcessiveMetadata > ERROR, metadata folder is not specified!");
+                throw new IllegalStateException("No metadata folder set!");
+            }
+            if (!ALLOWED_FILE_NAMES.contains(fieldName)) {
+                log.warn("deleteExcessiveMetadata > ERROR, invalid field name: {}!", fieldName);
+                throw new IllegalArgumentException("Invalid file name!");
+            }
+
+            doDeleteExcessiveMetadata(fieldName, Path.of(metadataFolder, folder, idPart), filename);
+            return true;
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private static void doDeleteExcessiveMetadata(String fieldName, Path dir, String filenameToKeep) throws
+            IOException {
+        try (Stream<Path> files = Files.list(dir)) {
+            files.forEach(path -> {
+                String existingFileName = FilenameUtils.getName(path.toString());
+                String existingFileExtension = FilenameUtils.getExtension(path.toString());
+                String baseName = FilenameUtils.getBaseName(path.toString());
+                if (existingFileExtension.equalsIgnoreCase("tmp")
+                        || ((baseName != null && baseName.equals(fieldName)) && !existingFileName.equals(
+                        filenameToKeep))) {
+                    log.debug("deleteExistingMetadata > found excessive metadata, will try to remove: {}", path);
+                    deleteIfExists(path);
+                }
+            });
+        }
+    }
+
     public Mono<Tuple2<String, Flux<DataBuffer>>> getMetadata(String folder, String id, String filename) {
         return Mono.fromCallable(() -> findMetadataPath(folder, id, filename))
                 .subscribeOn(Schedulers.boundedElastic())
