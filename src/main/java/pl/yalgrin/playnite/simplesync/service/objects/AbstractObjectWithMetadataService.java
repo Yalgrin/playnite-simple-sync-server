@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
-import static pl.yalgrin.playnite.simplesync.utils.ReactorUtils.toMono;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -77,10 +75,11 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
     }
 
     protected Mono<E> findOrCreateEntity(DTO dto) {
-        return toMono(repository.findByPlayniteId(dto.getId())).doOnNext(
+        return repository.findByPlayniteId(dto.getId()).take(1).next()
+                .doOnNext(
                         e -> log.debug("findOrCreateEntity > found entity with id = {} by playnite id: {}", e.getId(),
                                 dto.getId()))
-                .switchIfEmpty(toMono(repository.findByName(dto.getName()))
+                .switchIfEmpty(repository.findByName(dto.getName()).take(1).next()
                         .doOnNext(e -> {
                             log.debug("findOrCreateEntity > found entity with id = {} by name: {}", e.getId(),
                                     dto.getName());
@@ -96,7 +95,8 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
             return Mono.empty();
         }
         return Flux.fromIterable(getMetadataFields())
-                .flatMap(field -> toMono(fileParts.filter(p -> field.equals(FilenameUtils.getBaseName(p.filename()))))
+                .flatMap(field -> fileParts.filter(p -> field.equals(FilenameUtils.getBaseName(p.filename()))).take(1)
+                        .next()
                         .flatMap(this::readFile)
                         .flatMap(t -> Mono.justOrEmpty((FileData) FileData.builder()
                                 .fieldName(field).bytes(t._1)
@@ -188,7 +188,8 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
     }
 
     protected Mono<E> findOrCreateEntity(DIFF_DTO dto) {
-        return toMono(repository.findByPlayniteId(dto.getId())).doOnNext(
+        return repository.findByPlayniteId(dto.getId()).take(1).next()
+                .doOnNext(
                         e -> log.debug("findOrCreateEntity > found entity with id = {} by playnite id: {}", e.getId(),
                                 dto.getId()))
                 .switchIfEmpty(
@@ -211,14 +212,15 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
                                                                   List<String> changedFields, E e) {
         return Flux.fromIterable(changedFields)
                 .filter(str -> getMetadataFields().contains(str))
-                .flatMap(field -> toMono(fileParts.filter(p -> field.equals(FilenameUtils.getBaseName(p.filename())))
+                .flatMap(field -> fileParts.filter(p -> field.equals(FilenameUtils.getBaseName(p.filename()))).take(1)
+                        .next()
                         .flatMap(this::readFile)
                         .flatMap(t -> Mono.justOrEmpty((FileData) FileData.builder()
                                 .fieldName(field).bytes(t._1)
                                 .md5(DigestUtils.md5DigestAsHex(t._1)).filename(t._2)
                                 .toSave(true).build()))
                         .switchIfEmpty(Mono.justOrEmpty(FileData.builder().fieldName(field)
-                                .toSave(false).build()))))
+                                .toSave(false).build())))
                 .flatMap(t -> {
                     if (t.isToSave()) {
                         if (shouldSaveMetadata(e, t.getBytes(), t.getMd5(), t.getFieldName())) {
@@ -348,7 +350,8 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
     @Transactional(readOnly = true)
     public Mono<DIFF_DTO> findDiffById(Long id) {
         return diffRepository.findById(id).flatMap(
-                diff -> toMono(repository.findByPlayniteId(diff.getPlayniteId())).map(e -> mapper.toDTO(e, diff)));
+                diff -> repository.findByPlayniteId(diff.getPlayniteId()).take(1).next()
+                        .map(e -> mapper.toDTO(e, diff)));
     }
 
     @Data

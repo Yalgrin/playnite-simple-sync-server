@@ -70,7 +70,8 @@ public class ChangeService {
     public Flux<ChangeDTO> generateChangesForAllObjects() {
         return findMaxId()
                 .flatMapMany(maxId ->
-                        Flux.mergeSequential(Flux.fromIterable(relatedObjectRepositories.entrySet())
+                        Flux.mergeSequential(
+                                Flux.fromIterable(relatedObjectRepositories.entrySet())
                                         .flatMapSequential(
                                                 entry -> findChangesForObjectType(entry.getValue().findAllIds(), maxId,
                                                         entry.getKey())),

@@ -4,13 +4,18 @@ import io.vavr.Tuple
 import io.vavr.Tuple2
 import org.apache.commons.io.FilenameUtils
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.MediaType
+import org.springframework.http.client.MultipartBodyBuilder
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.multipart.MultipartFile
+import pl.yalgrin.playnite.simplesync.config.Constants
 import pl.yalgrin.playnite.simplesync.domain.objects.Game
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
+import pl.yalgrin.playnite.simplesync.dto.objects.GameDiffDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.helper.MetadataTestHelper
 import pl.yalgrin.playnite.simplesync.repository.objects.GameRepository
 import pl.yalgrin.playnite.simplesync.repository.objects.ObjectRepository
 import pl.yalgrin.playnite.simplesync.service.MetadataService
@@ -21,11 +26,14 @@ import reactor.test.StepVerifier
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicLong
+import java.util.function.Consumer
 
 class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
     @Autowired
     private GameRepository gameRepository
+    @Autowired
+    private MetadataTestHelper metadataTestHelper
 
     def "save single game"() {
         given:
@@ -48,6 +56,13 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         and:
         assertEntityAndGetResponse(dto, files)
+
+        and:
+        checkFiles(dto, { id ->
+            assert metadataTestHelper.fileExists(Constants.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileExists(Constants.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileExists(Constants.GAME, id, "BackgroundImage.tif")
+        })
     }
 
     def "save multiple games"() {
@@ -216,10 +231,66 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                 .verify()
     }
 
+    def "save game with images then remove images"() {
+        given:
+        GameDTO dto = GameFactoryUtil.createGame(UUID.randomUUID().toString(), "test")
+        def icon = GameFactoryUtil.randomFile("Icon.png", 2048)
+        def coverImage = GameFactoryUtil.randomFile("CoverImage.jpeg", 2048)
+        def backgroundImage = GameFactoryUtil.randomFile("BackgroundImage.tif", 2048)
+        def files = List.of(icon, coverImage, backgroundImage)
+
+        when:
+        def response = makeSaveRequest(dto, files)
+
+        then:
+        response.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GameDTO.class))
+                .expectNextMatches { objectMatches(it, dto) }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, files)
+
+        and:
+        checkFiles(dto, { id ->
+            assert metadataTestHelper.fileExists(Constants.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileExists(Constants.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileExists(Constants.GAME, id, "BackgroundImage.tif")
+        })
+
+        when:
+        GameDiffDTO diffDTO = GameDiffDTO.builder()
+                .id(dto.getId())
+                .gameId(dto.getGameId())
+                .pluginId(dto.getPluginId())
+                .changedFields(List.of("Icon", "CoverImage", "BackgroundImage"))
+                .build()
+
+        def diffResponse = makeSaveDiffRequest(diffDTO, List.of())
+
+        then:
+        diffResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        checkFiles(dto, { id ->
+            assert metadataTestHelper.fileDoesNotExist(Constants.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileDoesNotExist(Constants.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileDoesNotExist(Constants.GAME, id, "BackgroundImage.tif")
+        })
+    }
+
+
     @Override
     protected String uri() {
         return "/api/game"
     }
+
+    protected String diffUri() {
+        return "/api/game-diff"
+    }
+
 
     @Override
     protected ObjectRepository<Game> repository() {
@@ -275,6 +346,19 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
             }
         }
 
+        for (final def file in files) {
+            assert metadataTestHelper.fileExists(Constants.GAME, savedEntity.getId(), file.name)
+        }
+
+        true
+    }
+
+    private checkFiles(GameDTO dto, Consumer<Long> idChecker) {
+        def savedEntities = repository().findByPlayniteId(dto.id).collectList().block()
+        assert savedEntities.size() == 1
+
+        def id = savedEntities[0].id
+        idChecker.accept(id)
         true
     }
 
@@ -283,6 +367,29 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/game-metadata/$id/$metadataName")
                         .build())
+                .exchange()
+    }
+
+    protected WebTestClient.ResponseSpec makeSaveDiffRequest(GameDiffDTO dto, List<MultipartFile> files) {
+        def builder = new MultipartBodyBuilder()
+        builder.part("dto", dto)
+        if (!files.isEmpty()) {
+            files.each { file ->
+                builder.part("files", new ByteArrayResource(file.getBytes()) {
+                    @Override
+                    String getFilename() {
+                        return file.getOriginalFilename()
+                    }
+                })
+            }
+        }
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("${diffUri()}/save")
+                        .queryParam("clientId", "test")
+                        .build())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .bodyValue(builder.build())
                 .exchange()
     }
 }

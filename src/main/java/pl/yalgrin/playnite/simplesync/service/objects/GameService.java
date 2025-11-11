@@ -29,8 +29,6 @@ import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 
-import static pl.yalgrin.playnite.simplesync.utils.ReactorUtils.toMono;
-
 @Service
 @Slf4j
 public class GameService extends AbstractObjectWithMetadataService<Game, GameDiff, GameDTO, GameDiffDTO> {
@@ -316,7 +314,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
 
     @Override
     protected Mono<Game> findOrCreateEntity(GameDTO dto) {
-        return toMono(gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId()))
+        return gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId()).take(1).next()
                 .doOnNext(e -> {
                     log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
                             e.getId(),
@@ -331,7 +329,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
 
     @Override
     protected Mono<Game> findOrCreateEntity(GameDiffDTO dto) {
-        return toMono(gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId()))
+        return gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId()).take(1).next()
                 .doOnNext(e -> {
                     log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
                             e.getId(),

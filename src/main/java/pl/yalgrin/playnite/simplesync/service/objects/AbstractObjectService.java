@@ -19,8 +19,6 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
-import static pl.yalgrin.playnite.simplesync.utils.ReactorUtils.toMono;
-
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -60,14 +58,14 @@ public abstract class AbstractObjectService<E extends AbstractObjectEntity, D ex
     }
 
     private Mono<E> findBasedOnId(D dto) {
-        return toMono(repository.findByPlayniteId(dto.getId()))
+        return repository.findByPlayniteId(dto.getId()).take(1).next()
                 .doOnNext(
                         e -> log.debug("findOrCreateEntity > found entity with id = {} by playnite id: {}", e.getId(),
                                 dto.getId()));
     }
 
     private Mono<E> findBasedOnName(D dto) {
-        return toMono(repository.findByName(dto.getName()))
+        return repository.findByName(dto.getName()).take(1).next()
                 .doOnNext(e -> {
                     log.debug("findOrCreateEntity > found entity with id = {} by name: {}", e.getId(),
                             dto.getName());

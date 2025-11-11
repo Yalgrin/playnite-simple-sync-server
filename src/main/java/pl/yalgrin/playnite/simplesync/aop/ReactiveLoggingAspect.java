@@ -65,11 +65,11 @@ public class ReactiveLoggingAspect {
         return returnValue;
     }
 
-    private List<Object> formatArgs(Object[] args) {
-        return Arrays.stream(args).map(this::formatResult).toList();
+    private static List<Object> formatArgs(Object[] args) {
+        return Arrays.stream(args).map(ReactiveLoggingAspect::formatResult).toList();
     }
 
-    private Object formatResult(Object result) {
+    private static Object formatResult(Object result) {
         if (result instanceof byte[] arr) {
             return "byte[" + arr.length + "]";
         }
