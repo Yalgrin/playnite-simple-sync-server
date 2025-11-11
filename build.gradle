@@ -8,7 +8,7 @@ plugins {
 }
 
 group = 'pl.yalgrin'
-version = '0.1.4'
+version = '0.1.5-SNAPSHOT'
 
 def vavrVersion = '0.10.7'
 def spockVersion = '2.4-M6-groovy-4.0'
