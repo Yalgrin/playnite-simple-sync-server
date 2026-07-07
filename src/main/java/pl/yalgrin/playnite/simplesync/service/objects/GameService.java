@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.service.objects;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import lombok.extern.slf4j.Slf4j;
@@ -24,10 +23,13 @@ import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.service.MetadataService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+
+import static pl.yalgrin.playnite.simplesync.security.ClientUtilKt.getSessionClientId;
 
 @Service
 @Slf4j
@@ -182,12 +184,14 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
     }
 
     @Override
-    public Mono<GameDTO> saveObjectDiff(GameDiffDTO gameDiffDTO, String clientId, Flux<FilePart> fileParts) {
+    public Mono<GameDTO> saveObjectDiff(GameDiffDTO gameDiffDTO, Flux<FilePart> fileParts) {
         List<ChangeDTO> changes = Collections.synchronizedList(new ArrayList<>());
-        return saveGameWithDependencies(gameDiffDTO, clientId, fileParts, changes).as(
+        return getSessionClientId()
+                .flatMap(clientId -> saveGameWithDependencies(gameDiffDTO, clientId, fileParts, changes).as(
                         transactionalOperator::transactional)
                 .flatMap(
-                        g -> Mono.defer(() -> changeListenerService.publishChanges(changes)).then(Mono.justOrEmpty(g)));
+                        g -> Mono.defer(() -> changeListenerService.publishChanges(changes))
+                                .then(Mono.justOrEmpty(g))));
     }
 
     private Mono<GameDTO> saveGameWithDependencies(GameDiffDTO dto, String clientId,

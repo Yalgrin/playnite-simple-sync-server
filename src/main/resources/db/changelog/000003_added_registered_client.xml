@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="000003-1" author="yalgrin">
+        <createTable tableName="registered_client">
+            <column name="id" type="varchar(200)">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="display_name" type="varchar(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="client_token" type="varchar(200)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_connected" type="timestamp with time zone"/>
+        </createTable>
+    </changeSet>
+</databaseChangeLog>

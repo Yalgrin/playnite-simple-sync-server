@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.mapper.objects;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.r2dbc.postgresql.codec.Json;
 import io.vavr.control.Try;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +12,7 @@ import pl.yalgrin.playnite.simplesync.dto.filter.IdItemPropertiesDTO;
 import pl.yalgrin.playnite.simplesync.dto.filter.IntItemPropertiesDTO;
 import pl.yalgrin.playnite.simplesync.dto.filter.StringItemPropertiesDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.FilterPresetDTO;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Objects;

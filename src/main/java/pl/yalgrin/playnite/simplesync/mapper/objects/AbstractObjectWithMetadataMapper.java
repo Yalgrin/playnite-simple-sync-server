@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.mapper.objects;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.r2dbc.postgresql.codec.Json;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -10,6 +9,7 @@ import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectDiffEntity;
 import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectEntity;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractDiffDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;

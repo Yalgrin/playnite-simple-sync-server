@@ -49,20 +49,18 @@ public class PlatformResource {
 
     @PostMapping("/platform/save")
     public Mono<PlatformDTO> savePlatform(@RequestPart PlatformDTO dto,
-                                          @RequestPart(required = false) Flux<FilePart> files,
-                                          @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId, files, true));
+                                          @RequestPart(required = false) Flux<FilePart> files) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, files, true));
     }
 
     @PostMapping("/platform-diff/save")
     public Mono<PlatformDTO> savePlatformDiff(@RequestPart PlatformDiffDTO dto,
-                                              @RequestPart(required = false) Flux<FilePart> files,
-                                              @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObjectDiff(dto, clientId, files));
+                                              @RequestPart(required = false) Flux<FilePart> files) {
+        return singleExecutorHelper.runOnExecutor(service.saveObjectDiff(dto, files));
     }
 
     @PostMapping("/platform/delete")
-    public Mono<Void> deletePlatform(@RequestBody PlatformDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deletePlatform(@RequestBody PlatformDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

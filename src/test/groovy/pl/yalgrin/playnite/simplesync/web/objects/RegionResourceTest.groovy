@@ -141,7 +141,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.Region
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.isForceFetch()
                     newObjectId.set(change.getObjectId())
@@ -162,7 +162,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.Region
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.isForceFetch()
                     true
@@ -182,7 +182,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.Region
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.isForceFetch()
                     true

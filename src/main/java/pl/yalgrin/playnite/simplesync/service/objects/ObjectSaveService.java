@@ -6,7 +6,7 @@ import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
 import reactor.core.publisher.Mono;
 
 public interface ObjectSaveService<DTO extends AbstractObjectDTO> {
-    Mono<DTO> saveObject(DTO objectDTO, String clientId);
+    Mono<DTO> saveObject(DTO objectDTO);
 
     Mono<Tuple2<DTO, ChangeDTO>> saveObjectWithoutPublishing(DTO objectDTO, String clientId);
 }

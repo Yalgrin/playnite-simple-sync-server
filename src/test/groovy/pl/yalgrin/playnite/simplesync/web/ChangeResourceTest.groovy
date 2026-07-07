@@ -10,12 +10,16 @@ import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
+import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
+import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
+import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO
 import pl.yalgrin.playnite.simplesync.dto.GameIdsDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.ChangeRepository
+import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.util.objects.*
 import reactor.test.StepVerifier
 
@@ -25,14 +29,30 @@ class ChangeResourceTest extends SpockIntegrationTest {
 
     @Autowired
     private ChangeRepository changeRepository
+    @Autowired
+    private RegisteredClientService registeredClientService
+    @Autowired
+    private SessionManager sessionManager
 
     private GameDTO savedGame
+    private String clientId
 
     def setup() {
         def populator = new ResourceDatabasePopulator()
         populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
         populator.populate(connectionFactory).block()
 
+        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user")).block()
+        def sessionId = UUID.randomUUID().toString()
+        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))
+
+        webTestClient = webTestClient.mutate()
+                .defaultHeader("X-Client-Id", clientInfo.clientId)
+                .defaultHeader("X-Client-Token", clientInfo.clientToken)
+                .defaultHeader("X-Session-Id", sessionId)
+                .build()
+
+        clientId = clientInfo.clientId
 
         def category = CategoryFactoryUtil.randomCategory()
         makeSaveRequest(category, "/api/category")
@@ -121,7 +141,7 @@ class ChangeResourceTest extends SpockIntegrationTest {
             def change = result[i]
             assert expectedChange.getId() == change.getId()
             assert expectedChange.getType() == change.getType()
-            assert expectedChange.getClientId() == change.getClientId()
+            assert clientId == change.getClientId()
             assert expectedChange.getObjectId() == change.getObjectId()
         }
         true
@@ -177,20 +197,20 @@ class ChangeResourceTest extends SpockIntegrationTest {
 
     protected List<ChangeDTO> getAllExpectedResults() {
         List.of(
-                ChangeDTO.builder().id(1L).type(ObjectType.Category).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(2L).type(ObjectType.Genre).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(3L).type(ObjectType.Platform).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(4L).type(ObjectType.Company).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(5L).type(ObjectType.Company).clientId("test").objectId(2).build(),
-                ChangeDTO.builder().id(6L).type(ObjectType.Feature).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(7L).type(ObjectType.Tag).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(8L).type(ObjectType.Series).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(9L).type(ObjectType.AgeRating).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(10L).type(ObjectType.Region).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(11L).type(ObjectType.Source).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(12L).type(ObjectType.CompletionStatus).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(13L).type(ObjectType.FilterPreset).clientId("test").objectId(1).build(),
-                ChangeDTO.builder().id(14L).type(ObjectType.Game).clientId("test").objectId(1).build()
+                ChangeDTO.builder().id(1L).type(ObjectType.Category).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(2L).type(ObjectType.Genre).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(3L).type(ObjectType.Platform).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(4L).type(ObjectType.Company).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(5L).type(ObjectType.Company).clientId(clientId).objectId(2).build(),
+                ChangeDTO.builder().id(6L).type(ObjectType.Feature).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(7L).type(ObjectType.Tag).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(8L).type(ObjectType.Series).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(9L).type(ObjectType.AgeRating).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(10L).type(ObjectType.Region).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(11L).type(ObjectType.Source).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(12L).type(ObjectType.CompletionStatus).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(13L).type(ObjectType.FilterPreset).clientId(clientId).objectId(1).build(),
+                ChangeDTO.builder().id(14L).type(ObjectType.Game).clientId(clientId).objectId(1).build()
         )
     }
 
@@ -206,7 +226,6 @@ class ChangeResourceTest extends SpockIntegrationTest {
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("${uri}/save")
-                        .queryParam("clientId", "test")
                         .build())
                 .bodyValue(dto)
                 .exchange()
@@ -228,7 +247,6 @@ class ChangeResourceTest extends SpockIntegrationTest {
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("${uri}/save")
-                        .queryParam("clientId", "test")
                         .build())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .bodyValue(builder.build())

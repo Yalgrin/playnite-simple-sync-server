@@ -20,12 +20,12 @@ public class TagResource {
     }
 
     @PostMapping("/save")
-    public Mono<TagDTO> saveTag(@RequestBody TagDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<TagDTO> saveTag(@RequestBody TagDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteTag(@RequestBody TagDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteTag(@RequestBody TagDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

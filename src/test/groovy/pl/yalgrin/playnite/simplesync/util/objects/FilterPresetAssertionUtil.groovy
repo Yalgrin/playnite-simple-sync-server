@@ -1,16 +1,16 @@
 package pl.yalgrin.playnite.simplesync.util.objects
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import pl.yalgrin.playnite.simplesync.config.ObjectMapperProvider
+import pl.yalgrin.playnite.simplesync.config.JsonMapperProvider
 import pl.yalgrin.playnite.simplesync.domain.objects.FilterPreset
 import pl.yalgrin.playnite.simplesync.dto.filter.FilterPresetSettingsDTO
 import pl.yalgrin.playnite.simplesync.dto.filter.IdItemPropertiesDTO
 import pl.yalgrin.playnite.simplesync.dto.filter.IntItemPropertiesDTO
 import pl.yalgrin.playnite.simplesync.dto.filter.StringItemPropertiesDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.FilterPresetDTO
+import tools.jackson.databind.json.JsonMapper
 
 class FilterPresetAssertionUtil {
-    private static final ObjectMapper objectMapper = ObjectMapperProvider.create()
+    private static final JsonMapper objectMapper = JsonMapperProvider.build()
 
     static boolean assertFilterPreset(FilterPresetDTO expectedDTO, FilterPresetDTO resultDTO) {
         if (expectedDTO == null) {

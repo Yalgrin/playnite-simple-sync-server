@@ -20,12 +20,12 @@ public class GenreResource {
     }
 
     @PostMapping("/save")
-    public Mono<GenreDTO> saveGenre(@RequestBody GenreDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<GenreDTO> saveGenre(@RequestBody GenreDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteGenre(@RequestBody GenreDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteGenre(@RequestBody GenreDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

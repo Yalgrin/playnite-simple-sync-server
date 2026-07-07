@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.mapper.objects;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -8,6 +7,7 @@ import pl.yalgrin.playnite.simplesync.domain.objects.Platform;
 import pl.yalgrin.playnite.simplesync.domain.objects.PlatformDiff;
 import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDiffDTO;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 

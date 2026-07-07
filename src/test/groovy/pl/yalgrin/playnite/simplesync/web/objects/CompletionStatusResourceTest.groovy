@@ -141,7 +141,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.CompletionStatus
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.isForceFetch()
                     newObjectId.set(change.getObjectId())
@@ -162,7 +162,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.CompletionStatus
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.isForceFetch()
                     true
@@ -182,7 +182,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.CompletionStatus
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.isForceFetch()
                     true

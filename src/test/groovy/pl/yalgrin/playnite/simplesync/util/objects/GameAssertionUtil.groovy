@@ -1,14 +1,14 @@
 package pl.yalgrin.playnite.simplesync.util.objects
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import pl.yalgrin.playnite.simplesync.config.ObjectMapperProvider
+import pl.yalgrin.playnite.simplesync.config.JsonMapperProvider
 import pl.yalgrin.playnite.simplesync.domain.objects.Game
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
+import tools.jackson.databind.json.JsonMapper
 
 import java.util.function.BiPredicate
 
 class GameAssertionUtil {
-    private static final ObjectMapper objectMapper = ObjectMapperProvider.create()
+    private static final JsonMapper objectMapper = JsonMapperProvider.build()
 
     static boolean assertGame(GameDTO expectedDTO, GameDTO resultDTO) {
         if (expectedDTO == null) {

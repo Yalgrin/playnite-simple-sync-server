@@ -6,20 +6,42 @@ import org.springframework.core.io.ClassPathResource
 import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator
 import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
+import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
+import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
+import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
 import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectEntity
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO
 import pl.yalgrin.playnite.simplesync.repository.objects.ObjectRepository
+import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
 abstract class AbstractObjectTest<E extends AbstractObjectEntity, D extends AbstractObjectDTO> extends SpockIntegrationTest {
     @Autowired
     private ConnectionFactory connectionFactory
+    @Autowired
+    private RegisteredClientService registeredClientService
+    @Autowired
+    private SessionManager sessionManager
+
+    protected String clientId
 
     def setup() {
         def populator = new ResourceDatabasePopulator()
         populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
         populator.populate(connectionFactory).block()
+
+        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user")).block()
+        def sessionId = UUID.randomUUID().toString()
+        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))
+
+        webTestClient = webTestClient.mutate()
+                .defaultHeader("X-Client-Id", clientInfo.clientId)
+                .defaultHeader("X-Client-Token", clientInfo.clientToken)
+                .defaultHeader("X-Session-Id", sessionId)
+                .build()
+
+        clientId = clientInfo.clientId
     }
 
     protected WebTestClient.ResponseSpec makeGetRequest(Long id) {
@@ -34,7 +56,6 @@ abstract class AbstractObjectTest<E extends AbstractObjectEntity, D extends Abst
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("${uri()}/save")
-                        .queryParam("clientId", "test")
                         .build())
                 .bodyValue(dto)
                 .exchange()
@@ -44,7 +65,6 @@ abstract class AbstractObjectTest<E extends AbstractObjectEntity, D extends Abst
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("${uri()}/delete")
-                        .queryParam("clientId", "test")
                         .build())
                 .bodyValue(dto)
                 .exchange()
@@ -54,7 +74,6 @@ abstract class AbstractObjectTest<E extends AbstractObjectEntity, D extends Abst
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/change/stream")
-                        .queryParam("clientId", "test")
                         .build())
                 .exchange()
     }

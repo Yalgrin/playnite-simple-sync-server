@@ -172,7 +172,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.Game
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.isForceFetch()
                     newObjectId.set(change.getObjectId())
@@ -193,7 +193,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.GameDiff
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get() + 1
                     assert !change.isForceFetch()
                     true
@@ -213,7 +213,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.Game
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.isForceFetch()
                     true

@@ -19,6 +19,8 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+import static pl.yalgrin.playnite.simplesync.security.ClientUtilKt.getSessionClientId;
+
 @Service
 @Slf4j
 @RequiredArgsConstructor
@@ -30,10 +32,11 @@ public abstract class AbstractObjectService<E extends AbstractObjectEntity, D ex
     private final ChangeListenerService changeListenerService;
     private final TransactionalOperator transactionalOperator;
 
-    public Mono<D> saveObject(D objectDTO, String clientId) {
-        return saveObjectWithoutPublishing(objectDTO, clientId)
-                .as(transactionalOperator::transactional)
-                .flatMap(t -> changeListenerService.publishChange(t._2).thenReturn(t._1));
+    public Mono<D> saveObject(D objectDTO) {
+        return getSessionClientId()
+                .flatMap(clientId -> saveObjectWithoutPublishing(objectDTO, clientId)
+                        .as(transactionalOperator::transactional)
+                        .flatMap(t -> changeListenerService.publishChange(t._2).thenReturn(t._1)));
     }
 
     public Mono<Tuple2<D, ChangeDTO>> saveObjectWithoutPublishing(D objectDTO, String clientId) {
@@ -95,9 +98,11 @@ public abstract class AbstractObjectService<E extends AbstractObjectEntity, D ex
                 .build();
     }
 
-    public Mono<Void> deleteObject(D dto, String clientId) {
-        return doDeleteObject(dto, clientId).as(transactionalOperator::transactional)
-                .flatMap(changeListenerService::publishChanges);
+    public Mono<Void> deleteObject(D dto) {
+        return getSessionClientId()
+                .flatMap(clientId -> doDeleteObject(dto, clientId)
+                        .as(transactionalOperator::transactional)
+                        .flatMap(changeListenerService::publishChanges));
     }
 
     private Mono<List<ChangeDTO>> doDeleteObject(D dto, String clientId) {

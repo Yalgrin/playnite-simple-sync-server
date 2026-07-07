@@ -20,12 +20,12 @@ public class FilterPresetResource {
     }
 
     @PostMapping("/save")
-    public Mono<FilterPresetDTO> saveFilterPreset(@RequestBody FilterPresetDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<FilterPresetDTO> saveFilterPreset(@RequestBody FilterPresetDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteFilterPreset(@RequestBody FilterPresetDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteFilterPreset(@RequestBody FilterPresetDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

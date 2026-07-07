@@ -20,12 +20,12 @@ public class RegionResource {
     }
 
     @PostMapping("/save")
-    public Mono<RegionDTO> saveRegion(@RequestBody RegionDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<RegionDTO> saveRegion(@RequestBody RegionDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteRegion(@RequestBody RegionDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteRegion(@RequestBody RegionDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

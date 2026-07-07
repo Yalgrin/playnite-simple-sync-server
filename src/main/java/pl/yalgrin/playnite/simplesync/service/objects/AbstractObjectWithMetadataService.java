@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.service.objects;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import lombok.*;
@@ -29,10 +28,13 @@ import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.service.MetadataService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+
+import static pl.yalgrin.playnite.simplesync.security.ClientUtilKt.getSessionClientId;
 
 @Service
 @Slf4j
@@ -49,13 +51,19 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
     protected final TransactionalOperator transactionalOperator;
 
     @Override
-    public Mono<DTO> saveObject(DTO objectDTO, String clientId) {
-        return saveObject(objectDTO, clientId, Flux.empty(), false);
+    public Mono<DTO> saveObject(DTO objectDTO) {
+        return getSessionClientId()
+                .flatMap(clientId -> saveObject(objectDTO, clientId, Flux.empty(), false));
     }
 
     @Override
     public Mono<Tuple2<DTO, ChangeDTO>> saveObjectWithoutPublishing(DTO objectDTO, String clientId) {
         return saveObjectWithoutPublishing(objectDTO, clientId, Flux.empty(), false);
+    }
+
+    public Mono<DTO> saveObject(DTO dto, Flux<FilePart> fileParts, boolean saveFiles) {
+        return getSessionClientId()
+                .flatMap(clientId -> saveObject(dto, clientId, fileParts, saveFiles));
     }
 
     public Mono<DTO> saveObject(DTO dto, String clientId, Flux<FilePart> fileParts, boolean saveFiles) {
@@ -169,9 +177,11 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
                 .map(bytes -> Tuple.of(bytes, filePart.filename()));
     }
 
-    public Mono<DTO> saveObjectDiff(DIFF_DTO diffDto, String clientId, Flux<FilePart> fileParts) {
-        return saveObjectDiffWithoutPublishing(diffDto, clientId, fileParts).as(transactionalOperator::transactional)
-                .flatMap(t -> changeListenerService.publishChange(t._2).then(Mono.justOrEmpty(t._1)));
+    public Mono<DTO> saveObjectDiff(DIFF_DTO diffDto, Flux<FilePart> fileParts) {
+        return getSessionClientId()
+                .flatMap(clientId -> saveObjectDiffWithoutPublishing(diffDto, clientId, fileParts).as(
+                                transactionalOperator::transactional)
+                        .flatMap(t -> changeListenerService.publishChange(t._2).then(Mono.justOrEmpty(t._1))));
     }
 
     protected Mono<Tuple2<DTO, ChangeDTO>> saveObjectDiffWithoutPublishing(DIFF_DTO diffDto, String clientId,
@@ -308,9 +318,10 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
 
     protected abstract Class<DIFF_DTO> getDiffDtoClass();
 
-    public Mono<Void> deleteObject(DTO dto, String clientId) {
-        return doDeleteObject(dto, clientId).as(transactionalOperator::transactional).flatMap(
-                changeListenerService::publishChanges);
+    public Mono<Void> deleteObject(DTO dto) {
+        return getSessionClientId()
+                .flatMap(clientId -> doDeleteObject(dto, clientId).as(transactionalOperator::transactional).flatMap(
+                        changeListenerService::publishChanges));
     }
 
     private Mono<List<ChangeDTO>> doDeleteObject(DTO dto, String clientId) {

@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.vavr.control.Try;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,6 +19,7 @@ import pl.yalgrin.playnite.simplesync.repository.ChangeRepository;
 import pl.yalgrin.playnite.simplesync.repository.objects.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.*;
 import java.util.function.Function;

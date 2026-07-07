@@ -20,12 +20,12 @@ public class SeriesResource {
     }
 
     @PostMapping("/save")
-    public Mono<SeriesDTO> saveSeries(@RequestBody SeriesDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<SeriesDTO> saveSeries(@RequestBody SeriesDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteSeries(@RequestBody SeriesDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteSeries(@RequestBody SeriesDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

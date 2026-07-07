@@ -20,12 +20,12 @@ public class SourceResource {
     }
 
     @PostMapping("/save")
-    public Mono<SourceDTO> saveSource(@RequestBody SourceDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<SourceDTO> saveSource(@RequestBody SourceDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteSource(@RequestBody SourceDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteSource(@RequestBody SourceDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

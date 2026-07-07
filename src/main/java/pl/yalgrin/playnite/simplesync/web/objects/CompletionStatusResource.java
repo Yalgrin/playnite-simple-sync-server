@@ -20,13 +20,12 @@ public class CompletionStatusResource {
     }
 
     @PostMapping("/save")
-    public Mono<CompletionStatusDTO> saveCompletionStatus(@RequestBody CompletionStatusDTO dto,
-                                                          @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<CompletionStatusDTO> saveCompletionStatus(@RequestBody CompletionStatusDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteCompletionStatus(@RequestBody CompletionStatusDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteCompletionStatus(@RequestBody CompletionStatusDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

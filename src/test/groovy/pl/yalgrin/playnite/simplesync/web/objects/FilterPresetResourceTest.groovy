@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.web.objects
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.domain.objects.FilterPreset
@@ -13,6 +12,7 @@ import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import pl.yalgrin.playnite.simplesync.util.objects.FilterPresetAssertionUtil
 import pl.yalgrin.playnite.simplesync.util.objects.FilterPresetFactoryUtil
 import reactor.test.StepVerifier
+import tools.jackson.databind.ObjectMapper
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicLong
@@ -144,7 +144,7 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.FilterPreset
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.isForceFetch()
                     newObjectId.set(change.getObjectId())
@@ -165,7 +165,7 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.FilterPreset
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.isForceFetch()
                     true
@@ -185,7 +185,7 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.FilterPreset
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.isForceFetch()
                     true

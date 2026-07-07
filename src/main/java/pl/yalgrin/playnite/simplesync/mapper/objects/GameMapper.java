@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.mapper.objects;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import io.r2dbc.postgresql.codec.Json;
 import io.vavr.control.Try;
 import lombok.SneakyThrows;
@@ -11,6 +10,7 @@ import pl.yalgrin.playnite.simplesync.domain.objects.GameDiff;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDiffDTO;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 import java.util.Optional;

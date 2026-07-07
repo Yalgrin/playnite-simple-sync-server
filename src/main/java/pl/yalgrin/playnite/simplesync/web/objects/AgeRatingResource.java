@@ -1,6 +1,7 @@
 package pl.yalgrin.playnite.simplesync.web.objects;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 import pl.yalgrin.playnite.simplesync.dto.objects.AgeRatingDTO;
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper;
@@ -8,6 +9,7 @@ import pl.yalgrin.playnite.simplesync.service.objects.AgeRatingService;
 import reactor.core.publisher.Mono;
 
 @RestController
+@Slf4j
 @RequestMapping("/api/age-rating")
 @RequiredArgsConstructor
 public class AgeRatingResource {
@@ -20,12 +22,12 @@ public class AgeRatingResource {
     }
 
     @PostMapping("/save")
-    public Mono<AgeRatingDTO> saveAgeRating(@RequestBody AgeRatingDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<AgeRatingDTO> saveAgeRating(@RequestBody AgeRatingDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteAgeRating(@RequestBody AgeRatingDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteAgeRating(@RequestBody AgeRatingDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

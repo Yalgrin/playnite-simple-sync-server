@@ -48,19 +48,18 @@ public class GameResource {
     }
 
     @PostMapping("/game/save")
-    public Mono<GameDTO> saveGame(@RequestPart GameDTO dto, @RequestPart(required = false) Flux<FilePart> files,
-                                  @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId, files, true));
+    public Mono<GameDTO> saveGame(@RequestPart GameDTO dto, @RequestPart(required = false) Flux<FilePart> files) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, files, true));
     }
 
     @PostMapping("/game-diff/save")
-    public Mono<GameDTO> saveGameDiff(@RequestPart GameDiffDTO dto, @RequestPart(required = false) Flux<FilePart> files,
-                                      @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObjectDiff(dto, clientId, files));
+    public Mono<GameDTO> saveGameDiff(@RequestPart GameDiffDTO dto,
+                                      @RequestPart(required = false) Flux<FilePart> files) {
+        return singleExecutorHelper.runOnExecutor(service.saveObjectDiff(dto, files));
     }
 
     @PostMapping("/game/delete")
-    public Mono<Void> deleteGame(@RequestBody GameDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteGame(@RequestBody GameDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

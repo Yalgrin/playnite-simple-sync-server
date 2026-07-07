@@ -31,7 +31,6 @@ abstract class AbstractObjectWithDiffTest<E extends AbstractObjectEntity, D exte
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("${uri()}/save")
-                        .queryParam("clientId", "test")
                         .build())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .bodyValue(builder.build())

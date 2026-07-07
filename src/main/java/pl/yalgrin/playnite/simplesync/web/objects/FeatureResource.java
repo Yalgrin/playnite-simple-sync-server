@@ -20,12 +20,12 @@ public class FeatureResource {
     }
 
     @PostMapping("/save")
-    public Mono<FeatureDTO> saveFeature(@RequestBody FeatureDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<FeatureDTO> saveFeature(@RequestBody FeatureDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteFeature(@RequestBody FeatureDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteFeature(@RequestBody FeatureDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

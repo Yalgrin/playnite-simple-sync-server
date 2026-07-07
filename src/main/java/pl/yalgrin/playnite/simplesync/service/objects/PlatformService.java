@@ -1,6 +1,5 @@
 package pl.yalgrin.playnite.simplesync.service.objects;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
@@ -16,6 +15,7 @@ import pl.yalgrin.playnite.simplesync.repository.objects.PlatformRepository;
 import pl.yalgrin.playnite.simplesync.service.ChangeListenerService;
 import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.service.MetadataService;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.Set;
 

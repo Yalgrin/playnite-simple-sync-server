@@ -20,12 +20,12 @@ public class CategoryResource {
     }
 
     @PostMapping("/save")
-    public Mono<CategoryDTO> saveCategory(@RequestBody CategoryDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, clientId));
+    public Mono<CategoryDTO> saveCategory(@RequestBody CategoryDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.saveObject(dto));
     }
 
     @PostMapping("/delete")
-    public Mono<Void> deleteCategory(@RequestBody CategoryDTO dto, @RequestParam String clientId) {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto, clientId));
+    public Mono<Void> deleteCategory(@RequestBody CategoryDTO dto) {
+        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto));
     }
 }

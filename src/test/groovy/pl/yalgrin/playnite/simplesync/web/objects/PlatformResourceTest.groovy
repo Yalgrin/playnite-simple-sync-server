@@ -155,7 +155,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.Platform
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.isForceFetch()
                     newObjectId.set(change.getObjectId())
@@ -176,7 +176,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.PlatformDiff
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get() + 1
                     assert !change.isForceFetch()
                     true
@@ -196,7 +196,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                 .expectNextMatches { change ->
                     assert change.getId() != null
                     assert change.getType() == ObjectType.Platform
-                    assert change.getClientId() == "test"
+                    assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.isForceFetch()
                     true
