@@ -1,6 +1,6 @@
 package pl.yalgrin.playnite.simplesync.mapper.objects;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
 import pl.yalgrin.playnite.simplesync.domain.objects.Region;
 import pl.yalgrin.playnite.simplesync.dto.objects.RegionDTO;
@@ -20,7 +20,7 @@ public class RegionMapper extends AbstractObjectMapper<Region, RegionDTO> {
 
     @Override
     protected boolean hasChanged(RegionDTO dto, Region target) {
-        return super.hasChanged(dto, target) || !StringUtils.equals(target.getSpecificationId(),
+        return super.hasChanged(dto, target) || !Strings.CS.equals(target.getSpecificationId(),
                 dto.getSpecificationId());
     }
 

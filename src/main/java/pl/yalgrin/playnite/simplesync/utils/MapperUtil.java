@@ -2,7 +2,7 @@ package pl.yalgrin.playnite.simplesync.utils;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.LinkDTO;
 
@@ -18,7 +18,7 @@ public class MapperUtil {
     }
 
     public static boolean hasChanged(String obj1, String obj2) {
-        return !StringUtils.equals(obj1, obj2);
+        return !Strings.CS.equals(obj1, obj2);
     }
 
     public static boolean hasChanged(Object obj1, Object obj2) {
@@ -46,7 +46,7 @@ public class MapperUtil {
         return IntStream.range(0, oldList.size()).anyMatch(i -> {
             LinkDTO oldLink = oldList.get(i);
             LinkDTO newLink = newList.get(i);
-            return !StringUtils.equals(oldLink.getUrl(), newLink.getUrl()) || !StringUtils.equals(oldLink.getName(),
+            return !Strings.CS.equals(oldLink.getUrl(), newLink.getUrl()) || !Strings.CS.equals(oldLink.getName(),
                     newLink.getName());
         });
     }

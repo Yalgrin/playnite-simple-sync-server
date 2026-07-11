@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.service.objects;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
@@ -323,7 +323,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
                     log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
                             e.getId(),
                             dto.getGameId(), dto.getPluginId());
-                    if (!e.isRemoved() && !StringUtils.equals(e.getPlayniteId(), dto.getId())) {
+                    if (!e.isRemoved() && !Strings.CS.equals(e.getPlayniteId(), dto.getId())) {
                         throw new ForceFetchRequiredException();
                     }
                 })
@@ -341,7 +341,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
                     if (e.isRemoved()) {
                         throw new ManualSynchronizationRequiredException("Manual synchronization required!");
                     }
-                    if (!StringUtils.equals(e.getPlayniteId(), dto.getId())) {
+                    if (!Strings.CS.equals(e.getPlayniteId(), dto.getId())) {
                         throw new ForceFetchRequiredException();
                     }
                 })
@@ -381,7 +381,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
         } else if (Constants.BACKGROUND_IMAGE.equals(basename)) {
             md5ToCompare = game.getBackgroundImageMd5();
         }
-        return md5ToCompare == null || !StringUtils.equals(md5ToCompare, md5);
+        return md5ToCompare == null || !Strings.CS.equals(md5ToCompare, md5);
     }
 
     @Override

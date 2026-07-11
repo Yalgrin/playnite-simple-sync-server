@@ -4,7 +4,7 @@ import io.r2dbc.postgresql.codec.Json;
 import io.vavr.control.Try;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
 import pl.yalgrin.playnite.simplesync.domain.objects.FilterPreset;
 import pl.yalgrin.playnite.simplesync.dto.filter.FilterPresetSettingsDTO;
@@ -31,7 +31,7 @@ public class FilterPresetMapper extends AbstractObjectMapper<FilterPreset, Filte
         byte[] newDataToSave = objectMapper.writeValueAsBytes(dto);
 
         target.setChanged(
-                !StringUtils.equals(target.getName(), dto.getName()) || target.isRemoved() || isPreviousDataDifferent(
+                !Strings.CS.equals(target.getName(), dto.getName()) || target.isRemoved() || isPreviousDataDifferent(
                         target, dto));
         target.setName(dto.getName());
         target.setSavedData(Json.of(newDataToSave));
@@ -44,12 +44,12 @@ public class FilterPresetMapper extends AbstractObjectMapper<FilterPreset, Filte
         FilterPresetDTO previousDTO = Try.of(() -> objectMapper.readValue(previousSavedData, FilterPresetDTO.class))
                 .getOrNull();
         return previousDTO == null
-                || !StringUtils.equals(previousDTO.getId(), dto.getId())
-                || !StringUtils.equals(previousDTO.getName(), dto.getName())
+                || !Strings.CS.equals(previousDTO.getId(), dto.getId())
+                || !Strings.CS.equals(previousDTO.getName(), dto.getName())
                 || !Objects.equals(previousDTO.isRemoved(), dto.isRemoved())
-                || !StringUtils.equals(previousDTO.getSortingOrder(), dto.getSortingOrder())
-                || !StringUtils.equals(previousDTO.getSortingOrderDirection(), dto.getSortingOrderDirection())
-                || !StringUtils.equals(previousDTO.getGroupingOrder(), dto.getGroupingOrder())
+                || !Strings.CS.equals(previousDTO.getSortingOrder(), dto.getSortingOrder())
+                || !Strings.CS.equals(previousDTO.getSortingOrderDirection(), dto.getSortingOrderDirection())
+                || !Strings.CS.equals(previousDTO.getGroupingOrder(), dto.getGroupingOrder())
                 || !Objects.equals(previousDTO.isShowInFullscreenQuickSelection(),
                 dto.isShowInFullscreenQuickSelection())
                 || areSettingsDifferent(previousDTO.getSettings(), dto.getSettings());
@@ -63,8 +63,8 @@ public class FilterPresetMapper extends AbstractObjectMapper<FilterPreset, Filte
                         || !Objects.equals(previousDTO.isUninstalled(), newDTO.isUninstalled())
                         || !Objects.equals(previousDTO.isHidden(), newDTO.isHidden())
                         || !Objects.equals(previousDTO.isFavorite(), newDTO.isFavorite())
-                        || !StringUtils.equals(previousDTO.getName(), newDTO.getName())
-                        || !StringUtils.equals(previousDTO.getVersion(), newDTO.getVersion())
+                        || !Strings.CS.equals(previousDTO.getName(), newDTO.getName())
+                        || !Strings.CS.equals(previousDTO.getVersion(), newDTO.getVersion())
                         || areItemPropertiesDifferent(previousDTO.getReleaseYear(), newDTO.getReleaseYear())
                         || areItemPropertiesDifferent(previousDTO.getGenre(), newDTO.getGenre())
                         || areItemPropertiesDifferent(previousDTO.getPlatform(), newDTO.getPlatform())
@@ -99,7 +99,7 @@ public class FilterPresetMapper extends AbstractObjectMapper<FilterPreset, Filte
     private boolean areItemPropertiesDifferent(IdItemPropertiesDTO previousDTO, IdItemPropertiesDTO newDTO) {
         return (previousDTO == null) != (newDTO == null)
                 || (previousDTO != null && (areListsDifferent(previousDTO.getIds(), newDTO.getIds())
-                || !StringUtils.equals(previousDTO.getText(), newDTO.getText())));
+                || !Strings.CS.equals(previousDTO.getText(), newDTO.getText())));
     }
 
     private boolean areItemPropertiesDifferent(IntItemPropertiesDTO previousDTO, IntItemPropertiesDTO newDTO) {

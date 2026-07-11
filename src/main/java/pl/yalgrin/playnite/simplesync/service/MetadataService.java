@@ -9,6 +9,7 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -269,7 +270,7 @@ public class MetadataService {
         try (Stream<Path> list = Files.list(directory)) {
             List<Path> matchingFiles = list.filter(path -> {
                 String baseName = FilenameUtils.getBaseName(path.toString());
-                return baseName != null && StringUtils.equals(baseName, filename);
+                return baseName != null && Strings.CS.equals(baseName, filename);
             }).toList();
             if (matchingFiles.size() > 1) {
                 log.warn("findMetadataPath > found multiple matching files for directory {} - {}!", directory,

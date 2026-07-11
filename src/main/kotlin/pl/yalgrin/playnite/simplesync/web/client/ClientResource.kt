@@ -3,6 +3,8 @@ package pl.yalgrin.playnite.simplesync.web.client
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.web.bind.annotation.*
+import pl.yalgrin.playnite.simplesync.client.dto.CheckRequestDTO
+import pl.yalgrin.playnite.simplesync.client.dto.CheckResultDTO
 import pl.yalgrin.playnite.simplesync.client.dto.RegisteredClientDTO
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.message.ConnectionMessage
@@ -23,9 +25,9 @@ class ClientResource(
         return registeredClientService.register(info)
     }
 
-    @PostMapping
-    fun check(): Mono<Void> {
-        return Mono.empty()
+    @PostMapping("/check")
+    fun check(@RequestBody checkRequest: CheckRequestDTO): Mono<CheckResultDTO> {
+        return registeredClientService.check(checkRequest)
     }
 
     @PostMapping("/change-name")
@@ -36,5 +38,15 @@ class ClientResource(
     @PostMapping("/connect", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun connect(): Flux<ServerSentEvent<ConnectionMessage>> {
         return connectionService.connect()
+    }
+
+    @PostMapping("/enable-change-stream")
+    fun enableChangeStream(): Mono<Unit> {
+        return connectionService.enableChangeStream()
+    }
+
+    @PostMapping("/disable-change-stream")
+    fun disableChangeStream(): Mono<Unit> {
+        return connectionService.disableChangeStream()
     }
 }

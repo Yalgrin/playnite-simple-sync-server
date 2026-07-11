@@ -1,6 +1,6 @@
 package pl.yalgrin.playnite.simplesync.service.objects;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import pl.yalgrin.playnite.simplesync.config.Constants;
@@ -63,7 +63,7 @@ public class PlatformService extends
         } else if (Constants.BACKGROUND_IMAGE.equals(basename)) {
             md5ToCompare = platform.getBackgroundImageMd5();
         }
-        return md5ToCompare == null || !StringUtils.equals(md5ToCompare, md5);
+        return md5ToCompare == null || !Strings.CS.equals(md5ToCompare, md5);
     }
 
     @Override

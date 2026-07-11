@@ -5,3 +5,7 @@ data class SessionInfoDTO(
     val displayName: String,
     val sessionId: String
 )
+
+data class SessionSettingsDTO(
+    val enabledChangeStream: Boolean = false
+)

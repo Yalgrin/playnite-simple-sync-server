@@ -13,6 +13,7 @@ import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
+import pl.yalgrin.playnite.simplesync.config.CurrentApiVersionKt
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO
 import pl.yalgrin.playnite.simplesync.dto.GameIdsDTO
@@ -42,7 +43,7 @@ class ChangeResourceTest extends SpockIntegrationTest {
         populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
         populator.populate(connectionFactory).block()
 
-        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user")).block()
+        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", CurrentApiVersionKt.CURRENT_API_VERSION)).block()
         def sessionId = UUID.randomUUID().toString()
         sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))
 

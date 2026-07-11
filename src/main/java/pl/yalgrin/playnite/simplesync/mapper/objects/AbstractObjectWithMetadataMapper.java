@@ -4,7 +4,7 @@ import io.r2dbc.postgresql.codec.Json;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import lombok.SneakyThrows;
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectDiffEntity;
 import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectEntity;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractDiffDTO;
@@ -33,7 +33,7 @@ public abstract class AbstractObjectWithMetadataMapper<
         if (target.getId() == null) {
             diffDTO.getChangedFields().add(AbstractObjectDTO.Fields.ID);
         }
-        if (!StringUtils.equals(target.getName(), dto.getName())) {
+        if (!Strings.CS.equals(target.getName(), dto.getName())) {
             target.setName(dto.getName());
             diffDTO.getChangedFields().add(AbstractObjectDTO.Fields.NAME);
         }
@@ -109,7 +109,7 @@ public abstract class AbstractObjectWithMetadataMapper<
         if (changedFields == null) {
             return Tuple.of(target, diffDTO);
         }
-        if (changedFields.contains(AbstractObjectDTO.Fields.NAME) && !StringUtils.equals(target.getName(),
+        if (changedFields.contains(AbstractObjectDTO.Fields.NAME) && !Strings.CS.equals(target.getName(),
                 dto.getName())) {
             target.setName(dto.getName());
             diffDTO.setName(dto.getName());

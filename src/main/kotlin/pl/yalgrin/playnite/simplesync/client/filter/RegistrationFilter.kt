@@ -8,11 +8,11 @@ import org.springframework.web.server.WebFilterChain
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
 import pl.yalgrin.playnite.simplesync.exception.AuthException
+import pl.yalgrin.playnite.simplesync.exception.AuthExceptionType
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.security.withSessionInfo
 import pl.yalgrin.playnite.simplesync.util.toSha1
 import reactor.core.publisher.Mono
-import reactor.core.scheduler.Schedulers
 
 @Component
 class RegistrationFilter(
@@ -60,7 +60,7 @@ class RegistrationFilter(
                         )
                     }
             }
-            .switchIfEmpty(Mono.error(AuthException()))
+            .switchIfEmpty(Mono.error(AuthException(AuthExceptionType.NO_VALID_CLIENT_SESSION)))
     }
 
     private fun getSessionInfo(headers: HttpHeaders): Mono<SessionInfoDTO> {
@@ -70,8 +70,7 @@ class RegistrationFilter(
                 Mono.zip(
                     registeredClientRepository.findByClientId(clientId)
                         .filter { it.clientToken == clientToken.toSha1() },
-                    Mono.fromCallable { sessionManager.getSessionInfo(sessionId) }
-                        .subscribeOn(Schedulers.boundedElastic())
+                    sessionManager.getSessionInfoMono(sessionId)
                         .filter { it.clientId == clientId }
                 )
                     .map { Pair(it.t1, it.t2) }
@@ -83,7 +82,7 @@ class RegistrationFilter(
                         )
                     }
             }
-            .switchIfEmpty(Mono.error(AuthException()))
+            .switchIfEmpty(Mono.error(AuthException(AuthExceptionType.NO_VALID_CLIENT_SESSION)))
     }
 
     private fun fetchHeaders(headers: HttpHeaders): Mono<Triple<String, String, String>> = Mono.zip(

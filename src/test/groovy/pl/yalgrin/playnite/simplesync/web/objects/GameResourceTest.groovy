@@ -4,14 +4,17 @@ import io.vavr.Tuple
 import io.vavr.Tuple2
 import org.apache.commons.io.FilenameUtils
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.http.MediaType
 import org.springframework.http.client.MultipartBodyBuilder
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.multipart.MultipartFile
+import pl.yalgrin.playnite.simplesync.client.enums.MessageType
+import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
+import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
 import pl.yalgrin.playnite.simplesync.config.Constants
 import pl.yalgrin.playnite.simplesync.domain.objects.Game
-import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDiffDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
@@ -20,12 +23,14 @@ import pl.yalgrin.playnite.simplesync.repository.objects.GameRepository
 import pl.yalgrin.playnite.simplesync.repository.objects.ObjectRepository
 import pl.yalgrin.playnite.simplesync.service.MetadataService
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
+import pl.yalgrin.playnite.simplesync.util.JsonMapperUtil
 import pl.yalgrin.playnite.simplesync.util.objects.GameAssertionUtil
 import pl.yalgrin.playnite.simplesync.util.objects.GameFactoryUtil
 import reactor.test.StepVerifier
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 
 class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
@@ -156,25 +161,42 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         GameDTO removed = modified.toBuilder().removed(true).build()
 
         when:
-        def changeRequest = makeChangeStreamRequest()
-        def responseFlux = changeRequest.returnResult(ChangeDTO.class).responseBody
+        def changeRequest = makeConnectRequest(otherClientInfo)
+        def responseFlux = changeRequest.returnResult(new ParameterizedTypeReference<String>() {}).responseBody
 
         then:
         AtomicLong newObjectId = new AtomicLong(-1)
+        AtomicReference<String> sessionId = new AtomicReference<>()
         StepVerifier.create(responseFlux)
                 .expectSubscription()
+                .expectNextMatches { str ->
+                    def message = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert message.messageType == MessageType.INITIALIZATION
+                    assert message instanceof InitializationMessage
+                    sessionId.set(message.sessionId)
+                    true
+                }
+                .then {
+                    makeEnableChangeStreamRequest(otherClientInfo, sessionId.get())
+                }
                 .then {
                     makeSaveRequest(toSave, files).expectStatus().is2xxSuccessful()
                 }
-                .thenConsumeWhile { change ->
+                .thenConsumeWhile { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
                     change.getType() != ObjectType.Game
                 }
-                .expectNextMatches { change ->
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
                     assert change.getId() != null
                     assert change.getType() == ObjectType.Game
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
-                    assert !change.isForceFetch()
+                    assert !change.getForceFetch()
                     newObjectId.set(change.getObjectId())
                     true
                 }
@@ -190,12 +212,15 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                 .then {
                     makeSaveRequest(modified).expectStatus().is2xxSuccessful()
                 }
-                .expectNextMatches { change ->
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
                     assert change.getId() != null
                     assert change.getType() == ObjectType.GameDiff
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get() + 1
-                    assert !change.isForceFetch()
+                    assert !change.getForceFetch()
                     true
                 }
                 .then {
@@ -210,12 +235,15 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                 .then {
                     makeDeleteRequest(modified).expectStatus().is2xxSuccessful()
                 }
-                .expectNextMatches { change ->
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
                     assert change.getId() != null
                     assert change.getType() == ObjectType.Game
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
-                    assert !change.isForceFetch()
+                    assert !change.getForceFetch()
                     true
                 }
                 .then {

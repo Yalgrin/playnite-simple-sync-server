@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static pl.yalgrin.playnite.simplesync.security.ClientUtilKt.getSessionClientId;
+
 @Aspect
 @Component
 public class ReactiveLoggingAspect {
@@ -41,25 +43,41 @@ public class ReactiveLoggingAspect {
         if (returnValue != null) {
             if (returnValue instanceof Mono<?> mono) {
                 UUID uuid = UUID.randomUUID();
-                return mono
-                        .doOnSubscribe(
-                                _ -> logger.debug("{} > START, uuid: {}, args: {}", name, uuid, formatArgs(args)))
-                        .doOnSuccess(result -> logger.debug("{} > END, uuid: {}, result: {}", name, uuid,
-                                formatResult(result)))
-                        .doOnError(th -> logger.error("{} > ERROR, uuid: {}", name, uuid, th))
-                        .doOnCancel(() -> logger.debug("{} > CANCEL, uuid: {}", name, uuid));
+                return getSessionClientId()
+                        .defaultIfEmpty("(none)")
+                        .flatMap(clientId -> mono
+                                .doOnSubscribe(
+                                        _ -> logger.debug("{} > START, uuid: {}, clientId: {}, args: {}", name, uuid,
+                                                clientId, formatArgs(args)))
+                                .doOnSuccess(
+                                        result -> logger.debug("{} > END, uuid: {}, clientId: {}, result: {}", name,
+                                                uuid, clientId,
+                                                formatResult(result)))
+                                .doOnError(
+                                        th -> logger.error("{} > ERROR, uuid: {}, clientId: {}", name, uuid, clientId,
+                                                th))
+                                .doOnCancel(() -> logger.debug("{} > CANCEL, uuid: {}, clientId: {}", name, uuid,
+                                        clientId)));
             }
             if (returnValue instanceof Flux<?> flux) {
                 UUID uuid = UUID.randomUUID();
                 AtomicInteger counter = new AtomicInteger(0);
-                return flux
-                        .doOnSubscribe(
-                                _ -> logger.debug("{} > START, uuid: {}, args: {}", name, uuid, formatArgs(args)))
-                        .doOnNext(_ -> counter.incrementAndGet())
-                        .doOnComplete(
-                                () -> logger.debug("{} > END, uuid: {}, result.size(): {}", name, uuid, counter.get()))
-                        .doOnError(th -> logger.error("{} > ERROR, uuid: {}", name, uuid, th))
-                        .doOnCancel(() -> logger.debug("{} > CANCEL, uuid: {}", name, uuid));
+                return getSessionClientId()
+                        .defaultIfEmpty("(none)")
+                        .flatMapMany(clientId -> flux
+                                .doOnSubscribe(
+                                        _ -> logger.debug("{} > START, uuid: {}, clientId: {}, args: {}", name, uuid,
+                                                clientId, formatArgs(args)))
+                                .doOnNext(_ -> counter.incrementAndGet())
+                                .doOnComplete(
+                                        () -> logger.debug("{} > END, uuid: {}, clientId: {}, result.size(): {}", name,
+                                                uuid,
+                                                clientId, counter.get()))
+                                .doOnError(
+                                        th -> logger.error("{} > ERROR, uuid: {}, clientId: {}", name, uuid, clientId,
+                                                th))
+                                .doOnCancel(() -> logger.debug("{} > CANCEL, uuid: {}, clientId: {}", name, uuid,
+                                        clientId)));
             }
         }
         return returnValue;

@@ -17,7 +17,7 @@ public class JsonMapperProvider {
     public static JsonMapperBuilderCustomizer customizer() {
         return builder -> {
             builder.disable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
-            builder.changeDefaultPropertyInclusion(value -> value.withValueInclusion(JsonInclude.Include.NON_DEFAULT));
+            builder.changeDefaultPropertyInclusion(value -> value.withValueInclusion(JsonInclude.Include.NON_NULL));
             builder.changeDefaultPropertyInclusion(
                     value -> value.withContentInclusion(JsonInclude.Include.NON_DEFAULT));
         };

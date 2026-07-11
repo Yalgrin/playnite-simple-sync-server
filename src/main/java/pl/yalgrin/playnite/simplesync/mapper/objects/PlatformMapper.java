@@ -1,6 +1,6 @@
 package pl.yalgrin.playnite.simplesync.mapper.objects;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import pl.yalgrin.playnite.simplesync.domain.objects.Platform;
@@ -23,7 +23,7 @@ public class PlatformMapper extends
     @Override
     protected void fillEntityAndGenerateDiffAdditionalFields(PlatformDTO dto, Platform target,
                                                              PlatformDiffDTO diffDTO) {
-        if (!StringUtils.equals(target.getSpecificationId(), dto.getSpecificationId())) {
+        if (!Strings.CS.equals(target.getSpecificationId(), dto.getSpecificationId())) {
             target.setSpecificationId(dto.getSpecificationId());
             diffDTO.setSpecificationId(dto.getSpecificationId());
             diffDTO.getChangedFields().add("SpecificationId");
@@ -37,7 +37,7 @@ public class PlatformMapper extends
         if (changedFields == null) {
             return;
         }
-        if (changedFields.contains("SpecificationId") && !StringUtils.equals(target.getSpecificationId(),
+        if (changedFields.contains("SpecificationId") && !Strings.CS.equals(target.getSpecificationId(),
                 dto.getSpecificationId())) {
             target.setSpecificationId(dto.getSpecificationId());
             diffDTO.setSpecificationId(dto.getSpecificationId());

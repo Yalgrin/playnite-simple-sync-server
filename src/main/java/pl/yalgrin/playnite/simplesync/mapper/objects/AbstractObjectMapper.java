@@ -1,6 +1,6 @@
 package pl.yalgrin.playnite.simplesync.mapper.objects;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectEntity;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
 
@@ -19,7 +19,7 @@ public abstract class AbstractObjectMapper<E extends AbstractObjectEntity, D ext
     }
 
     protected boolean hasChanged(D dto, E target) {
-        return !StringUtils.equals(target.getName(), dto.getName()) || target.isRemoved();
+        return !Strings.CS.equals(target.getName(), dto.getName()) || target.isRemoved();
     }
 
     public D toDTO(E entity) {

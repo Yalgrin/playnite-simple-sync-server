@@ -6,6 +6,8 @@ import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
 import pl.yalgrin.playnite.simplesync.client.dto.RegisteredClientDTO
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
+import pl.yalgrin.playnite.simplesync.config.CurrentApiVersionKt
+import pl.yalgrin.playnite.simplesync.dto.ErrorDTO
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
@@ -19,7 +21,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name")
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION)
         AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
 
         when:
@@ -41,6 +43,44 @@ class ClientResourceTest extends SpockIntegrationTest {
 
         and:
         assertEntityAndGetResponse(receivedInfo.get().clientId, receivedInfo.get().clientToken)
+    }
+
+    def "register a client with older client version"() {
+        given:
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION - 1)
+
+        when:
+        def response = makeSaveRequest(infoDTO)
+
+        then:
+        response.expectStatus().is4xxClientError()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, ErrorDTO.class))
+                .expectNextMatches { error ->
+                    assert error.message == "ApiVersionException.OUTDATED_CLIENT"
+                    true
+                }
+                .verifyComplete()
+    }
+
+    def "register a client with newer client version"() {
+        given:
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION + 1)
+
+        when:
+        def response = makeSaveRequest(infoDTO)
+
+        then:
+        response.expectStatus().is4xxClientError()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, ErrorDTO.class))
+                .expectNextMatches { error ->
+                    assert error.message == "ApiVersionException.OUTDATED_SERVER"
+                    true
+                }
+                .verifyComplete()
     }
 
     protected WebTestClient.ResponseSpec makeSaveRequest(RegistrationRequestDTO dto) {

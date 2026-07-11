@@ -1,14 +1,18 @@
 package pl.yalgrin.playnite.simplesync.web.objects
 
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.ParameterizedTypeReference
 import org.springframework.test.web.reactive.server.WebTestClient
+import pl.yalgrin.playnite.simplesync.client.enums.MessageType
+import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
+import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
 import pl.yalgrin.playnite.simplesync.domain.objects.FilterPreset
-import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.FilterPresetDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.repository.objects.FilterPresetRepository
 import pl.yalgrin.playnite.simplesync.repository.objects.ObjectRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
+import pl.yalgrin.playnite.simplesync.util.JsonMapperUtil
 import pl.yalgrin.playnite.simplesync.util.objects.FilterPresetAssertionUtil
 import pl.yalgrin.playnite.simplesync.util.objects.FilterPresetFactoryUtil
 import reactor.test.StepVerifier
@@ -16,6 +20,7 @@ import tools.jackson.databind.ObjectMapper
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
 
 class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPresetDTO> {
 
@@ -131,22 +136,36 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
         FilterPresetDTO removed = modified.toBuilder().removed(true).build()
 
         when:
-        def changeRequest = makeChangeStreamRequest()
-        def responseFlux = changeRequest.returnResult(ChangeDTO.class).responseBody
+        def changeRequest = makeConnectRequest(otherClientInfo)
+        def responseFlux = changeRequest.returnResult(new ParameterizedTypeReference<String>() {}).responseBody
 
         then:
         AtomicLong newObjectId = new AtomicLong(-1)
+        AtomicReference<String> sessionId = new AtomicReference<>()
         StepVerifier.create(responseFlux)
                 .expectSubscription()
+                .expectNextMatches { str ->
+                    def message = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert message.messageType == MessageType.INITIALIZATION
+                    assert message instanceof InitializationMessage
+                    sessionId.set(message.sessionId)
+                    true
+                }
+                .then {
+                    makeEnableChangeStreamRequest(otherClientInfo, sessionId.get())
+                }
                 .then {
                     makeSaveRequest(toSave).expectStatus().is2xxSuccessful()
                 }
-                .expectNextMatches { change ->
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
                     assert change.getId() != null
                     assert change.getType() == ObjectType.FilterPreset
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
-                    assert !change.isForceFetch()
+                    assert !change.getForceFetch()
                     newObjectId.set(change.getObjectId())
                     true
                 }
@@ -162,12 +181,15 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
                 .then {
                     makeSaveRequest(modified).expectStatus().is2xxSuccessful()
                 }
-                .expectNextMatches { change ->
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
                     assert change.getId() != null
                     assert change.getType() == ObjectType.FilterPreset
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
-                    assert !change.isForceFetch()
+                    assert !change.getForceFetch()
                     true
                 }
                 .then {
@@ -182,12 +204,15 @@ class FilterPresetResourceTest extends AbstractObjectTest<FilterPreset, FilterPr
                 .then {
                     makeDeleteRequest(modified).expectStatus().is2xxSuccessful()
                 }
-                .expectNextMatches { change ->
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
                     assert change.getId() != null
                     assert change.getType() == ObjectType.FilterPreset
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
-                    assert !change.isForceFetch()
+                    assert !change.getForceFetch()
                     true
                 }
                 .then {
