@@ -14,6 +14,7 @@ import pl.yalgrin.playnite.simplesync.dto.filter.StringItemPropertiesDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.FilterPresetDTO;
 import tools.jackson.databind.ObjectMapper;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -110,9 +111,18 @@ public class FilterPresetMapper extends AbstractObjectMapper<FilterPreset, Filte
     private <T> boolean areListsDifferent(List<T> previousList, List<T> newList) {
         Integer previousCount = Optional.ofNullable(previousList).map(List::size).orElse(0);
         Integer newCount = Optional.ofNullable(newList).map(List::size).orElse(0);
-        return !Objects.equals(previousCount, newCount)
-                || previousList != null && newList != null && previousList.stream()
-                .anyMatch(str -> !newList.contains(str));
+        if (!Objects.equals(previousCount, newCount)) {
+            return true;
+        }
+        if (previousList != null && newList != null) {
+            List<T> newListCopy = new ArrayList<>(newList);
+            for (T t : previousList) {
+                if (!newListCopy.remove(t)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override

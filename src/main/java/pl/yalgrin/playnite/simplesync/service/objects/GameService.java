@@ -319,13 +319,14 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
     @Override
     protected Mono<Game> findOrCreateEntity(GameDTO dto) {
         return gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId()).take(1).next()
-                .doOnNext(e -> {
+                .flatMap(e -> {
                     log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
                             e.getId(),
                             dto.getGameId(), dto.getPluginId());
                     if (!e.isRemoved() && !Strings.CS.equals(e.getPlayniteId(), dto.getId())) {
-                        throw new ForceFetchRequiredException();
+                        return Mono.error(new ForceFetchRequiredException());
                     }
+                    return Mono.just(e);
                 })
                 .switchIfEmpty(Mono.fromSupplier(() -> createEntityFromDTO(dto))
                         .doOnNext(e -> log.debug("findOrCreateEntity > creating new entity...")));
@@ -334,16 +335,18 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
     @Override
     protected Mono<Game> findOrCreateEntity(GameDiffDTO dto) {
         return gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId()).take(1).next()
-                .doOnNext(e -> {
+                .flatMap(e -> {
                     log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
                             e.getId(),
                             dto.getGameId(), dto.getPluginId());
                     if (e.isRemoved()) {
-                        throw new ManualSynchronizationRequiredException("Manual synchronization required!");
+                        return Mono.error(
+                                new ManualSynchronizationRequiredException("Manual synchronization required!"));
                     }
                     if (!Strings.CS.equals(e.getPlayniteId(), dto.getId())) {
-                        throw new ForceFetchRequiredException();
+                        return Mono.error(new ForceFetchRequiredException());
                     }
+                    return Mono.just(e);
                 })
                 .switchIfEmpty(
                         Mono.error(new ManualSynchronizationRequiredException("Manual synchronization required!")));

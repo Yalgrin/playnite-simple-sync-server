@@ -38,7 +38,8 @@ class ConnectionService(
                         .map { ServerSentEvent.builder<ConnectionMessage>().data(it).build() },
                     Flux.merge(
                         Flux.interval(Duration.ofSeconds(30)).map { createHeartbeat() },
-                        changeListenerService.modificationFlux().filterWhen {
+                        changeListenerService.modificationFlux()
+                            .filter { it.isForceFetch || it.clientId != sessionInfo.clientId }.filterWhen {
                             sessionManager.getSessionSettingsMono(sessionInfo.sessionId).map { it.enabledChangeStream }
                                 .defaultIfEmpty(false)
                         }.map {
@@ -58,11 +59,6 @@ class ConnectionService(
                     .doOnTerminate { sessionManager.removeSessionInfo(sessionInfo) }
                     .doOnCancel { sessionManager.removeSessionInfo(sessionInfo) }
             }
-            .doOnSubscribe { log.debug("Connection established") }
-            .doOnNext { log.debug("Connection next") }
-            .doOnCancel { log.debug("Connection cancelled") }
-            .doOnTerminate { log.debug("Connection terminated") }
-            .doOnEach { s -> log.debug("Connection signal {}", s.type) }
     }
 
     private fun createSession(): Mono<SessionInfoDTO> {

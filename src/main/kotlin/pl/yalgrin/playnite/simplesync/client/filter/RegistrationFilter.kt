@@ -43,20 +43,20 @@ class RegistrationFilter(
     }
 
     private fun shouldCreateSessionOnUrl(url: String): Boolean {
-        return url == "/api/client/connect"
+        return url == "/api/client/connect" || url == "/api/change"
     }
 
     private fun getSessionInfoWithoutSessionId(headers: HttpHeaders): Mono<SessionInfoDTO> {
         return fetchHeaders(headers)
-            .filter { it.first.isNotBlank() && it.second.isNotBlank() && it.third.isBlank() }
-            .flatMap { (clientId, clientToken) ->
+            .filter { it.first.isNotBlank() && it.second.isNotBlank() }
+            .flatMap { (clientId, clientToken, sessionId) ->
                 registeredClientRepository.findByClientId(clientId)
                     .filter { it.clientToken == clientToken.toSha1() }
                     .map { client ->
                         SessionInfoDTO(
                             clientId = clientId,
                             displayName = client.displayName,
-                            sessionId = ""
+                            sessionId = sessionId
                         )
                     }
             }

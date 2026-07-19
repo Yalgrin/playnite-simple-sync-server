@@ -7,7 +7,6 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import pl.yalgrin.playnite.simplesync.domain.objects.Game;
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO;
 import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO;
@@ -24,7 +23,7 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.*;
 import java.util.function.Function;
 
-@Service
+@Service("legacyChangeService")
 @Slf4j
 public class ChangeService {
     private final ChangeRepository repository;
@@ -60,11 +59,6 @@ public class ChangeService {
         repositoryMap.put(ObjectType.CompletionStatus, completionStatusRepository);
         repositoryMap.put(ObjectType.FilterPreset, filterPresetRepository);
         this.relatedObjectRepositories = repositoryMap;
-    }
-
-    @Transactional(readOnly = true)
-    public Flux<ChangeDTO> findFromLastId(Long lastId) {
-        return repository.findFromLastId(lastId).map(mapper::toDTO);
     }
 
     public Flux<ChangeDTO> generateChangesForAllObjects() {

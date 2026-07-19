@@ -1,4 +1,4 @@
-package pl.yalgrin.playnite.simplesync.web
+package pl.yalgrin.playnite.simplesync.web.change
 
 import io.r2dbc.spi.ConnectionFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,9 +12,9 @@ import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
+import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
 import pl.yalgrin.playnite.simplesync.config.CurrentApiVersionKt
-import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO
 import pl.yalgrin.playnite.simplesync.dto.GameIdsDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
@@ -37,6 +37,7 @@ class ChangeResourceTest extends SpockIntegrationTest {
 
     private GameDTO savedGame
     private String clientId
+    private String savedClientId
 
     def setup() {
         def populator = new ResourceDatabasePopulator()
@@ -44,16 +45,21 @@ class ChangeResourceTest extends SpockIntegrationTest {
         populator.populate(connectionFactory).block()
 
         def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", CurrentApiVersionKt.CURRENT_API_VERSION)).block()
+        def clientInfoToSaveData = registeredClientService.register(new RegistrationRequestDTO("other-user", CurrentApiVersionKt.CURRENT_API_VERSION)).block()
         def sessionId = UUID.randomUUID().toString()
+        def otherUserSessionId = UUID.randomUUID().toString()
         sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))
+        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfoToSaveData.clientId, clientInfoToSaveData.displayName, otherUserSessionId))
 
+        def previousClient = webTestClient
         webTestClient = webTestClient.mutate()
-                .defaultHeader("X-Client-Id", clientInfo.clientId)
-                .defaultHeader("X-Client-Token", clientInfo.clientToken)
-                .defaultHeader("X-Session-Id", sessionId)
+                .defaultHeader("X-Client-Id", clientInfoToSaveData.clientId)
+                .defaultHeader("X-Client-Token", clientInfoToSaveData.clientToken)
+                .defaultHeader("X-Session-Id", otherUserSessionId)
                 .build()
 
         clientId = clientInfo.clientId
+        savedClientId = clientInfoToSaveData.clientId
 
         def category = CategoryFactoryUtil.randomCategory()
         makeSaveRequest(category, "/api/category")
@@ -110,6 +116,12 @@ class ChangeResourceTest extends SpockIntegrationTest {
                 .build()
 
         makeSaveRequest(savedGame, "/api/game", List.of())
+
+        webTestClient = previousClient.mutate()
+                .defaultHeader("X-Client-Id", clientInfo.clientId)
+                .defaultHeader("X-Client-Token", clientInfo.clientToken)
+                .defaultHeader("X-Session-Id", sessionId)
+                .build()
     }
 
     def "last change id should be match"() {
@@ -142,7 +154,7 @@ class ChangeResourceTest extends SpockIntegrationTest {
             def change = result[i]
             assert expectedChange.getId() == change.getId()
             assert expectedChange.getType() == change.getType()
-            assert clientId == change.getClientId()
+            assert savedClientId == change.getClientId()
             assert expectedChange.getObjectId() == change.getObjectId()
         }
         true
@@ -196,30 +208,30 @@ class ChangeResourceTest extends SpockIntegrationTest {
         true
     }
 
-    protected List<ChangeDTO> getAllExpectedResults() {
+    protected List<ChangeMessage> getAllExpectedResults() {
         List.of(
-                ChangeDTO.builder().id(1L).type(ObjectType.Category).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(2L).type(ObjectType.Genre).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(3L).type(ObjectType.Platform).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(4L).type(ObjectType.Company).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(5L).type(ObjectType.Company).clientId(clientId).objectId(2).build(),
-                ChangeDTO.builder().id(6L).type(ObjectType.Feature).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(7L).type(ObjectType.Tag).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(8L).type(ObjectType.Series).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(9L).type(ObjectType.AgeRating).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(10L).type(ObjectType.Region).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(11L).type(ObjectType.Source).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(12L).type(ObjectType.CompletionStatus).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(13L).type(ObjectType.FilterPreset).clientId(clientId).objectId(1).build(),
-                ChangeDTO.builder().id(14L).type(ObjectType.Game).clientId(clientId).objectId(1).build()
+                new ChangeMessage(1L, ObjectType.Category, clientId, 1, false),
+                new ChangeMessage(2L, ObjectType.Genre, clientId, 1, false),
+                new ChangeMessage(3L, ObjectType.Platform, clientId, 1, false),
+                new ChangeMessage(4L, ObjectType.Company, clientId, 1, false),
+                new ChangeMessage(5L, ObjectType.Company, clientId, 2, false),
+                new ChangeMessage(6L, ObjectType.Feature, clientId, 1, false),
+                new ChangeMessage(7L, ObjectType.Tag, clientId, 1, false),
+                new ChangeMessage(8L, ObjectType.Series, clientId, 1, false),
+                new ChangeMessage(9L, ObjectType.AgeRating, clientId, 1, false),
+                new ChangeMessage(10L, ObjectType.Region, clientId, 1, false),
+                new ChangeMessage(11L, ObjectType.Source, clientId, 1, false),
+                new ChangeMessage(12L, ObjectType.CompletionStatus, clientId, 1, false),
+                new ChangeMessage(13L, ObjectType.FilterPreset, clientId, 1, false),
+                new ChangeMessage(14L, ObjectType.Game, clientId, 1, false)
         )
     }
 
-    protected List<ChangeDTO> getFilteredResults(long fromId) {
+    protected List<ChangeMessage> getFilteredResults(long fromId) {
         getAllExpectedResults().stream().filter { it.id > fromId }.toList()
     }
 
-    protected List<ChangeDTO> getResultsForGame() {
+    protected List<ChangeMessage> getResultsForGame() {
         getAllExpectedResults().stream().filter { it.type != ObjectType.FilterPreset }.toList()
     }
 
@@ -254,32 +266,32 @@ class ChangeResourceTest extends SpockIntegrationTest {
                 .exchange()
     }
 
-    private List<ChangeDTO> fetchChanges(Long fromId) {
+    private List<ChangeMessage> fetchChanges(Long fromId) {
         return webTestClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/change")
                         .queryParam("lastChangeId", fromId)
                         .build())
                 .exchange()
-                .returnResult(ChangeDTO.class).responseBody.collectList().block()
+                .returnResult(ChangeMessage.class).responseBody.collectList().block()
     }
 
-    private List<ChangeDTO> generateChanges() {
+    private List<ChangeMessage> generateChanges() {
         return webTestClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/change/all")
                         .build())
                 .exchange()
-                .returnResult(ChangeDTO.class).responseBody.collectList().block()
+                .returnResult(ChangeMessage.class).responseBody.collectList().block()
     }
 
-    private List<ChangeDTO> generateChangesForGame(GameChangeRequestDTO requestDTO) {
+    private List<ChangeMessage> generateChangesForGame(GameChangeRequestDTO requestDTO) {
         return webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/change/games")
                         .build())
                 .bodyValue(requestDTO)
                 .exchange()
-                .returnResult(ChangeDTO.class).responseBody.collectList().block()
+                .returnResult(ChangeMessage.class).responseBody.collectList().block()
     }
 }

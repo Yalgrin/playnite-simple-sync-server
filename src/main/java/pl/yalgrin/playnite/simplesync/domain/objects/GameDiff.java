@@ -10,7 +10,6 @@ import org.springframework.data.annotation.Id;
 import org.springframework.data.annotation.Transient;
 import org.springframework.data.relational.core.mapping.Column;
 import org.springframework.data.relational.core.mapping.Table;
-import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDiffDTO;
 
 @EqualsAndHashCode(callSuper = true)
 @Data
@@ -46,7 +45,4 @@ public class GameDiff extends AbstractObjectDiffEntity {
 
     @Transient
     private boolean changed;
-
-    @Transient
-    private PlatformDiffDTO diffDTO;
 }

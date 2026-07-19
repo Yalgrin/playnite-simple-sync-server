@@ -23,7 +23,7 @@ import static pl.yalgrin.playnite.simplesync.security.ClientUtilKt.getSessionCli
 @Component
 public class ReactiveLoggingAspect {
 
-    @Pointcut("execution(* pl.yalgrin.playnite.simplesync.service..*.*(..))")
+    @Pointcut("execution(* pl.yalgrin.playnite.simplesync.service..*.*(..)) || execution(* pl.yalgrin.playnite.simplesync.*.service..*.*(..))")
     public void servicePointcut() {
     }
 

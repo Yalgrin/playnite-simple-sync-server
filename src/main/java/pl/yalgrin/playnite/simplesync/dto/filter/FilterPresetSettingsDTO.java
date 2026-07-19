@@ -18,66 +18,66 @@ public class FilterPresetSettingsDTO implements Serializable {
     private static final long serialVersionUID = 1511413271560442002L;
 
     @JsonProperty("UseAndFilteringStyle")
-    public boolean useAndFilteringStyle;
+    private boolean useAndFilteringStyle;
     @JsonProperty("IsInstalled")
-    public boolean installed;
+    private boolean installed;
     @JsonProperty("IsUnInstalled")
-    public boolean uninstalled;
+    private boolean uninstalled;
     @JsonProperty("Hidden")
-    public boolean hidden;
+    private boolean hidden;
     @JsonProperty("Favorite")
-    public boolean favorite;
+    private boolean favorite;
     @JsonProperty("Name")
-    public String name;
+    private String name;
     @JsonProperty("Version")
-    public String version;
+    private String version;
 
     @JsonProperty("ReleaseYear")
-    public StringItemPropertiesDTO releaseYear;
+    private StringItemPropertiesDTO releaseYear;
 
     @JsonProperty("Genre")
-    public IdItemPropertiesDTO genre;
+    private IdItemPropertiesDTO genre;
     @JsonProperty("Platform")
-    public IdItemPropertiesDTO platform;
+    private IdItemPropertiesDTO platform;
     @JsonProperty("Publisher")
-    public IdItemPropertiesDTO publisher;
+    private IdItemPropertiesDTO publisher;
     @JsonProperty("Developer")
-    public IdItemPropertiesDTO developer;
+    private IdItemPropertiesDTO developer;
     @JsonProperty("Category")
-    public IdItemPropertiesDTO category;
+    private IdItemPropertiesDTO category;
     @JsonProperty("Tag")
-    public IdItemPropertiesDTO tag;
+    private IdItemPropertiesDTO tag;
     @JsonProperty("Series")
-    public IdItemPropertiesDTO series;
+    private IdItemPropertiesDTO series;
     @JsonProperty("Region")
-    public IdItemPropertiesDTO region;
+    private IdItemPropertiesDTO region;
     @JsonProperty("Source")
-    public IdItemPropertiesDTO source;
+    private IdItemPropertiesDTO source;
     @JsonProperty("AgeRating")
-    public IdItemPropertiesDTO ageRating;
+    private IdItemPropertiesDTO ageRating;
     @JsonProperty("Library")
-    public IdItemPropertiesDTO library;
+    private IdItemPropertiesDTO library;
     @JsonProperty("CompletionStatuses")
-    public IdItemPropertiesDTO completionStatuses;
+    private IdItemPropertiesDTO completionStatuses;
     @JsonProperty("Feature")
-    public IdItemPropertiesDTO feature;
+    private IdItemPropertiesDTO feature;
 
     @JsonProperty("UserScore")
-    public IntItemPropertiesDTO userScore;
+    private IntItemPropertiesDTO userScore;
     @JsonProperty("CriticScore")
-    public IntItemPropertiesDTO criticScore;
+    private IntItemPropertiesDTO criticScore;
     @JsonProperty("CommunityScore")
-    public IntItemPropertiesDTO communityScore;
+    private IntItemPropertiesDTO communityScore;
     @JsonProperty("LastActivity")
-    public IntItemPropertiesDTO lastActivity;
+    private IntItemPropertiesDTO lastActivity;
     @JsonProperty("RecentActivity")
-    public IntItemPropertiesDTO recentActivity;
+    private IntItemPropertiesDTO recentActivity;
     @JsonProperty("Added")
-    public IntItemPropertiesDTO added;
+    private IntItemPropertiesDTO added;
     @JsonProperty("Modified")
-    public IntItemPropertiesDTO modified;
+    private IntItemPropertiesDTO modified;
     @JsonProperty("PlayTime")
-    public IntItemPropertiesDTO playTime;
+    private IntItemPropertiesDTO playTime;
     @JsonProperty("InstallSize")
-    public IntItemPropertiesDTO installSize;
+    private IntItemPropertiesDTO installSize;
 }
