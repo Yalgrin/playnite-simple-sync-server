@@ -114,7 +114,8 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
                                 .toSave(false).build())))
                 .flatMap(t -> {
                     if (t.isToSave()) {
-                        if (shouldSaveMetadata(e, t.getBytes(), t.getMd5(), t.getFieldName())) {
+                        if (shouldSaveMetadata(e, t.getBytes(), t.getMd5(), t.getFieldName()) || fileDoesNotExist(
+                                getMetadataFolder(), getIdPart(e), t.getFieldName())) {
                             return metadataService.saveMetadata(getMetadataFolder(), getIdPart(e), t.getFilename(),
                                             t.getBytes(), t.getFieldName())
                                     .doOnNext(_ -> {
@@ -136,6 +137,10 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
                     }
                 })
                 .collectList();
+    }
+
+    private boolean fileDoesNotExist(String metadataFolder, String idPart, String fieldName) {
+        return metadataService.fileDoesNotExist(metadataFolder, idPart, fieldName);
     }
 
     private Mono<E> saveEntityIfNeeded(Tuple2<E, DIFF_DTO> tuple) {

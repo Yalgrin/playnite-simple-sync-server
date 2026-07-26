@@ -10,6 +10,7 @@ import pl.yalgrin.playnite.simplesync.exception.ApiVersionException
 import pl.yalgrin.playnite.simplesync.exception.AuthException
 import pl.yalgrin.playnite.simplesync.exception.ForceFetchRequiredException
 import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException
+import pl.yalgrin.playnite.simplesync.util.toErrorDTO
 import reactor.core.publisher.Mono
 
 @RestControllerAdvice
@@ -22,14 +23,14 @@ class ExceptionHandler {
     @ExceptionHandler(AuthException::class)
     fun handleAuthException(ex: AuthException): Mono<ResponseEntity<ErrorDTO>> {
         log.error("Authorization error occurred!", ex)
-        return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ErrorDTO("AuthException.${ex.type.name}")))
+        return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.toErrorDTO()))
     }
 
     @ExceptionHandler(ApiVersionException::class)
     fun handleApiVersionException(ex: ApiVersionException): Mono<ResponseEntity<ErrorDTO>> {
         log.error("API version error occurred!", ex)
         return Mono.just(
-            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ErrorDTO("ApiVersionException.${ex.type.name}"))
+            ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.toErrorDTO())
         )
     }
 

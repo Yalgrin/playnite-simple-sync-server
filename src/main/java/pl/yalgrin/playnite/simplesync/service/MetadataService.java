@@ -240,6 +240,9 @@ public class MetadataService {
 
     private static void doDeleteExcessiveMetadata(String fieldName, Path dir, String filenameToKeep) throws
             IOException {
+        if (!Files.exists(dir)) {
+            return;
+        }
         try (Stream<Path> files = Files.list(dir)) {
             files.forEach(path -> {
                 String existingFileName = FilenameUtils.getName(path.toString());
@@ -292,5 +295,21 @@ public class MetadataService {
 
     private static Long pathToLong(Path gamePath) {
         return Try.of(() -> Long.parseLong(gamePath.getFileName().toString())).getOrNull();
+    }
+
+    @SneakyThrows
+    public boolean fileDoesNotExist(String metadataFolder, String idPart, String fieldName) {
+        Path folderPath = Path.of(this.metadataFolder, metadataFolder, idPart);
+        if (!Files.exists(folderPath) || !Files.isDirectory(folderPath)) {
+            return true;
+        }
+        try (Stream<Path> stream = Files.list(folderPath)) {
+            return stream.noneMatch(path -> {
+                String fileName = path.getFileName().toString();
+                int extensionIndex = fileName.lastIndexOf(".");
+                String baseName = fileName.substring(0, extensionIndex);
+                return Objects.equals(baseName, fieldName);
+            });
+        }
     }
 }
