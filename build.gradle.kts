@@ -29,7 +29,7 @@ kotlin {
 
 tasks.bootJar {
     enabled = true
-    mainClass.set("pl.yalgrin.playnite.simplesync.PlayniteSimpleSyncServerApplication")
+    mainClass.set("pl.yalgrin.playnite.simplesync.PlayniteSimpleSyncServerApplicationKt")
 }
 
 tasks.jar {

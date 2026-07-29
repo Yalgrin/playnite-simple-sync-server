@@ -1,4 +1,4 @@
-FROM eclipse-temurin:25-jre-alpine
+FROM eclipse-temurin:25-jdk-alpine
 EXPOSE 8093
 WORKDIR /app
 COPY ./build/libs/playnite-simple-sync-server-*.jar ./app.jar
