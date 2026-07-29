@@ -11,7 +11,7 @@ plugins {
 }
 
 group = "pl.yalgrin"
-version = "0.2.0"
+version = "0.2.1-SNAPSHOT"
 
 val vavrVersion = "1.0.1"
 val spockVersion = "2.4-groovy-5.0"
