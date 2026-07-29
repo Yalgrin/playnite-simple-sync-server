@@ -6,10 +6,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import pl.yalgrin.playnite.simplesync.dto.ErrorDTO
-import pl.yalgrin.playnite.simplesync.exception.ApiVersionException
-import pl.yalgrin.playnite.simplesync.exception.AuthException
-import pl.yalgrin.playnite.simplesync.exception.ForceFetchRequiredException
-import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException
+import pl.yalgrin.playnite.simplesync.exception.*
 import pl.yalgrin.playnite.simplesync.util.toErrorDTO
 import reactor.core.publisher.Mono
 
@@ -32,6 +29,12 @@ class ExceptionHandler {
         return Mono.just(
             ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.toErrorDTO())
         )
+    }
+
+    @ExceptionHandler(ValidationException::class)
+    fun handleValidationException(ex: ValidationException): Mono<ResponseEntity<ErrorDTO>> {
+        log.error("Validation error occurred!", ex)
+        return Mono.just(ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.toErrorDTO()))
     }
 
     @ExceptionHandler(ManualSynchronizationRequiredException::class)

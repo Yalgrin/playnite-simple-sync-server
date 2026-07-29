@@ -42,7 +42,7 @@ class ClientResourceTest extends SpockIntegrationTest {
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(receivedInfo.get().clientId, receivedInfo.get().clientToken)
+        assertEntityAndGetResponse(receivedInfo.get().clientId, receivedInfo.get().clientToken, infoDTO.displayName)
     }
 
     def "register a client with older client version"() {
@@ -83,6 +83,171 @@ class ClientResourceTest extends SpockIntegrationTest {
                 .verifyComplete()
     }
 
+    def "register a client with no name"() {
+        given:
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("", CurrentApiVersionKt.CURRENT_API_VERSION)
+
+        when:
+        def response = makeSaveRequest(infoDTO)
+
+        then:
+        response.expectStatus().is4xxClientError()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, ErrorDTO.class))
+                .expectNextMatches { error ->
+                    assert error != null
+                    assert error.message == "ValidationException"
+                    assert error.fieldErrors?.size() == 1
+                    assert error.fieldErrors.first.message == "validation.notNull"
+                    true
+                }
+                .verifyComplete()
+    }
+
+    def "register a client with too long name"() {
+        given:
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|a", CurrentApiVersionKt.CURRENT_API_VERSION)
+
+        when:
+        def response = makeSaveRequest(infoDTO)
+
+        then:
+        response.expectStatus().is4xxClientError()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, ErrorDTO.class))
+                .expectNextMatches { error ->
+                    assert error != null
+                    assert error.message == "ValidationException"
+                    assert error.fieldErrors?.size() == 1
+                    assert error.fieldErrors.first.message == "validation.maxSize"
+                    true
+                }
+                .verifyComplete()
+    }
+
+    def "register a client and then change the name"() {
+        given:
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION)
+        AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
+
+        when:
+        def response = makeSaveRequest(infoDTO)
+
+        then:
+        response.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, RegisteredClientDTO.class))
+                .expectNextMatches { clientInfo ->
+                    assert clientInfo.clientId != null
+                    assert clientInfo.displayName == infoDTO.displayName
+                    assert clientInfo.clientToken != null
+                    receivedInfo.set(clientInfo)
+                    true
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(receivedInfo.get().clientId, receivedInfo.get().clientToken, infoDTO.displayName)
+
+        when:
+        def makeChangeResponse = makeChangeNameRequest(receivedInfo.get(), "different name")
+
+        then:
+        makeChangeResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        assertEntityAndGetResponse(receivedInfo.get().clientId, receivedInfo.get().clientToken, "different name")
+    }
+
+    def "register a client and then change the name to an empty one"() {
+        given:
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION)
+        AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
+
+        when:
+        def response = makeSaveRequest(infoDTO)
+
+        then:
+        response.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, RegisteredClientDTO.class))
+                .expectNextMatches { clientInfo ->
+                    assert clientInfo.clientId != null
+                    assert clientInfo.displayName == infoDTO.displayName
+                    assert clientInfo.clientToken != null
+                    receivedInfo.set(clientInfo)
+                    true
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(receivedInfo.get().clientId, receivedInfo.get().clientToken, infoDTO.displayName)
+
+        when:
+        def makeChangeResponse = makeChangeNameRequest(receivedInfo.get(), "")
+
+        then:
+        makeChangeResponse.expectStatus().is4xxClientError()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(makeChangeResponse, ErrorDTO.class))
+                .expectNextMatches { error ->
+                    assert error != null
+                    assert error.message == "ValidationException"
+                    assert error.fieldErrors?.size() == 1
+                    assert error.fieldErrors.first.message == "validation.notNull"
+                    true
+                }
+                .verifyComplete()
+    }
+
+    def "register a client and then change the name to a one that is too long"() {
+        given:
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION)
+        AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
+
+        when:
+        def response = makeSaveRequest(infoDTO)
+
+        then:
+        response.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, RegisteredClientDTO.class))
+                .expectNextMatches { clientInfo ->
+                    assert clientInfo.clientId != null
+                    assert clientInfo.displayName == infoDTO.displayName
+                    assert clientInfo.clientToken != null
+                    receivedInfo.set(clientInfo)
+                    true
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(receivedInfo.get().clientId, receivedInfo.get().clientToken, infoDTO.displayName)
+
+        when:
+        def makeChangeResponse = makeChangeNameRequest(receivedInfo.get(), "1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|a")
+
+        then:
+        makeChangeResponse.expectStatus().is4xxClientError()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(makeChangeResponse, ErrorDTO.class))
+                .expectNextMatches { error ->
+                    assert error != null
+                    assert error.message == "ValidationException"
+                    assert error.fieldErrors?.size() == 1
+                    assert error.fieldErrors.first.message == "validation.maxSize"
+                    true
+                }
+                .verifyComplete()
+    }
+
     protected WebTestClient.ResponseSpec makeSaveRequest(RegistrationRequestDTO dto) {
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
@@ -92,11 +257,22 @@ class ClientResourceTest extends SpockIntegrationTest {
                 .exchange()
     }
 
-    protected assertEntityAndGetResponse(String clientId, String token) {
+    protected WebTestClient.ResponseSpec makeChangeNameRequest(RegisteredClientDTO dto, String newName) {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/client/change-name")
+                        .queryParam("newName", newName)
+                        .build())
+                .header("X-Client-Id", dto.clientId)
+                .header("X-Client-Token", dto.clientToken)
+                .exchange()
+    }
+
+    protected assertEntityAndGetResponse(String clientId, String token, String displayName) {
         def savedEntity = repository.findById(clientId).block()
         assert savedEntity != null
         assert savedEntity.clientId == clientId
-        assert savedEntity.displayName == "client name"
+        assert savedEntity.displayName == displayName
         assert savedEntity.clientToken == sha1(token)
         true
     }

@@ -31,7 +31,7 @@ class ClientResource(
     }
 
     @PostMapping("/change-name")
-    fun changeName(@RequestParam newName: String): Mono<*> {
+    fun changeName(@RequestParam newName: String): Mono<Void> {
         return registeredClientService.changeName(newName)
     }
 

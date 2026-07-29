@@ -44,7 +44,7 @@ class RegistrationFilter(
     }
 
     private fun shouldAllowSessionWithoutSessionId(url: String): Boolean {
-        return url == "/api/client/connect" || url == "/api/client/check" || url == "/api/change"
+        return url == "/api/client/connect" || url == "/api/client/check" || url == "/api/change" || url == "/api/client/change-name"
     }
 
     private fun getSessionInfoWithoutSessionId(headers: HttpHeaders): Mono<SessionInfoDTO> {

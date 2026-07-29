@@ -9,6 +9,7 @@ import pl.yalgrin.playnite.simplesync.client.dto.RegisteredClientDTO
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.enums.CheckResult
 import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
+import pl.yalgrin.playnite.simplesync.client.validator.RegisteredClientValidator
 import pl.yalgrin.playnite.simplesync.config.CURRENT_API_VERSION
 import pl.yalgrin.playnite.simplesync.exception.ApiVersionException
 import pl.yalgrin.playnite.simplesync.exception.ApiVersionExceptionType
@@ -22,7 +23,8 @@ import kotlin.time.toJavaInstant
 
 @Service
 class RegisteredClientService(
-    val registeredClientRepository: RegisteredClientRepository
+    val registeredClientRepository: RegisteredClientRepository,
+    val validator: RegisteredClientValidator
 ) {
     @Transactional(rollbackFor = [Throwable::class])
     fun register(info: RegistrationRequestDTO): Mono<RegisteredClientDTO> {
@@ -45,7 +47,8 @@ class RegisteredClientService(
     }
 
     private fun doRegister(info: RegistrationRequestDTO): Mono<RegisteredClientDTO> =
-        Mono.fromSupplier { createToken() }
+        validator.validateRegisterRequestMono(info)
+            .then(Mono.fromSupplier { createToken() })
             .flatMap { token ->
                 Mono.fromCallable { token.toSha1() }
                     .map { createEntity(info, it) }
@@ -81,8 +84,9 @@ class RegisteredClientService(
         }
 
     @Transactional(rollbackFor = [Throwable::class])
-    fun changeName(newName: String): Mono<*> {
-        return getSessionInfo()
+    fun changeName(newName: String): Mono<Void> {
+        return validator.validateChangeNameRequestMono(newName)
+            .then(getSessionInfo())
             .flatMap { sessionInfo ->
                 registeredClientRepository.findById(sessionInfo.clientId)
                     .map { registeredClient ->
@@ -92,6 +96,7 @@ class RegisteredClientService(
                     .flatMap { registeredClient ->
                         registeredClientRepository.save(registeredClient)
                     }
+                    .then()
             }
     }
 
