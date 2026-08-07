@@ -6,12 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
-import pl.yalgrin.playnite.simplesync.domain.objects.FilterPreset;
 import pl.yalgrin.playnite.simplesync.dto.filter.FilterPresetSettingsDTO;
 import pl.yalgrin.playnite.simplesync.dto.filter.IdItemPropertiesDTO;
 import pl.yalgrin.playnite.simplesync.dto.filter.IntItemPropertiesDTO;
 import pl.yalgrin.playnite.simplesync.dto.filter.StringItemPropertiesDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.FilterPresetDTO;
+import pl.yalgrin.playnite.simplesync.library.domain.FilterPreset;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;

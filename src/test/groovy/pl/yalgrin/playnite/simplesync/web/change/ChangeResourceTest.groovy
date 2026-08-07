@@ -10,16 +10,15 @@ import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
+import pl.yalgrin.playnite.simplesync.change.repository.ChangeRepository
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
-import pl.yalgrin.playnite.simplesync.config.CurrentApiVersionKt
 import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO
 import pl.yalgrin.playnite.simplesync.dto.GameIdsDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
-import pl.yalgrin.playnite.simplesync.repository.ChangeRepository
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.util.objects.*
 import reactor.test.StepVerifier
@@ -44,8 +43,8 @@ class ChangeResourceTest extends SpockIntegrationTest {
         populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
         populator.populate(connectionFactory).block()
 
-        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", CurrentApiVersionKt.CURRENT_API_VERSION)).block()
-        def clientInfoToSaveData = registeredClientService.register(new RegistrationRequestDTO("other-user", CurrentApiVersionKt.CURRENT_API_VERSION)).block()
+        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)).block()
+        def clientInfoToSaveData = registeredClientService.register(new RegistrationRequestDTO("other-user", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)).block()
         def sessionId = UUID.randomUUID().toString()
         def otherUserSessionId = UUID.randomUUID().toString()
         sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))

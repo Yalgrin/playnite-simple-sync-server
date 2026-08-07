@@ -3,9 +3,9 @@ package pl.yalgrin.playnite.simplesync.change.service
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import pl.yalgrin.playnite.simplesync.change.mapper.ChangeMessageMapper
+import pl.yalgrin.playnite.simplesync.change.repository.ChangeRepository
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO
-import pl.yalgrin.playnite.simplesync.repository.ChangeRepository
 import pl.yalgrin.playnite.simplesync.security.getSessionClientId
 import pl.yalgrin.playnite.simplesync.service.ChangeService
 import reactor.core.publisher.Flux

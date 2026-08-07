@@ -6,7 +6,6 @@ import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
 import pl.yalgrin.playnite.simplesync.client.dto.RegisteredClientDTO
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
-import pl.yalgrin.playnite.simplesync.config.CurrentApiVersionKt
 import pl.yalgrin.playnite.simplesync.dto.ErrorDTO
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
@@ -21,7 +20,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
         AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
 
         when:
@@ -47,7 +46,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client with older client version"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION - 1)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION - 1)
 
         when:
         def response = makeSaveRequest(infoDTO)
@@ -66,7 +65,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client with newer client version"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION + 1)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION + 1)
 
         when:
         def response = makeSaveRequest(infoDTO)
@@ -85,7 +84,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client with no name"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("", CurrentApiVersionKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
 
         when:
         def response = makeSaveRequest(infoDTO)
@@ -107,7 +106,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client with too long name"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|a", CurrentApiVersionKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|a", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
 
         when:
         def response = makeSaveRequest(infoDTO)
@@ -129,7 +128,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client and then change the name"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
         AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
 
         when:
@@ -164,7 +163,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client and then change the name to an empty one"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
         AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
 
         when:
@@ -207,7 +206,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client and then change the name to a one that is too long"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", CurrentApiVersionKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
         AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
 
         when:

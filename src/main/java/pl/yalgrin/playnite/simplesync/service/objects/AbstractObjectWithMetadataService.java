@@ -14,16 +14,16 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
-import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectDiffEntity;
-import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectEntity;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractDiffDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
 import pl.yalgrin.playnite.simplesync.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException;
+import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectDiffEntity;
+import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity;
+import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.AbstractObjectWithMetadataMapper;
-import pl.yalgrin.playnite.simplesync.repository.objects.ObjectRepository;
-import pl.yalgrin.playnite.simplesync.service.ChangeListenerService;
 import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.service.MetadataService;
 import reactor.core.publisher.Flux;
@@ -39,7 +39,7 @@ import static pl.yalgrin.playnite.simplesync.security.ClientUtilKt.getSessionCli
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractObjectWithMetadataService<E extends AbstractObjectEntity, DIFF_E extends AbstractObjectDiffEntity, DTO extends AbstractObjectDTO, DIFF_DTO extends AbstractDiffDTO>
+public abstract class AbstractObjectWithMetadataService<E extends LibraryObjectEntity, DIFF_E extends LibraryObjectDiffEntity, DTO extends AbstractObjectDTO, DIFF_DTO extends AbstractDiffDTO>
         implements ObjectSaveService<DTO> {
     protected final ObjectRepository<E> repository;
     protected final R2dbcRepository<DIFF_E, Long> diffRepository;
@@ -164,7 +164,7 @@ public abstract class AbstractObjectWithMetadataService<E extends AbstractObject
     private Mono<E> saveEntityIfChanged(E entity) {
         return Mono.justOrEmpty(entity)
                 .doOnNext(e -> log.debug("saveObject > entity has{} been changed!", e.isChanged() ? "" : " not"))
-                .filter(AbstractObjectEntity::isChanged)
+                .filter(LibraryObjectEntity::isChanged)
                 .flatMap(repository::save)
                 .switchIfEmpty(Mono.justOrEmpty(entity));
     }

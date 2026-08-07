@@ -16,9 +16,9 @@ import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
 import org.springframework.core.io.buffer.DefaultDataBufferFactory;
 import org.springframework.stereotype.Service;
-import pl.yalgrin.playnite.simplesync.config.Constants;
-import pl.yalgrin.playnite.simplesync.repository.objects.GameRepository;
-import pl.yalgrin.playnite.simplesync.repository.objects.PlatformRepository;
+import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt;
+import pl.yalgrin.playnite.simplesync.library.repository.GameRepository;
+import pl.yalgrin.playnite.simplesync.library.repository.PlatformRepository;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -43,9 +43,9 @@ import java.util.stream.Stream;
 @RequiredArgsConstructor
 public class MetadataService {
 
-    private static final Set<String> ALLOWED_FOLDERS = Set.of(Constants.PLATFORM, Constants.GAME);
-    public static final Set<String> ALLOWED_FILE_NAMES = Set.of(Constants.ICON, Constants.COVER_IMAGE,
-            Constants.BACKGROUND_IMAGE);
+    private static final Set<String> ALLOWED_FOLDERS = Set.of(ConstantsKt.PLATFORM, ConstantsKt.GAME);
+    public static final Set<String> ALLOWED_FILE_NAMES = Set.of(ConstantsKt.ICON, ConstantsKt.COVER_IMAGE,
+            ConstantsKt.BACKGROUND_IMAGE);
     public static final int PARTITION_SIZE = 990;
 
     @Value("${application.metadata-folder}")
@@ -73,13 +73,13 @@ public class MetadataService {
         if (!ALLOWED_FOLDERS.contains(path.getFileName().toString())) {
             log.debug("checkFolderAndRemoveInvalidFolders > deleting main folder due to unsupported type: {}", path);
             deleteDirectory(path);
-        } else if (Constants.GAME.equals(path.getFileName().toString())) {
+        } else if (ConstantsKt.GAME.equals(path.getFileName().toString())) {
             Set<Long> idsToCheck = getIdsToCheck(path);
             if (!idsToCheck.isEmpty()) {
                 Set<Long> existingIds = getExistingIds(idsToCheck, gameRepository::findIdsByIds);
                 removeInvalidSubdirectories(path, existingIds, "game");
             }
-        } else if (Constants.PLATFORM.equals(path.getFileName().toString())) {
+        } else if (ConstantsKt.PLATFORM.equals(path.getFileName().toString())) {
             Set<Long> idsToCheck = getIdsToCheck(path);
             if (!idsToCheck.isEmpty()) {
                 Set<Long> existingIds = getExistingIds(idsToCheck, platformRepository::findIdsByIds);
@@ -261,7 +261,6 @@ public class MetadataService {
     public Mono<Tuple2<String, Flux<DataBuffer>>> getMetadata(String folder, String id, String filename) {
         return Mono.fromCallable(() -> findMetadataPath(folder, id, filename))
                 .subscribeOn(Schedulers.boundedElastic())
-                .filter(Objects::nonNull)
                 .flatMap(path ->
                         getFileName(path).zipWith(readFile(path))
                 );

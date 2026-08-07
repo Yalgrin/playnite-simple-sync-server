@@ -11,11 +11,11 @@ import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.client.enums.MessageType
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
-import pl.yalgrin.playnite.simplesync.domain.objects.Platform
 import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
-import pl.yalgrin.playnite.simplesync.repository.objects.ObjectRepository
-import pl.yalgrin.playnite.simplesync.repository.objects.PlatformRepository
+import pl.yalgrin.playnite.simplesync.library.domain.Platform
+import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.library.repository.PlatformRepository
 import pl.yalgrin.playnite.simplesync.service.MetadataService
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import pl.yalgrin.playnite.simplesync.util.JsonMapperUtil

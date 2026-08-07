@@ -2,7 +2,6 @@ package pl.yalgrin.playnite.simplesync.helper
 
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
-import lombok.RequiredArgsConstructor
 import org.springframework.stereotype.Component
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
@@ -15,7 +14,6 @@ import java.time.Duration
 
 
 @Component
-@RequiredArgsConstructor
 class SingleExecutorHelper {
     private val sink: Sinks.Many<RequestTask> = Sinks.many().unicast().onBackpressureBuffer<RequestTask>()
     private val sinkScheduler = Schedulers.newSingle("sink-scheduler")

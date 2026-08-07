@@ -2,8 +2,8 @@ package pl.yalgrin.playnite.simplesync.mapper.objects;
 
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
-import pl.yalgrin.playnite.simplesync.domain.objects.Region;
 import pl.yalgrin.playnite.simplesync.dto.objects.RegionDTO;
+import pl.yalgrin.playnite.simplesync.library.domain.Region;
 
 @Component
 public class RegionMapper extends AbstractObjectMapper<Region, RegionDTO> {

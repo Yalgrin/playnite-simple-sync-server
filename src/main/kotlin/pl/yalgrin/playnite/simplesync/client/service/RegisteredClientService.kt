@@ -10,7 +10,7 @@ import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.enums.CheckResult
 import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
 import pl.yalgrin.playnite.simplesync.client.validator.RegisteredClientValidator
-import pl.yalgrin.playnite.simplesync.config.CURRENT_API_VERSION
+import pl.yalgrin.playnite.simplesync.common.config.CURRENT_API_VERSION
 import pl.yalgrin.playnite.simplesync.exception.ApiVersionException
 import pl.yalgrin.playnite.simplesync.exception.ApiVersionExceptionType
 import pl.yalgrin.playnite.simplesync.security.getSessionInfo

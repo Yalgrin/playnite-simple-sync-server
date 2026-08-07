@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.objects
 
-import pl.yalgrin.playnite.simplesync.domain.objects.Feature
 import pl.yalgrin.playnite.simplesync.dto.objects.FeatureDTO
+import pl.yalgrin.playnite.simplesync.library.domain.Feature
 
 class FeatureAssertionUtil {
     static boolean assertFeature(FeatureDTO expectedDTO, FeatureDTO resultDTO) {

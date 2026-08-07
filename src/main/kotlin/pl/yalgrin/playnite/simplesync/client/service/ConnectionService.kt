@@ -3,13 +3,13 @@ package pl.yalgrin.playnite.simplesync.client.service
 import org.slf4j.LoggerFactory
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.stereotype.Service
+import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.ConnectionMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.security.getSessionInfo
-import pl.yalgrin.playnite.simplesync.service.ChangeListenerService
 import pl.yalgrin.playnite.simplesync.util.thenAny
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono

@@ -6,11 +6,11 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.client.enums.MessageType
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
-import pl.yalgrin.playnite.simplesync.domain.objects.Source
 import pl.yalgrin.playnite.simplesync.dto.objects.SourceDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
-import pl.yalgrin.playnite.simplesync.repository.objects.ObjectRepository
-import pl.yalgrin.playnite.simplesync.repository.objects.SourceRepository
+import pl.yalgrin.playnite.simplesync.library.domain.Source
+import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.library.repository.SourceRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import pl.yalgrin.playnite.simplesync.util.JsonMapperUtil
 import pl.yalgrin.playnite.simplesync.util.objects.SourceAssertionUtil

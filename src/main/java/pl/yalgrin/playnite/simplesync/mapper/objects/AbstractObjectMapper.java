@@ -1,10 +1,10 @@
 package pl.yalgrin.playnite.simplesync.mapper.objects;
 
 import org.apache.commons.lang3.Strings;
-import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectEntity;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
+import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity;
 
-public abstract class AbstractObjectMapper<E extends AbstractObjectEntity, D extends AbstractObjectDTO> {
+public abstract class AbstractObjectMapper<E extends LibraryObjectEntity, D extends AbstractObjectDTO> {
 
     public E fillEntity(D dto, E target) {
         target.setChanged(hasChanged(dto, target));

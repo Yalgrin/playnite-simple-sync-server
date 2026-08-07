@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.objects
 
-import pl.yalgrin.playnite.simplesync.domain.objects.AgeRating
 import pl.yalgrin.playnite.simplesync.dto.objects.AgeRatingDTO
+import pl.yalgrin.playnite.simplesync.library.domain.AgeRating
 
 class AgeRatingAssertionUtil {
     static boolean assertAgeRating(AgeRatingDTO expectedDTO, AgeRatingDTO resultDTO) {

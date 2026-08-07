@@ -1,8 +1,8 @@
 package pl.yalgrin.playnite.simplesync.change.mapper
 
 import org.springframework.stereotype.Component
+import pl.yalgrin.playnite.simplesync.change.domain.Change
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
-import pl.yalgrin.playnite.simplesync.domain.Change
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 
 @Component
@@ -23,7 +23,7 @@ class ChangeMessageMapper {
             type = entity.type,
             clientId = entity.clientId,
             objectId = entity.objectId,
-            forceFetch = entity.isNotifyAll
+            forceFetch = entity.notifyAll
         )
     }
 }

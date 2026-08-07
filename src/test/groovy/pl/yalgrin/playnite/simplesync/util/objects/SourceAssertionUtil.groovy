@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.objects
 
-import pl.yalgrin.playnite.simplesync.domain.objects.Source
 import pl.yalgrin.playnite.simplesync.dto.objects.SourceDTO
+import pl.yalgrin.playnite.simplesync.library.domain.Source
 
 class SourceAssertionUtil {
     static boolean assertSource(SourceDTO expectedDTO, SourceDTO resultDTO) {

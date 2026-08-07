@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.objects
 
-import pl.yalgrin.playnite.simplesync.domain.objects.Company
 import pl.yalgrin.playnite.simplesync.dto.objects.CompanyDTO
+import pl.yalgrin.playnite.simplesync.library.domain.Company
 
 class CompanyAssertionUtil {
     static boolean assertCompany(CompanyDTO expectedDTO, CompanyDTO resultDTO) {

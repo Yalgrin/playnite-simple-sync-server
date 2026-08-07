@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.objects
 
-import pl.yalgrin.playnite.simplesync.domain.objects.Platform
 import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDTO
+import pl.yalgrin.playnite.simplesync.library.domain.Platform
 
 class PlatformAssertionUtil {
     static boolean assertPlatform(PlatformDTO expectedDTO, PlatformDTO resultDTO) {

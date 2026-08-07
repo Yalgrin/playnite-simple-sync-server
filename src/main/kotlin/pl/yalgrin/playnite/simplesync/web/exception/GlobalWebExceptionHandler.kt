@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.exception
 import org.slf4j.LoggerFactory
 import org.springframework.core.annotation.Order
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebExceptionHandler
@@ -32,6 +33,7 @@ class GlobalWebExceptionHandler(
                 .map { exchange.response.bufferFactory().wrap(it) }
                 .flatMap {
                     exchange.response.statusCode = HttpStatus.UNAUTHORIZED
+                    exchange.response.headers.contentType = MediaType.APPLICATION_JSON
                     exchange.response.writeWith(Mono.just(it))
                 }
                 .onErrorResume { Mono.error(ex) }

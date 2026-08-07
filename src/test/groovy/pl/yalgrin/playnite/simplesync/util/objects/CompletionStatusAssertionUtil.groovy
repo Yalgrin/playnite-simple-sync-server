@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.objects
 
-import pl.yalgrin.playnite.simplesync.domain.objects.CompletionStatus
 import pl.yalgrin.playnite.simplesync.dto.objects.CompletionStatusDTO
+import pl.yalgrin.playnite.simplesync.library.domain.CompletionStatus
 
 class CompletionStatusAssertionUtil {
     static boolean assertCompletionStatus(CompletionStatusDTO expectedDTO, CompletionStatusDTO resultDTO) {

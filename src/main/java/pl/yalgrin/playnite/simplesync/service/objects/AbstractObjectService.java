@@ -7,13 +7,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
-import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectEntity;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
 import pl.yalgrin.playnite.simplesync.dto.ChangeDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
 import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity;
+import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.AbstractObjectMapper;
-import pl.yalgrin.playnite.simplesync.repository.objects.ObjectRepository;
-import pl.yalgrin.playnite.simplesync.service.ChangeListenerService;
 import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import reactor.core.publisher.Mono;
 
@@ -24,7 +24,7 @@ import static pl.yalgrin.playnite.simplesync.security.ClientUtilKt.getSessionCli
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractObjectService<E extends AbstractObjectEntity, D extends AbstractObjectDTO> implements
+public abstract class AbstractObjectService<E extends LibraryObjectEntity, D extends AbstractObjectDTO> implements
         ObjectSaveService<D> {
     private final ObjectRepository<E> repository;
     private final AbstractObjectMapper<E, D> mapper;
@@ -48,7 +48,7 @@ public abstract class AbstractObjectService<E extends AbstractObjectEntity, D ex
                 .map(entity -> mapper.fillEntity(dto, entity))
                 .doOnNext(entity -> log.debug("saveObject > entity has{} been changed!",
                         entity.isChanged() ? "" : " not"))
-                .filter(AbstractObjectEntity::isChanged)
+                .filter(LibraryObjectEntity::isChanged)
                 .flatMap(repository::save)
                 .flatMap(entity -> saveChange(clientId, entity))
                 .map(t -> Tuple.of(mapper.toDTO(t._1), t._2));

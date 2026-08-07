@@ -5,18 +5,18 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.Strings;
-import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectDiffEntity;
-import pl.yalgrin.playnite.simplesync.domain.objects.AbstractObjectEntity;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractDiffDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
+import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectDiffEntity;
+import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class AbstractObjectWithMetadataMapper<
-        E extends AbstractObjectEntity,
-        DIFF_E extends AbstractObjectDiffEntity,
+        E extends LibraryObjectEntity,
+        DIFF_E extends LibraryObjectDiffEntity,
         DTO extends AbstractObjectDTO,
         DIFF_DTO extends AbstractDiffDTO> {
     protected final ObjectMapper objectMapper;

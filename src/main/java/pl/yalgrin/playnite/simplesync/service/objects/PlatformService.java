@@ -3,16 +3,16 @@ package pl.yalgrin.playnite.simplesync.service.objects;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
-import pl.yalgrin.playnite.simplesync.config.Constants;
-import pl.yalgrin.playnite.simplesync.domain.objects.Platform;
-import pl.yalgrin.playnite.simplesync.domain.objects.PlatformDiff;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
+import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt;
 import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDiffDTO;
 import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.library.domain.Platform;
+import pl.yalgrin.playnite.simplesync.library.domain.PlatformDiff;
+import pl.yalgrin.playnite.simplesync.library.repository.PlatformDiffRepository;
+import pl.yalgrin.playnite.simplesync.library.repository.PlatformRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.PlatformMapper;
-import pl.yalgrin.playnite.simplesync.repository.objects.PlatformDiffRepository;
-import pl.yalgrin.playnite.simplesync.repository.objects.PlatformRepository;
-import pl.yalgrin.playnite.simplesync.service.ChangeListenerService;
 import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.service.MetadataService;
 import tools.jackson.databind.ObjectMapper;
@@ -33,18 +33,18 @@ public class PlatformService extends
 
     @Override
     protected Set<String> getMetadataFields() {
-        return Set.of(Constants.ICON, Constants.COVER_IMAGE, Constants.BACKGROUND_IMAGE);
+        return Set.of(ConstantsKt.ICON, ConstantsKt.COVER_IMAGE, ConstantsKt.BACKGROUND_IMAGE);
     }
 
     @Override
     protected void setHex(Platform platform, String baseName, String md5) {
-        if (Constants.ICON.equals(baseName)) {
+        if (ConstantsKt.ICON.equals(baseName)) {
             platform.setIconMd5(md5);
             platform.setChanged(true);
-        } else if (Constants.COVER_IMAGE.equals(baseName)) {
+        } else if (ConstantsKt.COVER_IMAGE.equals(baseName)) {
             platform.setCoverImageMd5(md5);
             platform.setChanged(true);
-        } else if (Constants.BACKGROUND_IMAGE.equals(baseName)) {
+        } else if (ConstantsKt.BACKGROUND_IMAGE.equals(baseName)) {
             platform.setBackgroundImageMd5(md5);
             platform.setChanged(true);
         }
@@ -56,11 +56,11 @@ public class PlatformService extends
             return true;
         }
         String md5ToCompare = null;
-        if (Constants.ICON.equals(basename)) {
+        if (ConstantsKt.ICON.equals(basename)) {
             md5ToCompare = platform.getIconMd5();
-        } else if (Constants.COVER_IMAGE.equals(basename)) {
+        } else if (ConstantsKt.COVER_IMAGE.equals(basename)) {
             md5ToCompare = platform.getCoverImageMd5();
-        } else if (Constants.BACKGROUND_IMAGE.equals(basename)) {
+        } else if (ConstantsKt.BACKGROUND_IMAGE.equals(basename)) {
             md5ToCompare = platform.getBackgroundImageMd5();
         }
         return md5ToCompare == null || !Strings.CS.equals(md5ToCompare, md5);
@@ -68,12 +68,14 @@ public class PlatformService extends
 
     @Override
     protected String getMetadataFolder() {
-        return Constants.PLATFORM;
+        return ConstantsKt.PLATFORM;
     }
 
     @Override
     protected Platform createEntityFromDTO(PlatformDTO dto) {
-        return Platform.builder().playniteId(dto.getId()).build();
+        Platform platform = new Platform();
+        platform.setPlayniteId(dto.getId());
+        return platform;
     }
 
     @Override

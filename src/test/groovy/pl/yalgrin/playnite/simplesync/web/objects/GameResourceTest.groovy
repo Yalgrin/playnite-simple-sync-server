@@ -13,14 +13,13 @@ import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.client.enums.MessageType
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
-import pl.yalgrin.playnite.simplesync.config.Constants
-import pl.yalgrin.playnite.simplesync.domain.objects.Game
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDiffDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.helper.MetadataTestHelper
-import pl.yalgrin.playnite.simplesync.repository.objects.GameRepository
-import pl.yalgrin.playnite.simplesync.repository.objects.ObjectRepository
+import pl.yalgrin.playnite.simplesync.library.domain.Game
+import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
+import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.service.MetadataService
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import pl.yalgrin.playnite.simplesync.util.JsonMapperUtil
@@ -64,9 +63,9 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         and:
         checkFiles(dto, { id ->
-            assert metadataTestHelper.fileExists(Constants.GAME, id, "Icon.png")
-            assert metadataTestHelper.fileExists(Constants.GAME, id, "CoverImage.jpeg")
-            assert metadataTestHelper.fileExists(Constants.GAME, id, "BackgroundImage.tif")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "BackgroundImage.tif")
         })
     }
 
@@ -283,9 +282,9 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         and:
         checkFiles(dto, { id ->
-            assert metadataTestHelper.fileExists(Constants.GAME, id, "Icon.png")
-            assert metadataTestHelper.fileExists(Constants.GAME, id, "CoverImage.jpeg")
-            assert metadataTestHelper.fileExists(Constants.GAME, id, "BackgroundImage.tif")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "BackgroundImage.tif")
         })
 
         when:
@@ -303,9 +302,9 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         and:
         checkFiles(dto, { id ->
-            assert metadataTestHelper.fileDoesNotExist(Constants.GAME, id, "Icon.png")
-            assert metadataTestHelper.fileDoesNotExist(Constants.GAME, id, "CoverImage.jpeg")
-            assert metadataTestHelper.fileDoesNotExist(Constants.GAME, id, "BackgroundImage.tif")
+            assert metadataTestHelper.fileDoesNotExist(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileDoesNotExist(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileDoesNotExist(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "BackgroundImage.tif")
         })
     }
 
@@ -375,7 +374,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         }
 
         for (final def file in files) {
-            assert metadataTestHelper.fileExists(Constants.GAME, savedEntity.getId(), file.name)
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, savedEntity.getId(), file.name)
         }
 
         true

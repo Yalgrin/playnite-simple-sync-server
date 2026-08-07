@@ -5,11 +5,11 @@ import io.vavr.control.Try;
 import lombok.SneakyThrows;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import pl.yalgrin.playnite.simplesync.domain.objects.Game;
-import pl.yalgrin.playnite.simplesync.domain.objects.GameDiff;
 import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDiffDTO;
+import pl.yalgrin.playnite.simplesync.library.domain.Game;
+import pl.yalgrin.playnite.simplesync.library.domain.GameDiff;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;

@@ -7,7 +7,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.web.bind.annotation.*;
-import pl.yalgrin.playnite.simplesync.config.Constants;
+import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt;
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO;
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDiffDTO;
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper;
@@ -39,7 +39,7 @@ public class GameResource {
     @GetMapping(value = "/game-metadata/{id}/{metadataName}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     public Mono<ResponseEntity<Flux<DataBuffer>>> getGameMetadata(@PathVariable String id,
                                                                   @PathVariable String metadataName) {
-        return metadataService.getMetadata(Constants.GAME, id, metadataName)
+        return metadataService.getMetadata(ConstantsKt.GAME, id, metadataName)
                 .flatMap(t -> Mono.justOrEmpty(ResponseEntity.ok()
                         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + t.getT1() + "\"")
                         .contentType(MediaType.APPLICATION_OCTET_STREAM).body(t.getT2())))

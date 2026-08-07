@@ -40,7 +40,7 @@ class RegistrationFilter(
     }
 
     private fun shouldNotRequireSessionOnUrl(url: String): Boolean {
-        return url == "/api/client/register"
+        return url == "/api/client/register" || url == "/api/health"
     }
 
     private fun shouldAllowSessionWithoutSessionId(url: String): Boolean {
