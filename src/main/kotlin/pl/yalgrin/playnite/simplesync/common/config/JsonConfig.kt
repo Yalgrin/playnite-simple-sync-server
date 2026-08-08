@@ -10,6 +10,6 @@ class JsonConfig {
     @Primary
     @Bean
     fun jsonMapper(): JsonMapper {
-        return build()
+        return buildJsonMapper()
     }
 }

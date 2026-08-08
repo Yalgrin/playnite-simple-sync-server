@@ -15,12 +15,13 @@ import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
+import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
 import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO
 import pl.yalgrin.playnite.simplesync.dto.GameIdsDTO
 import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
 import pl.yalgrin.playnite.simplesync.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.security.SessionManager
-import pl.yalgrin.playnite.simplesync.util.objects.*
+import pl.yalgrin.playnite.simplesync.util.library.*
 import reactor.test.StepVerifier
 
 class ChangeResourceTest extends SpockIntegrationTest {
@@ -43,8 +44,8 @@ class ChangeResourceTest extends SpockIntegrationTest {
         populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
         populator.populate(connectionFactory).block()
 
-        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)).block()
-        def clientInfoToSaveData = registeredClientService.register(new RegistrationRequestDTO("other-user", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)).block()
+        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", ConstantsKt.CURRENT_API_VERSION)).block()
+        def clientInfoToSaveData = registeredClientService.register(new RegistrationRequestDTO("other-user", ConstantsKt.CURRENT_API_VERSION)).block()
         def sessionId = UUID.randomUUID().toString()
         def otherUserSessionId = UUID.randomUUID().toString()
         sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))

@@ -5,7 +5,7 @@ import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomize
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.json.JsonMapper
 
-fun build(): JsonMapper {
+fun buildJsonMapper(): JsonMapper {
     return JsonMapper.builder().customize().build()
 }
 

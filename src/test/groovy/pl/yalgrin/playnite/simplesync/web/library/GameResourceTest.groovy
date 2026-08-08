@@ -1,0 +1,422 @@
+package pl.yalgrin.playnite.simplesync.web.library
+
+import io.vavr.Tuple
+import io.vavr.Tuple2
+import org.apache.commons.io.FilenameUtils
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.ParameterizedTypeReference
+import org.springframework.core.io.ByteArrayResource
+import org.springframework.http.MediaType
+import org.springframework.http.client.MultipartBodyBuilder
+import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.web.multipart.MultipartFile
+import pl.yalgrin.playnite.simplesync.client.enums.MessageType
+import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
+import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
+import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
+import pl.yalgrin.playnite.simplesync.dto.objects.GameDiffDTO
+import pl.yalgrin.playnite.simplesync.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.helper.MetadataTestHelper
+import pl.yalgrin.playnite.simplesync.library.domain.Game
+import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
+import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.service.MetadataService
+import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
+import pl.yalgrin.playnite.simplesync.util.JsonMapperUtil
+import pl.yalgrin.playnite.simplesync.util.library.GameAssertionUtil
+import pl.yalgrin.playnite.simplesync.util.library.GameFactoryUtil
+import reactor.test.StepVerifier
+
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.AtomicReference
+import java.util.function.Consumer
+
+class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
+
+    @Autowired
+    private GameRepository gameRepository
+    @Autowired
+    private MetadataTestHelper metadataTestHelper
+
+    def "save single game"() {
+        given:
+        GameDTO dto = GameFactoryUtil.createGame(UUID.randomUUID().toString(), "test")
+        def icon = GameFactoryUtil.randomFile("Icon.png", 2048)
+        def coverImage = GameFactoryUtil.randomFile("CoverImage.jpeg", 2048)
+        def backgroundImage = GameFactoryUtil.randomFile("BackgroundImage.tif", 2048)
+        def files = List.of(icon, coverImage, backgroundImage)
+
+        when:
+        def response = makeSaveRequest(dto, files)
+
+        then:
+        response.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GameDTO.class))
+                .expectNextMatches { objectMatches(it, dto) }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, files)
+
+        and:
+        checkFiles(dto, { id ->
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "BackgroundImage.tif")
+        })
+    }
+
+    def "save multiple games"() {
+        given:
+        List<Tuple2<GameDTO, List<MultipartFile>>> list = new ArrayList<>()
+        for (int i = 0; i < 1000; i++) {
+            list.add(Tuple.of(GameFactoryUtil.gameWithIndex(i), GameFactoryUtil.randomFiles()))
+        }
+
+        when:
+        List<CompletableFuture<WebTestClient.ResponseSpec>> futures = list.stream()
+                .map { tuple -> CompletableFuture.supplyAsync({ makeSaveRequest(tuple._1, tuple._2) }) }
+                .toList()
+        List<WebTestClient.ResponseSpec> responses = futures.stream()
+                .map(CompletableFuture::join)
+                .toList() as List<WebTestClient.ResponseSpec>
+
+        then:
+        responses.stream().allMatch { response ->
+            response.expectStatus().is2xxSuccessful()
+            true
+        }
+
+        and:
+        responses.withIndex().stream().allMatch { tuple ->
+            StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), GameDTO.class))
+                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())._1()) }
+                    .verifyComplete()
+            true
+        }
+
+        and:
+        list.stream().allMatch { tuple -> assertEntityAndGetResponse(tuple._1(), tuple._2()) }
+    }
+
+    def "save game and then delete it"() {
+        given:
+        GameDTO dto = GameFactoryUtil.randomGame()
+        def files = GameFactoryUtil.randomFiles()
+
+        when:
+        def saveResponse = makeSaveRequest(dto, files)
+
+        then:
+        saveResponse.expectStatus().is2xxSuccessful()
+        assertEntityAndGetResponse(dto, files)
+
+        when:
+        def deleteResponse = makeDeleteRequest(dto)
+
+        then:
+        deleteResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, GameDTO.class))
+                .verifyComplete()
+        assertDeleted(dto)
+    }
+
+    def "save and then remove repeatedly"() {
+        given:
+        GameDTO dto = GameFactoryUtil.randomGame()
+        def files = GameFactoryUtil.randomFiles()
+
+        when:
+        def saveResponse = makeSaveRequest(dto, files)
+
+        then:
+        saveResponse.expectStatus().is2xxSuccessful()
+        assertEntityAndGetResponse(dto, files)
+
+        when:
+        def deleteResponse = makeDeleteRequest(dto)
+        def deleteResponse2 = makeDeleteRequest(dto)
+
+        then:
+        deleteResponse.expectStatus().is2xxSuccessful()
+        deleteResponse2.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, GameDTO.class))
+                .verifyComplete()
+        assertDeleted(dto)
+    }
+
+    def "save, modify and delete and await the change stream"() {
+        given:
+        GameDTO toSave = GameFactoryUtil.randomGame()
+        def files = GameFactoryUtil.randomFiles()
+        GameDTO modified = toSave.toBuilder().name("some other name").build()
+        GameDTO removed = modified.toBuilder().removed(true).build()
+
+        when:
+        def changeRequest = makeConnectRequest(otherClientInfo)
+        def responseFlux = changeRequest.returnResult(new ParameterizedTypeReference<String>() {}).responseBody
+
+        then:
+        AtomicLong newObjectId = new AtomicLong(-1)
+        AtomicReference<String> sessionId = new AtomicReference<>()
+        StepVerifier.create(responseFlux)
+                .expectSubscription()
+                .expectNextMatches { str ->
+                    def message = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert message.messageType == MessageType.INITIALIZATION
+                    assert message instanceof InitializationMessage
+                    sessionId.set(message.sessionId)
+                    true
+                }
+                .then {
+                    makeEnableChangeStreamRequest(otherClientInfo, sessionId.get())
+                }
+                .then {
+                    makeSaveRequest(toSave, files).expectStatus().is2xxSuccessful()
+                }
+                .thenConsumeWhile { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
+                    change.getType() != ObjectType.Game
+                }
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
+                    assert change.getId() != null
+                    assert change.getType() == ObjectType.Game
+                    assert change.getClientId() == clientId
+                    assert change.getObjectId() != null
+                    assert !change.getForceFetch()
+                    newObjectId.set(change.getObjectId())
+                    true
+                }
+                .then {
+                    def getResponse = makeGetRequest(newObjectId.get())
+
+                    getResponse.expectStatus().is2xxSuccessful()
+
+                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDTO.class))
+                            .expectNextMatches { objectMatches(it, toSave) }
+                            .verifyComplete()
+                }
+                .then {
+                    makeSaveRequest(modified).expectStatus().is2xxSuccessful()
+                }
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
+                    assert change.getId() != null
+                    assert change.getType() == ObjectType.GameDiff
+                    assert change.getClientId() == clientId
+                    assert change.getObjectId() == newObjectId.get() + 1
+                    assert !change.getForceFetch()
+                    true
+                }
+                .then {
+                    def getResponse = makeGetRequest(newObjectId.get())
+
+                    getResponse.expectStatus().is2xxSuccessful()
+
+                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDTO.class))
+                            .expectNextMatches { objectMatches(it, modified) }
+                            .verifyComplete()
+                }
+                .then {
+                    makeDeleteRequest(modified).expectStatus().is2xxSuccessful()
+                }
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
+                    assert change.getId() != null
+                    assert change.getType() == ObjectType.Game
+                    assert change.getClientId() == clientId
+                    assert change.getObjectId() == newObjectId.get()
+                    assert !change.getForceFetch()
+                    true
+                }
+                .then {
+                    def getResponse = makeGetRequest(newObjectId.get())
+
+                    getResponse.expectStatus().is2xxSuccessful()
+
+                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDTO.class))
+                            .expectNextMatches { objectMatches(it, removed) }
+                            .verifyComplete()
+                }
+                .thenCancel()
+                .verify()
+    }
+
+    def "save game with images then remove images"() {
+        given:
+        GameDTO dto = GameFactoryUtil.createGame(UUID.randomUUID().toString(), "test")
+        def icon = GameFactoryUtil.randomFile("Icon.png", 2048)
+        def coverImage = GameFactoryUtil.randomFile("CoverImage.jpeg", 2048)
+        def backgroundImage = GameFactoryUtil.randomFile("BackgroundImage.tif", 2048)
+        def files = List.of(icon, coverImage, backgroundImage)
+
+        when:
+        def response = makeSaveRequest(dto, files)
+
+        then:
+        response.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GameDTO.class))
+                .expectNextMatches { objectMatches(it, dto) }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, files)
+
+        and:
+        checkFiles(dto, { id ->
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "BackgroundImage.tif")
+        })
+
+        when:
+        GameDiffDTO diffDTO = GameDiffDTO.builder()
+                .id(dto.getId())
+                .gameId(dto.getGameId())
+                .pluginId(dto.getPluginId())
+                .changedFields(List.of("Icon", "CoverImage", "BackgroundImage"))
+                .build()
+
+        def diffResponse = makeSaveDiffRequest(diffDTO, List.of())
+
+        then:
+        diffResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        checkFiles(dto, { id ->
+            assert metadataTestHelper.fileDoesNotExist(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileDoesNotExist(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileDoesNotExist(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "BackgroundImage.tif")
+        })
+    }
+
+
+    @Override
+    protected String uri() {
+        return "/api/game"
+    }
+
+    protected String diffUri() {
+        return "/api/game-diff"
+    }
+
+
+    @Override
+    protected ObjectRepository<Game> repository() {
+        return gameRepository
+    }
+
+    @Override
+    protected Class<? extends GameDTO> dtoClass() {
+        return GameDTO.class
+    }
+
+    @Override
+    boolean objectMatches(GameDTO resultDTO, GameDTO expectedDTO) {
+        GameAssertionUtil.assertGame(expectedDTO, resultDTO)
+    }
+
+    @Override
+    boolean objectMatches(Game resultDTO, GameDTO expectedDTO) {
+        GameAssertionUtil.assertGameEntity(expectedDTO, resultDTO)
+    }
+
+    protected assertEntityAndGetResponse(GameDTO dto, List<MultipartFile> files) {
+        def savedEntities = repository().findByPlayniteId(dto.id).collectList().block()
+        assert savedEntities.size() == 1
+
+        def savedEntity = savedEntities[0]
+        assert objectMatches(savedEntity, dto)
+
+        def getResponse = makeGetRequest(savedEntity.getId())
+
+        getResponse.expectStatus().is2xxSuccessful()
+
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, dtoClass()))
+                .expectNextMatches { objectMatches(it, dto) }
+                .verifyComplete()
+
+        Map<String, MultipartFile> expectedFileMap = new HashMap<>()
+        for (final def file in files) {
+            expectedFileMap.put(FilenameUtils.getBaseName(file.getName()), file)
+        }
+        for (final def filename in MetadataService.ALLOWED_FILE_NAMES) {
+            def expectedFile = expectedFileMap.get(filename)
+            def metadataRequest = makeGetMetadataRequest(savedEntity.getId(), filename)
+            if (expectedFile != null) {
+                metadataRequest.expectStatus().is2xxSuccessful()
+
+                def response = metadataRequest.expectBody().returnResult()
+                assert response.getResponseBody() != null
+                assert response.getResponseBody() == expectedFile.getBytes()
+                assert response.getResponseHeaders().getContentType() == MediaType.parseMediaType(expectedFile.getContentType())
+            } else {
+                metadataRequest.expectStatus().isNotFound()
+            }
+        }
+
+        for (final def file in files) {
+            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, savedEntity.getId(), file.name)
+        }
+
+        true
+    }
+
+    private checkFiles(GameDTO dto, Consumer<Long> idChecker) {
+        def savedEntities = repository().findByPlayniteId(dto.id).collectList().block()
+        assert savedEntities.size() == 1
+
+        def id = savedEntities[0].id
+        idChecker.accept(id)
+        true
+    }
+
+    protected WebTestClient.ResponseSpec makeGetMetadataRequest(Long id, String metadataName) {
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/game-metadata/$id/$metadataName")
+                        .build())
+                .exchange()
+    }
+
+    protected WebTestClient.ResponseSpec makeSaveDiffRequest(GameDiffDTO dto, List<MultipartFile> files) {
+        def builder = new MultipartBodyBuilder()
+        builder.part("dto", dto)
+        if (!files.isEmpty()) {
+            files.each { file ->
+                builder.part("files", new ByteArrayResource(file.getBytes()) {
+                    @Override
+                    String getFilename() {
+                        return file.getOriginalFilename()
+                    }
+                })
+            }
+        }
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("${diffUri()}/save")
+                        .queryParam("clientId", "test")
+                        .build())
+                .contentType(MediaType.MULTIPART_FORM_DATA)
+                .bodyValue(builder.build())
+                .exchange()
+    }
+}
