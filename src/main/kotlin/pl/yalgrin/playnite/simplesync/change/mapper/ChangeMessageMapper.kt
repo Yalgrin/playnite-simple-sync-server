@@ -2,17 +2,18 @@ package pl.yalgrin.playnite.simplesync.change.mapper
 
 import org.springframework.stereotype.Component
 import pl.yalgrin.playnite.simplesync.change.domain.Change
+import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
-import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
 
 @Component
 class ChangeMessageMapper {
     fun toMessage(dto: ChangeDTO): ChangeMessage {
+        //TODO
         return ChangeMessage(
             id = dto.id,
-            type = dto.type,
+            type = dto.type!!,
             clientId = dto.clientId,
-            objectId = dto.objectId,
+            objectId = dto.objectId!!,
             forceFetch = dto.isForceFetch
         )
     }

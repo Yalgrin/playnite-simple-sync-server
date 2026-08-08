@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.TagDTO
 import pl.yalgrin.playnite.simplesync.library.domain.Tag
+import pl.yalgrin.playnite.simplesync.library.dto.TagDTO
 
 class TagAssertionUtil {
     static boolean assertTag(TagDTO expectedDTO, TagDTO resultDTO) {

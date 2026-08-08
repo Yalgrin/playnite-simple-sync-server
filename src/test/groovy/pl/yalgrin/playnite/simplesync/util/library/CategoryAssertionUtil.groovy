@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.CategoryDTO
 import pl.yalgrin.playnite.simplesync.library.domain.Category
+import pl.yalgrin.playnite.simplesync.library.dto.CategoryDTO
 
 class CategoryAssertionUtil {
     static boolean assertCategory(CategoryDTO expectedDTO, CategoryDTO resultDTO) {

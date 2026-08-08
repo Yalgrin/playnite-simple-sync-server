@@ -25,6 +25,8 @@ bin/
 out/
 !**/src/main/**/out/
 !**/src/test/**/out/
+.kotlin
+.junie
 
 ### NetBeans ###
 /nbproject/private/
@@ -36,6 +38,7 @@ out/
 ### VS Code ###
 .vscode/
 
+### Custom app folders and files
 logs
 metadata
 *.bak

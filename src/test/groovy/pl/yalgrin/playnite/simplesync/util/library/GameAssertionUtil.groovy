@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
 import pl.yalgrin.playnite.simplesync.library.domain.Game
+import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import tools.jackson.databind.json.JsonMapper
 
 import java.util.function.BiPredicate

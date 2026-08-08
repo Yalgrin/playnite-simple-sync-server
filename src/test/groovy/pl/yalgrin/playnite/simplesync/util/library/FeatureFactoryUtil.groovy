@@ -1,27 +1,17 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.FeatureDTO
+import pl.yalgrin.playnite.simplesync.library.dto.FeatureDTO
 
 class FeatureFactoryUtil {
     static FeatureDTO createFeature(String id, String name, boolean removed = false) {
-        return FeatureDTO.builder()
-                .id(id)
-                .name(name)
-                .removed(removed)
-                .build()
+        return new FeatureDTO(id, name, removed)
     }
 
     static FeatureDTO randomFeature() {
-        return FeatureDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .build()
+        return createFeature(UUID.randomUUID().toString(), UUID.randomUUID().toString())
     }
 
     static FeatureDTO featureWithIndex(int idx) {
-        return FeatureDTO.builder()
-                .id("id-$idx")
-                .name("name-$idx")
-                .build()
+        return createFeature("id-$idx", "name-$idx")
     }
 }

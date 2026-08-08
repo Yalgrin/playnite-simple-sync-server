@@ -18,7 +18,7 @@ class RandomUtil {
     static <T> List<T> generateRandomList(Function<Integer, T> supplier, int min = 0, int max = 10, int chanceOfNull = 5) {
         def random = ThreadLocalRandom.current()
         if (random.nextInt(100) < chanceOfNull) {
-            return null
+            return List.of()
         }
         def number = min + random.nextInt(max - min)
         List<T> result = Lists.newArrayList()

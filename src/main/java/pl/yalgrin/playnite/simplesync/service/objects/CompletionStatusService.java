@@ -3,12 +3,12 @@ package pl.yalgrin.playnite.simplesync.service.objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
-import pl.yalgrin.playnite.simplesync.dto.objects.CompletionStatusDTO;
-import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeService;
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.library.domain.CompletionStatus;
+import pl.yalgrin.playnite.simplesync.library.dto.CompletionStatusDTO;
 import pl.yalgrin.playnite.simplesync.library.repository.CompletionStatusRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.CompletionStatusMapper;
-import pl.yalgrin.playnite.simplesync.service.ChangeService;
 
 @Service
 public class CompletionStatusService extends AbstractObjectService<CompletionStatus, CompletionStatusDTO> {
@@ -27,6 +27,6 @@ public class CompletionStatusService extends AbstractObjectService<CompletionSta
 
     @Override
     protected ObjectType getObjectType() {
-        return ObjectType.CompletionStatus;
+        return ObjectType.COMPLETION_STATUS;
     }
 }

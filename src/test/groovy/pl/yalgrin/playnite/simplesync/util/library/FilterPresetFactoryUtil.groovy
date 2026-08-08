@@ -1,86 +1,101 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
 import org.apache.commons.compress.utils.Lists
-import pl.yalgrin.playnite.simplesync.dto.filter.FilterPresetSettingsDTO
-import pl.yalgrin.playnite.simplesync.dto.filter.IdItemPropertiesDTO
-import pl.yalgrin.playnite.simplesync.dto.filter.IntItemPropertiesDTO
-import pl.yalgrin.playnite.simplesync.dto.filter.StringItemPropertiesDTO
-import pl.yalgrin.playnite.simplesync.dto.objects.FilterPresetDTO
+import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDTO
+import pl.yalgrin.playnite.simplesync.library.dto.filter.FilterPresetSettingsDTO
+import pl.yalgrin.playnite.simplesync.library.dto.filter.IdItemPropertiesDTO
+import pl.yalgrin.playnite.simplesync.library.dto.filter.IntItemPropertiesDTO
+import pl.yalgrin.playnite.simplesync.library.dto.filter.StringItemPropertiesDTO
 
 import java.util.concurrent.ThreadLocalRandom
 
 class FilterPresetFactoryUtil {
     static FilterPresetDTO createFilterPreset(String id, String name, boolean removed = false) {
-        return FilterPresetDTO.builder()
-                .id(id)
-                .name(name)
-                .settings(FilterPresetSettingsDTO.builder()
-                        .installed(true)
-                        .category(IdItemPropertiesDTO.builder()
-                                .ids(List.of(UUID.randomUUID().toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString()))
-                                .build())
-                        .build())
-                .sortingOrder("Added")
-                .sortingOrderDirection("Descending")
-                .groupingOrder("Category")
-                .removed(removed)
-                .build()
+        return new FilterPresetDTO(
+                id,
+                name,
+                removed,
+                createSettings(true, createProperties()),
+                "Added",
+                "Descending",
+                "Category",
+                false
+        )
+    }
+
+    private static FilterPresetSettingsDTO createSettings(boolean installed, IdItemPropertiesDTO category) {
+        def obj = new FilterPresetSettingsDTO()
+        obj.setInstalled(installed)
+        obj.setCategory(category)
+        return obj
+    }
+
+    private static IdItemPropertiesDTO createProperties() {
+        return new IdItemPropertiesDTO(List.of(UUID.randomUUID().toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString()), null)
     }
 
     static FilterPresetDTO randomFilterPreset() {
         def random = ThreadLocalRandom.current()
-        FilterPresetDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .settings(generateRandomSettings())
-                .sortingOrder(UUID.randomUUID().toString())
-                .sortingOrderDirection(UUID.randomUUID().toString())
-                .groupingOrder(UUID.randomUUID().toString())
-                .showInFullscreenQuickSelection(random.nextBoolean())
-                .build()
+        return new FilterPresetDTO(
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                false,
+                generateRandomSettings(),
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                random.nextBoolean()
+        )
     }
 
     static FilterPresetDTO filterPresetWithIndex(int idx) {
-        randomFilterPreset().toBuilder()
-                .id("id-" + idx)
-                .name("name " + idx)
-                .build()
+        def random = ThreadLocalRandom.current()
+        return new FilterPresetDTO(
+                "id-$idx",
+                "name-$idx",
+                false,
+                generateRandomSettings(),
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                random.nextBoolean()
+        )
     }
 
     private static FilterPresetSettingsDTO generateRandomSettings() {
         def random = ThreadLocalRandom.current()
-        FilterPresetSettingsDTO.builder()
-                .useAndFilteringStyle(random.nextBoolean())
-                .installed(random.nextBoolean())
-                .uninstalled(random.nextBoolean())
-                .hidden(random.nextBoolean())
-                .favorite(random.nextBoolean())
-                .name(UUID.randomUUID().toString())
-                .version(UUID.randomUUID().toString())
-                .releaseYear(generateStringProperties())
-                .genre(generateIdProperties())
-                .platform(generateIdProperties())
-                .publisher(generateIdProperties())
-                .developer(generateIdProperties())
-                .category(generateIdProperties())
-                .tag(generateIdProperties())
-                .series(generateIdProperties())
-                .region(generateIdProperties())
-                .source(generateIdProperties())
-                .ageRating(generateIdProperties())
-                .library(generateIdProperties())
-                .completionStatuses(generateIdProperties())
-                .feature(generateIdProperties())
-                .userScore(generateIntProperties())
-                .criticScore(generateIntProperties())
-                .communityScore(generateIntProperties())
-                .lastActivity(generateIntProperties())
-                .recentActivity(generateIntProperties())
-                .added(generateIntProperties())
-                .modified(generateIntProperties())
-                .playTime(generateIntProperties())
-                .installSize(generateIntProperties())
-                .build()
+        return new FilterPresetSettingsDTO(
+                random.nextBoolean(),
+                random.nextBoolean(),
+                random.nextBoolean(),
+                random.nextBoolean(),
+                random.nextBoolean(),
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                generateStringProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIdProperties(),
+                generateIntProperties(),
+                generateIntProperties(),
+                generateIntProperties(),
+                generateIntProperties(),
+                generateIntProperties(),
+                generateIntProperties(),
+                generateIntProperties(),
+                generateIntProperties(),
+                generateIntProperties()
+        )
     }
 
     private static StringItemPropertiesDTO generateStringProperties() {
@@ -92,9 +107,7 @@ class FilterPresetFactoryUtil {
         for (i in 0..<random.nextInt(5)) {
             values.add(UUID.randomUUID().toString())
         }
-        StringItemPropertiesDTO.builder()
-                .values(values)
-                .build()
+        return new StringItemPropertiesDTO(values)
     }
 
     private static IdItemPropertiesDTO generateIdProperties() {
@@ -106,10 +119,7 @@ class FilterPresetFactoryUtil {
         for (i in 0..<random.nextInt(5)) {
             values.add(UUID.randomUUID().toString())
         }
-        IdItemPropertiesDTO.builder()
-                .ids(values)
-                .text(UUID.randomUUID().toString())
-                .build()
+        return new IdItemPropertiesDTO(values, UUID.randomUUID().toString())
     }
 
     private static IntItemPropertiesDTO generateIntProperties() {
@@ -121,8 +131,6 @@ class FilterPresetFactoryUtil {
         for (i in 0..<random.nextInt(5)) {
             values.add(random.nextInt())
         }
-        IntItemPropertiesDTO.builder()
-                .values(values)
-                .build()
+        return new IntItemPropertiesDTO(values)
     }
 }

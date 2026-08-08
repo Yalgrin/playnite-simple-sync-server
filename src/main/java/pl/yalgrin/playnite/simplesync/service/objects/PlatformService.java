@@ -4,16 +4,16 @@ import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt;
-import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDTO;
-import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDiffDTO;
-import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.library.domain.Platform;
 import pl.yalgrin.playnite.simplesync.library.domain.PlatformDiff;
+import pl.yalgrin.playnite.simplesync.library.dto.PlatformDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.PlatformDiffDTO;
 import pl.yalgrin.playnite.simplesync.library.repository.PlatformDiffRepository;
 import pl.yalgrin.playnite.simplesync.library.repository.PlatformRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.PlatformMapper;
-import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.service.MetadataService;
 import tools.jackson.databind.ObjectMapper;
 
@@ -80,12 +80,12 @@ public class PlatformService extends
 
     @Override
     protected ObjectType getObjectType() {
-        return ObjectType.Platform;
+        return ObjectType.PLATFORM;
     }
 
     @Override
     protected ObjectType getDiffType() {
-        return ObjectType.PlatformDiff;
+        return ObjectType.PLATFORM_DIFF;
     }
 
     @Override

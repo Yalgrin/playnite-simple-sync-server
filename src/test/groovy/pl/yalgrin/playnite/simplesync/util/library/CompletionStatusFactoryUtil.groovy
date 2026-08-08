@@ -1,27 +1,17 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.CompletionStatusDTO
+import pl.yalgrin.playnite.simplesync.library.dto.CompletionStatusDTO
 
 class CompletionStatusFactoryUtil {
     static CompletionStatusDTO createCompletionStatus(String id, String name, boolean removed = false) {
-        return CompletionStatusDTO.builder()
-                .id(id)
-                .name(name)
-                .removed(removed)
-                .build()
+        return new CompletionStatusDTO(id, name, removed)
     }
 
     static CompletionStatusDTO randomCompletionStatus() {
-        return CompletionStatusDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .build()
+        return createCompletionStatus(UUID.randomUUID().toString(), UUID.randomUUID().toString())
     }
 
     static CompletionStatusDTO completionStatusWithIndex(int idx) {
-        return CompletionStatusDTO.builder()
-                .id("id-$idx")
-                .name("name-$idx")
-                .build()
+        return createCompletionStatus("id-$idx", "name-$idx")
     }
 }

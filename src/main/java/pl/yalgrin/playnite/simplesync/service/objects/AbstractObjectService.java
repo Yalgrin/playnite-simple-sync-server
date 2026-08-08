@@ -7,14 +7,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
+import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO;
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
-import pl.yalgrin.playnite.simplesync.dto.ChangeDTO;
-import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
-import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeService;
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity;
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO;
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.AbstractObjectMapper;
-import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -24,7 +24,7 @@ import static pl.yalgrin.playnite.simplesync.security.ClientUtilKt.getSessionCli
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractObjectService<E extends LibraryObjectEntity, D extends AbstractObjectDTO> implements
+public abstract class AbstractObjectService<E extends LibraryObjectEntity, D extends LibraryObjectDTO> implements
         ObjectSaveService<D> {
     private final ObjectRepository<E> repository;
     private final AbstractObjectMapper<E, D> mapper;
@@ -90,12 +90,7 @@ public abstract class AbstractObjectService<E extends LibraryObjectEntity, D ext
     }
 
     private ChangeDTO createChange(String clientId, E entity) {
-        return ChangeDTO.builder()
-                .type(getObjectType())
-                .clientId(clientId)
-                .objectId(entity.getId())
-                .forceFetch(entity.isNotifyAll())
-                .build();
+        return new ChangeDTO(null, getObjectType(), clientId, entity.getId(), entity.isNotifyAll());
     }
 
     public Mono<Void> deleteObject(D dto) {
@@ -120,9 +115,7 @@ public abstract class AbstractObjectService<E extends LibraryObjectEntity, D ext
     }
 
     private ChangeDTO createDeleteChange(String clientId, E entity) {
-        return ChangeDTO.builder().type(getObjectType())
-                .clientId(clientId).objectId(entity.getId())
-                .forceFetch(entity.isNotifyAll()).build();
+        return new ChangeDTO(null, getObjectType(), clientId, entity.getId(), entity.isNotifyAll());
     }
 
     protected abstract ObjectType getObjectType();

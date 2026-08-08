@@ -5,10 +5,10 @@ import org.springframework.http.MediaType
 import org.springframework.http.client.MultipartBodyBuilder
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.multipart.MultipartFile
-import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
 
-abstract class AbstractObjectWithDiffTest<E extends LibraryObjectEntity, D extends AbstractObjectDTO> extends AbstractObjectTest<E, D> {
+abstract class AbstractObjectWithDiffTest<E extends LibraryObjectEntity, D extends LibraryObjectDTO> extends AbstractObjectTest<E, D> {
 
     @Override
     protected WebTestClient.ResponseSpec makeSaveRequest(D dto) {

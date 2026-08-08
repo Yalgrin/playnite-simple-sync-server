@@ -3,12 +3,12 @@ package pl.yalgrin.playnite.simplesync.service.objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
-import pl.yalgrin.playnite.simplesync.dto.objects.RegionDTO;
-import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeService;
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.library.domain.Region;
+import pl.yalgrin.playnite.simplesync.library.dto.RegionDTO;
 import pl.yalgrin.playnite.simplesync.library.repository.RegionRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.RegionMapper;
-import pl.yalgrin.playnite.simplesync.service.ChangeService;
 
 @Service
 public class RegionService extends AbstractObjectService<Region, RegionDTO> {
@@ -26,6 +26,6 @@ public class RegionService extends AbstractObjectService<Region, RegionDTO> {
 
     @Override
     protected ObjectType getObjectType() {
-        return ObjectType.Region;
+        return ObjectType.REGION;
     }
 }

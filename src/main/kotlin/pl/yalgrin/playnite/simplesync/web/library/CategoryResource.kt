@@ -1,8 +1,8 @@
 package pl.yalgrin.playnite.simplesync.web.library
 
 import org.springframework.web.bind.annotation.*
-import pl.yalgrin.playnite.simplesync.dto.objects.CategoryDTO
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
+import pl.yalgrin.playnite.simplesync.library.dto.CategoryDTO
 import pl.yalgrin.playnite.simplesync.service.objects.CategoryService
 import reactor.core.publisher.Mono
 

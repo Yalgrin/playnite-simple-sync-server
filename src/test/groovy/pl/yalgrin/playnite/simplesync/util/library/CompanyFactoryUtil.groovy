@@ -1,27 +1,17 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.CompanyDTO
+import pl.yalgrin.playnite.simplesync.library.dto.CompanyDTO
 
 class CompanyFactoryUtil {
     static CompanyDTO createCompany(String id, String name, boolean removed = false) {
-        return CompanyDTO.builder()
-                .id(id)
-                .name(name)
-                .removed(removed)
-                .build()
+        return new CompanyDTO(id, name, removed)
     }
 
     static CompanyDTO randomCompany() {
-        return CompanyDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .build()
+        return createCompany(UUID.randomUUID().toString(), UUID.randomUUID().toString())
     }
 
     static CompanyDTO companyWithIndex(int idx) {
-        return CompanyDTO.builder()
-                .id("id-$idx")
-                .name("name-$idx")
-                .build()
+        return createCompany("id-$idx", "name-$idx")
     }
 }

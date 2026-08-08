@@ -10,16 +10,16 @@ import org.springframework.r2dbc.connection.init.ResourceDatabasePopulator
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
+import pl.yalgrin.playnite.simplesync.change.dto.GameChangeRequestDTO
+import pl.yalgrin.playnite.simplesync.change.dto.GameIdsDTO
 import pl.yalgrin.playnite.simplesync.change.repository.ChangeRepository
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
 import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
-import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO
-import pl.yalgrin.playnite.simplesync.dto.GameIdsDTO
-import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
-import pl.yalgrin.playnite.simplesync.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.util.library.*
 import reactor.test.StepVerifier
@@ -100,20 +100,20 @@ class ChangeResourceTest extends SpockIntegrationTest {
         def filterPreset = FilterPresetFactoryUtil.randomFilterPreset()
         makeSaveRequest(filterPreset, "/api/filter-preset")
 
-        savedGame = GameFactoryUtil.randomGame().toBuilder()
-                .categories(List.of(category))
-                .platforms(List.of(platform))
-                .genres(List.of(genre))
-                .developers(List.of(developer))
-                .publishers(List.of(publisher))
-                .features(List.of(feature))
-                .tags(List.of(tag))
-                .series(List.of(series))
-                .ageRatings(List.of(ageRating))
-                .regions(List.of(region))
-                .source(source)
-                .completionStatus(completionStatus)
-                .build()
+        def game = GameFactoryUtil.randomGame()
+        game.setCategories(List.of(category))
+        game.setPlatforms(List.of(platform))
+        game.setGenres(List.of(genre))
+        game.setDevelopers(List.of(developer))
+        game.setPublishers(List.of(publisher))
+        game.setFeatures(List.of(feature))
+        game.setTags(List.of(tag))
+        game.setSeries(List.of(series))
+        game.setAgeRatings(List.of(ageRating))
+        game.setRegions(List.of(region))
+        game.setSource(source)
+        game.setCompletionStatus(completionStatus)
+        savedGame = game
 
         makeSaveRequest(savedGame, "/api/game", List.of())
 
@@ -188,12 +188,32 @@ class ChangeResourceTest extends SpockIntegrationTest {
         true
     }
 
-    def "should generate changes for one game"() {
+    def "should generate changes for one game using UUID"() {
         given:
         def expectedResult = getResultsForGame()
 
         when:
-        def result = generateChangesForGame(GameChangeRequestDTO.builder().gameIds(List.of(GameIdsDTO.builder().gameId(savedGame.getGameId()).pluginId(savedGame.getPluginId()).build())).build())
+        def result = generateChangesForGame(new GameChangeRequestDTO(List.of(), List.of(new GameIdsDTO(savedGame.getGameId(), savedGame.getPluginId()))))
+
+        then:
+        assert expectedResult.size() == result.size()
+        for (def i = 0; i < expectedResult.size(); i++) {
+            def expectedChange = expectedResult[i]
+            def change = result[i]
+            assert change.getId() == null
+            assert expectedChange.getType() == change.getType()
+            assert change.getClientId() == null
+            assert expectedChange.getObjectId() == change.getObjectId()
+        }
+        true
+    }
+
+    def "should generate changes for one game using raw ID"() {
+        given:
+        def expectedResult = getResultsForGame()
+
+        when:
+        def result = generateChangesForGame(new GameChangeRequestDTO(List.of(savedGame.getId()), List.of()))
 
         then:
         assert expectedResult.size() == result.size()
@@ -210,20 +230,20 @@ class ChangeResourceTest extends SpockIntegrationTest {
 
     protected List<ChangeMessage> getAllExpectedResults() {
         List.of(
-                new ChangeMessage(1L, ObjectType.Category, clientId, 1, false),
-                new ChangeMessage(2L, ObjectType.Genre, clientId, 1, false),
-                new ChangeMessage(3L, ObjectType.Platform, clientId, 1, false),
-                new ChangeMessage(4L, ObjectType.Company, clientId, 1, false),
-                new ChangeMessage(5L, ObjectType.Company, clientId, 2, false),
-                new ChangeMessage(6L, ObjectType.Feature, clientId, 1, false),
-                new ChangeMessage(7L, ObjectType.Tag, clientId, 1, false),
-                new ChangeMessage(8L, ObjectType.Series, clientId, 1, false),
-                new ChangeMessage(9L, ObjectType.AgeRating, clientId, 1, false),
-                new ChangeMessage(10L, ObjectType.Region, clientId, 1, false),
-                new ChangeMessage(11L, ObjectType.Source, clientId, 1, false),
-                new ChangeMessage(12L, ObjectType.CompletionStatus, clientId, 1, false),
-                new ChangeMessage(13L, ObjectType.FilterPreset, clientId, 1, false),
-                new ChangeMessage(14L, ObjectType.Game, clientId, 1, false)
+                new ChangeMessage(1L, ObjectType.CATEGORY, clientId, 1, false),
+                new ChangeMessage(2L, ObjectType.GENRE, clientId, 1, false),
+                new ChangeMessage(3L, ObjectType.PLATFORM, clientId, 1, false),
+                new ChangeMessage(4L, ObjectType.COMPANY, clientId, 1, false),
+                new ChangeMessage(5L, ObjectType.COMPANY, clientId, 2, false),
+                new ChangeMessage(6L, ObjectType.FEATURE, clientId, 1, false),
+                new ChangeMessage(7L, ObjectType.TAG, clientId, 1, false),
+                new ChangeMessage(8L, ObjectType.SERIES, clientId, 1, false),
+                new ChangeMessage(9L, ObjectType.AGE_RATING, clientId, 1, false),
+                new ChangeMessage(10L, ObjectType.REGION, clientId, 1, false),
+                new ChangeMessage(11L, ObjectType.SOURCE, clientId, 1, false),
+                new ChangeMessage(12L, ObjectType.COMPLETION_STATUS, clientId, 1, false),
+                new ChangeMessage(13L, ObjectType.FILTER_PRESET, clientId, 1, false),
+                new ChangeMessage(14L, ObjectType.GAME, clientId, 1, false)
         )
     }
 
@@ -232,7 +252,7 @@ class ChangeResourceTest extends SpockIntegrationTest {
     }
 
     protected List<ChangeMessage> getResultsForGame() {
-        getAllExpectedResults().stream().filter { it.type != ObjectType.FilterPreset }.toList()
+        getAllExpectedResults().stream().filter { it.type != ObjectType.FILTER_PRESET }.toList()
     }
 
     private WebTestClient.ResponseSpec makeSaveRequest(Object dto, String uri) {

@@ -14,17 +14,17 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
+import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO;
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
-import pl.yalgrin.playnite.simplesync.dto.ChangeDTO;
-import pl.yalgrin.playnite.simplesync.dto.objects.AbstractDiffDTO;
-import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
-import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeService;
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException;
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectDiffEntity;
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity;
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDiffDTO;
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.AbstractObjectWithMetadataMapper;
-import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.service.MetadataService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -39,7 +39,7 @@ import static pl.yalgrin.playnite.simplesync.security.ClientUtilKt.getSessionCli
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public abstract class AbstractObjectWithMetadataService<E extends LibraryObjectEntity, DIFF_E extends LibraryObjectDiffEntity, DTO extends AbstractObjectDTO, DIFF_DTO extends AbstractDiffDTO>
+public abstract class AbstractObjectWithMetadataService<E extends LibraryObjectEntity, DIFF_E extends LibraryObjectDiffEntity, DTO extends LibraryObjectDTO, DIFF_DTO extends LibraryObjectDiffDTO>
         implements ObjectSaveService<DTO> {
     protected final ObjectRepository<E> repository;
     protected final R2dbcRepository<DIFF_E, Long> diffRepository;
@@ -83,11 +83,11 @@ public abstract class AbstractObjectWithMetadataService<E extends LibraryObjectE
     }
 
     protected Mono<E> findOrCreateEntity(DTO dto) {
-        return repository.findByPlayniteId(dto.getId()).take(1).next()
+        return Mono.justOrEmpty(dto.getId()).flatMapMany(repository::findByPlayniteId).take(1).next()
                 .doOnNext(
                         e -> log.debug("findOrCreateEntity > found entity with id = {} by playnite id: {}", e.getId(),
                                 dto.getId()))
-                .switchIfEmpty(repository.findByName(dto.getName()).take(1).next()
+                .switchIfEmpty(Mono.justOrEmpty(dto.getName()).flatMapMany(repository::findByName).take(1).next()
                         .doOnNext(e -> {
                             log.debug("findOrCreateEntity > found entity with id = {} by name: {}", e.getId(),
                                     dto.getName());
@@ -298,14 +298,12 @@ public abstract class AbstractObjectWithMetadataService<E extends LibraryObjectE
         E entity = tuple._1;
         DIFF_E diffE = tuple._2;
         if (isSavingDiffForEntireEntity(entity, diffE)) {
-            return ChangeDTO.builder().type(getObjectType()).clientId(clientId)
-                    .objectId(entity.getId()).forceFetch(entity.isNotifyAll()).build();
+            return new ChangeDTO(null, getObjectType(), clientId, entity.getId(), entity.isNotifyAll());
         }
         if (diffE == null) {
             return null;
         }
-        return ChangeDTO.builder().type(getDiffType()).clientId(clientId)
-                .objectId(diffE.getId()).forceFetch(entity.isNotifyAll()).build();
+        return new ChangeDTO(null, getDiffType(), clientId, diffE.getId(), entity.isNotifyAll());
     }
 
     @SneakyThrows
@@ -349,9 +347,7 @@ public abstract class AbstractObjectWithMetadataService<E extends LibraryObjectE
     }
 
     private ChangeDTO createDeleteChange(String clientId, E entity) {
-        return ChangeDTO.builder().type(getObjectType())
-                .clientId(clientId).objectId(entity.getId())
-                .forceFetch(entity.isNotifyAll()).build();
+        return new ChangeDTO(null, getObjectType(), clientId, entity.getId(), entity.isNotifyAll());
     }
 
     protected abstract ObjectType getObjectType();

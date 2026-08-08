@@ -1,27 +1,17 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.SourceDTO
+import pl.yalgrin.playnite.simplesync.library.dto.SourceDTO
 
 class SourceFactoryUtil {
     static SourceDTO createSource(String id, String name, boolean removed = false) {
-        return SourceDTO.builder()
-                .id(id)
-                .name(name)
-                .removed(removed)
-                .build()
+        return new SourceDTO(id, name, removed)
     }
 
     static SourceDTO randomSource() {
-        return SourceDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .build()
+        return createSource(UUID.randomUUID().toString(), UUID.randomUUID().toString())
     }
 
     static SourceDTO sourceWithIndex(int idx) {
-        return SourceDTO.builder()
-                .id("id-$idx")
-                .name("name-$idx")
-                .build()
+        return createSource("id-$idx", "name-$idx")
     }
 }

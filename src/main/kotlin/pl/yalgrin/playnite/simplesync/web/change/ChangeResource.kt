@@ -1,9 +1,9 @@
 package pl.yalgrin.playnite.simplesync.web.change
 
 import org.springframework.web.bind.annotation.*
+import pl.yalgrin.playnite.simplesync.change.dto.GameChangeRequestDTO
 import pl.yalgrin.playnite.simplesync.change.service.ChangeService
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
-import pl.yalgrin.playnite.simplesync.dto.GameChangeRequestDTO
 import reactor.core.publisher.Flux
 
 @RestController

@@ -6,9 +6,9 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.client.enums.MessageType
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
-import pl.yalgrin.playnite.simplesync.dto.objects.AgeRatingDTO
-import pl.yalgrin.playnite.simplesync.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.library.domain.AgeRating
+import pl.yalgrin.playnite.simplesync.library.dto.AgeRatingDTO
 import pl.yalgrin.playnite.simplesync.library.repository.AgeRatingRepository
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
@@ -129,8 +129,8 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
     def "save, modify and delete and await the change stream"() {
         given:
         AgeRatingDTO toSave = AgeRatingFactoryUtil.randomAgeRating()
-        AgeRatingDTO modified = toSave.toBuilder().name("some other name").build()
-        AgeRatingDTO removed = modified.toBuilder().removed(true).build()
+        AgeRatingDTO modified = toSave.withName("some other name")
+        AgeRatingDTO removed = modified.withRemoved(true)
 
         when:
         def changeRequest = makeConnectRequest(otherClientInfo)
@@ -159,7 +159,7 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.AgeRating
+                    assert change.getType() == ObjectType.AGE_RATING
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.getForceFetch()
@@ -183,7 +183,7 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.AgeRating
+                    assert change.getType() == ObjectType.AGE_RATING
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.getForceFetch()
@@ -206,7 +206,7 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.AgeRating
+                    assert change.getType() == ObjectType.AGE_RATING
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.getForceFetch()

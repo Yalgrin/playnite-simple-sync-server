@@ -6,9 +6,9 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.client.enums.MessageType
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
-import pl.yalgrin.playnite.simplesync.dto.objects.GenreDTO
-import pl.yalgrin.playnite.simplesync.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.library.domain.Genre
+import pl.yalgrin.playnite.simplesync.library.dto.GenreDTO
 import pl.yalgrin.playnite.simplesync.library.repository.GenreRepository
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
@@ -129,8 +129,8 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
     def "save, modify and delete and await the change stream"() {
         given:
         GenreDTO toSave = GenreFactoryUtil.randomGenre()
-        GenreDTO modified = toSave.toBuilder().name("some other name").build()
-        GenreDTO removed = modified.toBuilder().removed(true).build()
+        GenreDTO modified = toSave.withName("some other name")
+        GenreDTO removed = modified.withRemoved(true)
 
         when:
         def changeRequest = makeConnectRequest(otherClientInfo)
@@ -159,7 +159,7 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Genre
+                    assert change.getType() == ObjectType.GENRE
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.getForceFetch()
@@ -183,7 +183,7 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Genre
+                    assert change.getType() == ObjectType.GENRE
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.getForceFetch()
@@ -206,7 +206,7 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Genre
+                    assert change.getType() == ObjectType.GENRE
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.getForceFetch()

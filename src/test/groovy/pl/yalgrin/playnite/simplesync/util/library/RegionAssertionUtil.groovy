@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.RegionDTO
 import pl.yalgrin.playnite.simplesync.library.domain.Region
+import pl.yalgrin.playnite.simplesync.library.dto.RegionDTO
 
 class RegionAssertionUtil {
     static boolean assertRegion(RegionDTO expectedDTO, RegionDTO resultDTO) {

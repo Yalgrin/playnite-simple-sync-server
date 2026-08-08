@@ -7,9 +7,9 @@ import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.common.config.GAME
-import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
-import pl.yalgrin.playnite.simplesync.dto.objects.GameDiffDTO
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
+import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
+import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
 import pl.yalgrin.playnite.simplesync.service.MetadataService
 import pl.yalgrin.playnite.simplesync.service.objects.GameService
 import reactor.core.publisher.Flux

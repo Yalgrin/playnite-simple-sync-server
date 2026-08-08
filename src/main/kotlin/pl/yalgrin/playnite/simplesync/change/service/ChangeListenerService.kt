@@ -2,7 +2,7 @@ package pl.yalgrin.playnite.simplesync.change.service
 
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
-import pl.yalgrin.playnite.simplesync.dto.ChangeDTO
+import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks

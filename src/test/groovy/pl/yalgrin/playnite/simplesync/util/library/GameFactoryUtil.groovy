@@ -3,8 +3,8 @@ package pl.yalgrin.playnite.simplesync.util.library
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.MultipartFile
-import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
-import pl.yalgrin.playnite.simplesync.dto.objects.LinkDTO
+import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
+import pl.yalgrin.playnite.simplesync.library.dto.LinkDTO
 import pl.yalgrin.playnite.simplesync.util.RandomUtil
 
 import java.time.LocalDateTime
@@ -13,101 +13,131 @@ import java.util.concurrent.ThreadLocalRandom
 
 class GameFactoryUtil {
     static GameDTO createGame(String id, String name, boolean removed = false) {
-        return GameDTO.builder()
-                .id(id)
-                .gameId(UUID.randomUUID().toString())
-                .pluginId(UUID.randomUUID().toString())
-                .name(name)
-                .description("description")
-                .notes("notes")
-                .genres(List.of(
+        return new GameDTO(
+                id,
+                name,
+                removed,
+                "description",
+                "notes",
+                List.of(
                         GenreFactoryUtil.createGenre(UUID.randomUUID().toString(), "genre-1"),
                         GenreFactoryUtil.createGenre(UUID.randomUUID().toString(), "genre-2")
-                ))
-                .hidden(true)
-                .favorite(true)
-                .lastActivity(ZonedDateTime.now())
-                .sortingName("sorting-name")
-                .platforms(List.of(
+                ),
+                true,
+                true,
+                ZonedDateTime.now(),
+                "sorting-name",
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                List.of(
                         PlatformFactoryUtil.createPlatform(UUID.randomUUID().toString(), "platform-1"),
                         PlatformFactoryUtil.createPlatform(UUID.randomUUID().toString(), "platform-2")
-                ))
-                .publishers(List.of(
+                ),
+                List.of(
                         CompanyFactoryUtil.createCompany("company-1", "company-1"),
                         CompanyFactoryUtil.createCompany(UUID.randomUUID().toString(), "company-2"),
                         CompanyFactoryUtil.createCompany(UUID.randomUUID().toString(), "company-3")
-                ))
-                .developers(List.of(
+                ),
+                List.of(
                         CompanyFactoryUtil.createCompany("company-1", "company-1"),
                         CompanyFactoryUtil.createCompany(UUID.randomUUID().toString(), "company-4"),
                         CompanyFactoryUtil.createCompany(UUID.randomUUID().toString(), "company-5")
-                ))
-                .releaseDate(LocalDateTime.now())
-                .categories(List.of(
+                ),
+                LocalDateTime.now(),
+                List.of(
                         CategoryFactoryUtil.createCategory(UUID.randomUUID().toString(), "category-1"),
                         CategoryFactoryUtil.createCategory(UUID.randomUUID().toString(), "category-2")
-                ))
-                .tags(List.of(
+                ),
+                List.of(
                         TagFactoryUtil.createTag(UUID.randomUUID().toString(), "tag-1"),
                         TagFactoryUtil.createTag(UUID.randomUUID().toString(), "tag-2")
-                ))
-                .features(List.of(
+                ),
+                List.of(
                         FeatureFactoryUtil.createFeature(UUID.randomUUID().toString(), "feature-1"),
                         FeatureFactoryUtil.createFeature(UUID.randomUUID().toString(), "feature-2")
-                ))
-                .links(List.of(
-                        LinkDTO.builder().name("home page").url("https://some-website.com").build(),
-                        LinkDTO.builder().name("steam page").url("https://steam.com/whatever").build()
-                ))
-                .playtime(12345678L)
-                .added(ZonedDateTime.now())
-                .modified(ZonedDateTime.now())
-                .playCount(321L)
-                .lastSizeScanDate(ZonedDateTime.now())
-                .series(List.of(
+                ),
+                List.of(
+                        new LinkDTO("home page", "https://some-website.com"),
+                        new LinkDTO("steam page", "https://steam.com/whatever")
+                ),
+                12345678L,
+                ZonedDateTime.now(),
+                ZonedDateTime.now(),
+                321L,
+                43252345435L,
+                ZonedDateTime.now(),
+                List.of(
                         SeriesFactoryUtil.createSeries(UUID.randomUUID().toString(), "series-1"),
                         SeriesFactoryUtil.createSeries(UUID.randomUUID().toString(), "series-2")
-                ))
-                .version("1.0")
-                .ageRatings(List.of(
+                ),
+                "1.0",
+                List.of(
                         AgeRatingFactoryUtil.createAgeRating(UUID.randomUUID().toString(), "pegi-13"),
                         AgeRatingFactoryUtil.createAgeRating(UUID.randomUUID().toString(), "pegi-18")
-                ))
-                .regions(List.of(
+                ),
+                List.of(
                         RegionFactoryUtil.createRegion(UUID.randomUUID().toString(), "region-1"),
                         RegionFactoryUtil.createRegion(UUID.randomUUID().toString(), "region-2")
-                ))
-                .source(SourceFactoryUtil.createSource(UUID.randomUUID().toString(), "steam"))
-                .completionStatus(CompletionStatusFactoryUtil.createCompletionStatus(UUID.randomUUID().toString(), "completed"))
-                .userScore(69)
-                .criticScore(96)
-                .communityScore(21)
-                .manual("manual")
-                .removed(removed)
-                .build()
+                ),
+                SourceFactoryUtil.createSource(UUID.randomUUID().toString(), "steam"),
+                CompletionStatusFactoryUtil.createCompletionStatus(UUID.randomUUID().toString(), "completed"),
+                69,
+                96,
+                21,
+                "manual",
+                true,
+                true,
+                true
+        )
     }
 
     static GameDTO randomGame() {
         def random = ThreadLocalRandom.current()
-        return GameDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .gameId(UUID.randomUUID().toString())
-                .pluginId(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .description(UUID.randomUUID().toString())
-                .notes(UUID.randomUUID().toString())
-                .genres(RandomUtil.generateRandomList { GenreFactoryUtil.randomGenre() })
-                .hidden(random.nextBoolean())
-                .favorite(random.nextBoolean())
-                .lastActivity(ZonedDateTime.now().plusSeconds(random.nextInt()))
-                .build()
+        return new GameDTO(
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                false,
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                RandomUtil.generateRandomList { GenreFactoryUtil.randomGenre() },
+                random.nextBoolean(),
+                random.nextBoolean(),
+                ZonedDateTime.now().plusSeconds(random.nextInt()),
+                null,
+                UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
+                List.of(),
+                List.of(),
+                List.of(),
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                List.of(),
+                0,
+                null,
+                null,
+                0,
+                0,
+                null,
+                List.of(),
+                null,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                false,
+                false,
+                false
+        )
     }
 
     static GameDTO gameWithIndex(int idx) {
-        return randomGame().toBuilder()
-                .id("id-$idx")
-                .name("name-$idx")
-                .build()
+        return randomGame().withIdAndName("id-$idx", "name-$idx")
     }
 
     static MockMultipartFile randomFile(String name, int size = 4096) {

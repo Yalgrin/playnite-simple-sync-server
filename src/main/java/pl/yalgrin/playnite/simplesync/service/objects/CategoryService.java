@@ -3,12 +3,12 @@ package pl.yalgrin.playnite.simplesync.service.objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
-import pl.yalgrin.playnite.simplesync.dto.objects.CategoryDTO;
-import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeService;
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.library.domain.Category;
+import pl.yalgrin.playnite.simplesync.library.dto.CategoryDTO;
 import pl.yalgrin.playnite.simplesync.library.repository.CategoryRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.CategoryMapper;
-import pl.yalgrin.playnite.simplesync.service.ChangeService;
 
 @Service
 public class CategoryService extends AbstractObjectService<Category, CategoryDTO> {
@@ -26,6 +26,6 @@ public class CategoryService extends AbstractObjectService<Category, CategoryDTO
 
     @Override
     protected ObjectType getObjectType() {
-        return ObjectType.Category;
+        return ObjectType.CATEGORY;
     }
 }

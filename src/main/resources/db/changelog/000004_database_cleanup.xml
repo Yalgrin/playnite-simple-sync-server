@@ -10,4 +10,69 @@
             <where>type is null or client_id is null or object_id is null</where>
         </delete>
     </changeSet>
+
+    <changeSet id="000004-2" author="yalgrin">
+        <sql>UPDATE playnite_change
+             SET type = 'CATEGORY'
+             WHERE type = 'Category'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'GENRE'
+             WHERE type = 'Genre'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'PLATFORM'
+             WHERE type = 'Platform'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'PLATFORM_DIFF'
+             WHERE type = 'PlatformDiff'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'COMPANY'
+             WHERE type = 'Company'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'FEATURE'
+             WHERE type = 'Feature'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'TAG'
+             WHERE type = 'Tag'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'SERIES'
+             WHERE type = 'Series'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'AGE_RATING'
+             WHERE type = 'AgeRating'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'REGION'
+             WHERE type = 'Region'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'SOURCE'
+             WHERE type = 'Source'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'COMPLETION_STATUS'
+             WHERE type = 'CompletionStatus'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'FILTER_PRESET'
+             WHERE type = 'FilterPreset'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'GAME'
+             WHERE type = 'Game'</sql>
+        <sql>UPDATE playnite_change
+             SET type = 'GAME_DIFF'
+             WHERE type = 'GameDiff'</sql>
+        <rollback>
+            <sql>UPDATE playnite_change SET type = 'Category' WHERE type = 'CATEGORY'</sql>
+            <sql>UPDATE playnite_change SET type = 'Genre' WHERE type = 'GENRE'</sql>
+            <sql>UPDATE playnite_change SET type = 'Platform' WHERE type = 'PLATFORM'</sql>
+            <sql>UPDATE playnite_change SET type = 'PlatformDiff' WHERE type = 'PLATFORM_DIFF'</sql>
+            <sql>UPDATE playnite_change SET type = 'Company' WHERE type = 'COMPANY'</sql>
+            <sql>UPDATE playnite_change SET type = 'Feature' WHERE type = 'FEATURE'</sql>
+            <sql>UPDATE playnite_change SET type = 'Tag' WHERE type = 'TAG'</sql>
+            <sql>UPDATE playnite_change SET type = 'Series' WHERE type = 'SERIES'</sql>
+            <sql>UPDATE playnite_change SET type = 'AgeRating' WHERE type = 'AGE_RATING'</sql>
+            <sql>UPDATE playnite_change SET type = 'Region' WHERE type = 'REGION'</sql>
+            <sql>UPDATE playnite_change SET type = 'Source' WHERE type = 'SOURCE'</sql>
+            <sql>UPDATE playnite_change SET type = 'CompletionStatus' WHERE type = 'COMPLETION_STATUS'</sql>
+            <sql>UPDATE playnite_change SET type = 'FilterPreset' WHERE type = 'FILTER_PRESET'</sql>
+            <sql>UPDATE playnite_change SET type = 'Game' WHERE type = 'GAME'</sql>
+            <sql>UPDATE playnite_change SET type = 'GameDiff' WHERE type = 'GAME_DIFF'</sql>
+        </rollback>
+    </changeSet>
 </databaseChangeLog>

@@ -8,18 +8,18 @@ import org.springframework.data.r2dbc.repository.R2dbcRepository;
 import org.springframework.http.codec.multipart.FilePart;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
+import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO;
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt;
-import pl.yalgrin.playnite.simplesync.dto.ChangeDTO;
-import pl.yalgrin.playnite.simplesync.dto.objects.*;
-import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.exception.ForceFetchRequiredException;
 import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException;
 import pl.yalgrin.playnite.simplesync.library.domain.Game;
 import pl.yalgrin.playnite.simplesync.library.domain.GameDiff;
+import pl.yalgrin.playnite.simplesync.library.dto.*;
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.GameMapper;
-import pl.yalgrin.playnite.simplesync.service.ChangeService;
 import pl.yalgrin.playnite.simplesync.service.MetadataService;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -158,7 +158,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
                 completionStatusService);
     }
 
-    private <T extends AbstractObjectDTO> Mono<List<Tuple2<T, ChangeDTO>>> saveObjects(GameDTO dto, String clientId,
+    private <T extends LibraryObjectDTO> Mono<List<Tuple2<T, ChangeDTO>>> saveObjects(GameDTO dto, String clientId,
                                                                                        List<ChangeDTO> changes,
                                                                                        Function<GameDTO, List<T>> dtoGetter,
                                                                                        BiConsumer<GameDTO, List<T>> dtoSetter,
@@ -171,7 +171,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
                 .doOnNext(t -> t.stream().map(Tuple2::_2).filter(Objects::nonNull).forEach(changes::add));
     }
 
-    private <T extends AbstractObjectDTO> Mono<Tuple2<T, ChangeDTO>> saveObject(GameDTO dto, String clientId,
+    private <T extends LibraryObjectDTO> Mono<Tuple2<T, ChangeDTO>> saveObject(GameDTO dto, String clientId,
                                                                                 List<ChangeDTO> changes,
                                                                                 Function<GameDTO, T> dtoGetter,
                                                                                 BiConsumer<GameDTO, T> dtoSetter,
@@ -213,7 +213,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
                         t -> changes.add(t._2)).map(Tuple2::_1));
     }
 
-    private <T extends AbstractObjectDTO> Mono<List<Tuple2<T, ChangeDTO>>> saveObjects(GameDiffDTO dto, String clientId,
+    private <T extends LibraryObjectDTO> Mono<List<Tuple2<T, ChangeDTO>>> saveObjects(GameDiffDTO dto, String clientId,
                                                                                        List<ChangeDTO> changes,
                                                                                        Function<GameDiffDTO, List<T>> dtoGetter,
                                                                                        BiConsumer<GameDiffDTO, List<T>> dtoSetter,
@@ -230,7 +230,7 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
                 .doOnNext(t -> t.stream().map(Tuple2::_2).filter(Objects::nonNull).forEach(changes::add));
     }
 
-    private <T extends AbstractObjectDTO> Mono<Tuple2<T, ChangeDTO>> saveObject(GameDiffDTO dto, String clientId,
+    private <T extends LibraryObjectDTO> Mono<Tuple2<T, ChangeDTO>> saveObject(GameDiffDTO dto, String clientId,
                                                                                 List<ChangeDTO> changes,
                                                                                 Function<GameDiffDTO, T> dtoGetter,
                                                                                 BiConsumer<GameDiffDTO, T> dtoSetter,
@@ -249,76 +249,78 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
     private Mono<List<Tuple2<GenreDTO, ChangeDTO>>> saveGenres(GameDiffDTO dto, String clientId,
                                                                List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getGenres, GameDiffDTO::setGenres, genreService,
-                GameDiffDTO.Fields.GENRES);
+                GameDiffFields.GENRES);
     }
 
     private Mono<List<Tuple2<PlatformDTO, ChangeDTO>>> savePlatforms(GameDiffDTO dto, String clientId,
                                                                      List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getPlatforms, GameDiffDTO::setPlatforms,
-                platformService, GameDiffDTO.Fields.PLATFORMS);
+                platformService, GameDiffFields.PLATFORMS);
     }
 
     private Mono<List<Tuple2<CompanyDTO, ChangeDTO>>> savePublishers(GameDiffDTO dto, String clientId,
                                                                      List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getPublishers, GameDiffDTO::setPublishers,
-                companyService, GameDiffDTO.Fields.PUBLISHERS);
+                companyService, GameDiffFields.PUBLISHERS);
     }
 
     private Mono<List<Tuple2<CompanyDTO, ChangeDTO>>> saveDevelopers(GameDiffDTO dto, String clientId,
                                                                      List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getDevelopers, GameDiffDTO::setDevelopers,
-                companyService, GameDiffDTO.Fields.DEVELOPERS);
+                companyService, GameDiffFields.DEVELOPERS);
     }
 
     private Mono<List<Tuple2<CategoryDTO, ChangeDTO>>> saveCategories(GameDiffDTO dto, String clientId,
                                                                       List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getCategories, GameDiffDTO::setCategories,
-                categoryService, GameDiffDTO.Fields.CATEGORIES);
+                categoryService, GameDiffFields.CATEGORIES);
     }
 
     private Mono<List<Tuple2<TagDTO, ChangeDTO>>> saveTags(GameDiffDTO dto, String clientId, List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getTags, GameDiffDTO::setTags, tagService,
-                GameDiffDTO.Fields.TAGS);
+                GameDiffFields.TAGS);
     }
 
     private Mono<List<Tuple2<FeatureDTO, ChangeDTO>>> saveFeatures(GameDiffDTO dto, String clientId,
                                                                    List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getFeatures, GameDiffDTO::setFeatures, featureService,
-                GameDiffDTO.Fields.FEATURES);
+                GameDiffFields.FEATURES);
     }
 
     private Mono<List<Tuple2<SeriesDTO, ChangeDTO>>> saveSeries(GameDiffDTO dto, String clientId,
                                                                 List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getSeries, GameDiffDTO::setSeries, seriesService,
-                GameDiffDTO.Fields.SERIES);
+                GameDiffFields.SERIES);
     }
 
     private Mono<List<Tuple2<AgeRatingDTO, ChangeDTO>>> saveAgeRatings(GameDiffDTO dto, String clientId,
                                                                        List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getAgeRatings, GameDiffDTO::setAgeRatings,
-                ageRatingService, GameDiffDTO.Fields.AGE_RATINGS);
+                ageRatingService, GameDiffFields.AGE_RATINGS);
     }
 
     private Mono<List<Tuple2<RegionDTO, ChangeDTO>>> saveRegions(GameDiffDTO dto, String clientId,
                                                                  List<ChangeDTO> changes) {
         return saveObjects(dto, clientId, changes, GameDiffDTO::getRegions, GameDiffDTO::setRegions, regionService,
-                GameDiffDTO.Fields.REGIONS);
+                GameDiffFields.REGIONS);
     }
 
     private Mono<Tuple2<SourceDTO, ChangeDTO>> saveSource(GameDiffDTO dto, String clientId, List<ChangeDTO> changes) {
         return saveObject(dto, clientId, changes, GameDiffDTO::getSource, GameDiffDTO::setSource, sourceService,
-                GameDiffDTO.Fields.SOURCE);
+                GameDiffFields.SOURCE);
     }
 
     private Mono<Tuple2<CompletionStatusDTO, ChangeDTO>> saveCompletionStatus(GameDiffDTO dto, String clientId,
                                                                               List<ChangeDTO> changes) {
         return saveObject(dto, clientId, changes, GameDiffDTO::getCompletionStatus, GameDiffDTO::setCompletionStatus,
-                completionStatusService, GameDiffDTO.Fields.COMPLETION_STATUS);
+                completionStatusService, GameDiffFields.COMPLETION_STATUS);
     }
 
     @Override
     protected Mono<Game> findOrCreateEntity(GameDTO dto) {
-        return gameRepository.findByGameIdAndPluginId(dto.getGameId(), dto.getPluginId()).take(1).next()
+        return Mono.justOrEmpty(dto)
+                .filter(d -> dto.getGameId() != null && dto.getPluginId() != null)
+                .flatMap(d -> gameRepository.findByGameIdAndPluginId(d.getGameId(), d.getPluginId()).take(1).next())
                 .flatMap(e -> {
                     log.debug("findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
                             e.getId(),
@@ -388,9 +390,12 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
     }
 
     @Override
-    protected Flux<Game> findObjectToDelete(GameDTO categoryDTO) {
-        return gameRepository.findByPlayniteIdAndGameIdAndPluginIdAndRemovedIsFalse(categoryDTO.getId(),
-                categoryDTO.getGameId(), categoryDTO.getPluginId());
+    protected Flux<Game> findObjectToDelete(GameDTO gameDTO) {
+        if (gameDTO.getId() == null || gameDTO.getGameId() == null || gameDTO.getPluginId() == null) {
+            return Flux.empty();
+        }
+        return gameRepository.findByPlayniteIdAndGameIdAndPluginIdAndRemovedIsFalse(gameDTO.getId(),
+                gameDTO.getGameId(), gameDTO.getPluginId());
     }
 
     @Override
@@ -407,12 +412,12 @@ public class GameService extends AbstractObjectWithMetadataService<Game, GameDif
 
     @Override
     protected ObjectType getObjectType() {
-        return ObjectType.Game;
+        return ObjectType.GAME;
     }
 
     @Override
     protected ObjectType getDiffType() {
-        return ObjectType.GameDiff;
+        return ObjectType.GAME_DIFF;
     }
 
     @Override

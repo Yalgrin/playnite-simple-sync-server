@@ -5,10 +5,11 @@ import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.Strings;
-import pl.yalgrin.playnite.simplesync.dto.objects.AbstractDiffDTO;
-import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectDiffEntity;
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity;
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDiffDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectFields;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
@@ -17,8 +18,8 @@ import java.util.List;
 public abstract class AbstractObjectWithMetadataMapper<
         E extends LibraryObjectEntity,
         DIFF_E extends LibraryObjectDiffEntity,
-        DTO extends AbstractObjectDTO,
-        DIFF_DTO extends AbstractDiffDTO> {
+        DTO extends LibraryObjectDTO,
+        DIFF_DTO extends LibraryObjectDiffDTO> {
     protected final ObjectMapper objectMapper;
 
     protected AbstractObjectWithMetadataMapper(ObjectMapper objectMapper) {
@@ -31,17 +32,17 @@ public abstract class AbstractObjectWithMetadataMapper<
         diffDTO.setName(dto.getName());
         diffDTO.setChangedFields(new ArrayList<>());
         if (target.getId() == null) {
-            diffDTO.getChangedFields().add(AbstractObjectDTO.Fields.ID);
+            diffDTO.getChangedFields().add(LibraryObjectFields.ID);
         }
         if (!Strings.CS.equals(target.getName(), dto.getName())) {
             target.setName(dto.getName());
-            diffDTO.getChangedFields().add(AbstractObjectDTO.Fields.NAME);
+            diffDTO.getChangedFields().add(LibraryObjectFields.NAME);
         }
         if (target.isRemoved()) {
             target.setRemoved(false);
             target.setPlayniteId(dto.getId());
             diffDTO.setRemoved(dto.isRemoved());
-            diffDTO.getChangedFields().add(AbstractObjectDTO.Fields.REMOVED);
+            diffDTO.getChangedFields().add(LibraryObjectFields.REMOVED);
         }
         fillEntityAndGenerateDiffAdditionalFields(dto, target, diffDTO);
         target.setChanged(!diffDTO.getChangedFields().isEmpty());
@@ -80,13 +81,13 @@ public abstract class AbstractObjectWithMetadataMapper<
         DIFF_DTO diffDto = objectMapper.readValue(diffEntity.getDiffData().asArray(), getDiffClass());
         List<String> changedFields = diffDto.getChangedFields();
         if (changedFields != null) {
-            if (changedFields.contains(AbstractObjectDTO.Fields.ID)) {
+            if (changedFields.contains(LibraryObjectFields.ID)) {
                 diffDto.setId(entity.getPlayniteId());
             }
-            if (changedFields.contains(AbstractObjectDTO.Fields.NAME)) {
+            if (changedFields.contains(LibraryObjectFields.NAME)) {
                 diffDto.setName(entity.getName());
             }
-            if (changedFields.contains(AbstractObjectDTO.Fields.REMOVED)) {
+            if (changedFields.contains(LibraryObjectFields.REMOVED)) {
                 diffDto.setRemoved(entity.isRemoved());
             }
             fillOtherFieldsFromDiffEntity(diffDto, changedFields, entity, diffEntity);
@@ -109,16 +110,16 @@ public abstract class AbstractObjectWithMetadataMapper<
         if (changedFields == null) {
             return Tuple.of(target, diffDTO);
         }
-        if (changedFields.contains(AbstractObjectDTO.Fields.NAME) && !Strings.CS.equals(target.getName(),
+        if (changedFields.contains(LibraryObjectFields.NAME) && !Strings.CS.equals(target.getName(),
                 dto.getName())) {
             target.setName(dto.getName());
             diffDTO.setName(dto.getName());
-            diffDTO.getChangedFields().add(AbstractObjectDTO.Fields.NAME);
+            diffDTO.getChangedFields().add(LibraryObjectFields.NAME);
         }
         if (target.isRemoved()) {
             target.setRemoved(false);
             diffDTO.setRemoved(dto.isRemoved());
-            diffDTO.getChangedFields().add(AbstractObjectDTO.Fields.REMOVED);
+            diffDTO.getChangedFields().add(LibraryObjectFields.REMOVED);
         }
         fillEntityAndGenerateDiffAdditionalFields(dto, target, diffDTO);
         target.setChanged(!diffDTO.getChangedFields().isEmpty());

@@ -10,15 +10,16 @@ import pl.yalgrin.playnite.simplesync.client.dto.RegisteredClientDTO
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
-import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO
+import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 import tools.jackson.databind.json.JsonMapper
 
-abstract class AbstractObjectTest<E extends LibraryObjectEntity, D extends AbstractObjectDTO> extends SpockIntegrationTest {
+abstract class AbstractObjectTest<E extends LibraryObjectEntity, D extends LibraryObjectDTO> extends SpockIntegrationTest {
     @Autowired
     private ConnectionFactory connectionFactory
     @Autowired
@@ -37,10 +38,10 @@ abstract class AbstractObjectTest<E extends LibraryObjectEntity, D extends Abstr
         populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
         populator.populate(connectionFactory).block()
 
-        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)).block()
+        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", ConstantsKt.CURRENT_API_VERSION)).block()
         def sessionId = UUID.randomUUID().toString()
         sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))
-        otherClientInfo = registeredClientService.register(new RegistrationRequestDTO("other-client", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)).block()
+        otherClientInfo = registeredClientService.register(new RegistrationRequestDTO("other-client", ConstantsKt.CURRENT_API_VERSION)).block()
 
         rawWebTestClient = webTestClient
         webTestClient = webTestClient.mutate()

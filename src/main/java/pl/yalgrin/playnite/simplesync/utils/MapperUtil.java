@@ -3,8 +3,8 @@ package pl.yalgrin.playnite.simplesync.utils;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import org.apache.commons.lang3.Strings;
-import pl.yalgrin.playnite.simplesync.dto.objects.AbstractObjectDTO;
-import pl.yalgrin.playnite.simplesync.dto.objects.LinkDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.LinkDTO;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -25,13 +25,13 @@ public class MapperUtil {
         return !Objects.equals(obj1, obj2);
     }
 
-    public static boolean hasChanged(List<? extends AbstractObjectDTO> oldList,
-                                     List<? extends AbstractObjectDTO> newList) {
+    public static boolean hasChanged(List<? extends LibraryObjectDTO> oldList,
+                                     List<? extends LibraryObjectDTO> newList) {
         Set<String> oldIds = Optional.ofNullable(oldList)
-                .map(e -> e.stream().map(AbstractObjectDTO::getId).filter(Objects::nonNull).collect(Collectors.toSet()))
+                .map(e -> e.stream().map(LibraryObjectDTO::getId).filter(Objects::nonNull).collect(Collectors.toSet()))
                 .orElseGet(Collections::emptySet);
         Set<String> newIds = Optional.ofNullable(newList)
-                .map(e -> e.stream().map(AbstractObjectDTO::getId).filter(Objects::nonNull).collect(Collectors.toSet()))
+                .map(e -> e.stream().map(LibraryObjectDTO::getId).filter(Objects::nonNull).collect(Collectors.toSet()))
                 .orElseGet(Collections::emptySet);
         return oldIds.size() != newIds.size() || oldIds.stream().anyMatch(id -> !newIds.contains(id));
     }

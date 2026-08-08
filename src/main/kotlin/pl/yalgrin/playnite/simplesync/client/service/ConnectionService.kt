@@ -43,12 +43,13 @@ class ConnectionService(
                             sessionManager.getSessionSettingsMono(sessionInfo.sessionId).map { it.enabledChangeStream }
                                 .defaultIfEmpty(false)
                         }.map {
+                                //TODO
                             ServerSentEvent.builder<ConnectionMessage>().data(
                                 ChangeMessage(
                                     id = it.id,
-                                    type = it.type,
+                                    type = it.type!!,
                                     clientId = it.clientId,
-                                    objectId = it.objectId,
+                                    objectId = it.objectId!!,
                                     forceFetch = it.isForceFetch
                                 )
                             ).build()

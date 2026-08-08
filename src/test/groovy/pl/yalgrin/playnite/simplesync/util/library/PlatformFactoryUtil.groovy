@@ -3,34 +3,21 @@ package pl.yalgrin.playnite.simplesync.util.library
 import org.springframework.http.MediaType
 import org.springframework.mock.web.MockMultipartFile
 import org.springframework.web.multipart.MultipartFile
-import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDTO
+import pl.yalgrin.playnite.simplesync.library.dto.PlatformDTO
 
 import java.util.concurrent.ThreadLocalRandom
 
 class PlatformFactoryUtil {
     static PlatformDTO createPlatform(String id, String name, boolean removed = false) {
-        return PlatformDTO.builder()
-                .id(id)
-                .name(name)
-                .specificationId(UUID.randomUUID().toString())
-                .removed(removed)
-                .build()
+        return new PlatformDTO(id, name, removed, UUID.randomUUID().toString(), false, false, false)
     }
 
     static PlatformDTO randomPlatform() {
-        return PlatformDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .specificationId(UUID.randomUUID().toString())
-                .build()
+        return createPlatform(UUID.randomUUID().toString(), UUID.randomUUID().toString())
     }
 
     static PlatformDTO platformWithIndex(int idx) {
-        return PlatformDTO.builder()
-                .id("id-$idx")
-                .name("name-$idx")
-                .specificationId(UUID.randomUUID().toString())
-                .build()
+        return createPlatform(UUID.randomUUID().toString(), UUID.randomUUID().toString())
     }
 
     static MockMultipartFile randomFile(String name, int size = 4096) {

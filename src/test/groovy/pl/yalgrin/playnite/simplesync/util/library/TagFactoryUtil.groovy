@@ -1,27 +1,17 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.TagDTO
+import pl.yalgrin.playnite.simplesync.library.dto.TagDTO
 
 class TagFactoryUtil {
     static TagDTO createTag(String id, String name, boolean removed = false) {
-        return TagDTO.builder()
-                .id(id)
-                .name(name)
-                .removed(removed)
-                .build()
+        return new TagDTO(id, name, removed)
     }
 
     static TagDTO randomTag() {
-        return TagDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .build()
+        return createTag(UUID.randomUUID().toString(), UUID.randomUUID().toString())
     }
 
     static TagDTO tagWithIndex(int idx) {
-        return TagDTO.builder()
-                .id("id-$idx")
-                .name("name-$idx")
-                .build()
+        return createTag("id-$idx", "name-$idx")
     }
 }

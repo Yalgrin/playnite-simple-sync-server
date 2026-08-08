@@ -6,9 +6,9 @@ import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.client.enums.MessageType
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
-import pl.yalgrin.playnite.simplesync.dto.objects.FeatureDTO
-import pl.yalgrin.playnite.simplesync.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.library.domain.Feature
+import pl.yalgrin.playnite.simplesync.library.dto.FeatureDTO
 import pl.yalgrin.playnite.simplesync.library.repository.FeatureRepository
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
@@ -129,8 +129,8 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
     def "save, modify and delete and await the change stream"() {
         given:
         FeatureDTO toSave = FeatureFactoryUtil.randomFeature()
-        FeatureDTO modified = toSave.toBuilder().name("some other name").build()
-        FeatureDTO removed = modified.toBuilder().removed(true).build()
+        FeatureDTO modified = toSave.withName("some other name")
+        FeatureDTO removed = modified.withRemoved(true)
 
         when:
         def changeRequest = makeConnectRequest(otherClientInfo)
@@ -159,7 +159,7 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Feature
+                    assert change.getType() == ObjectType.FEATURE
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.getForceFetch()
@@ -183,7 +183,7 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Feature
+                    assert change.getType() == ObjectType.FEATURE
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.getForceFetch()
@@ -206,7 +206,7 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Feature
+                    assert change.getType() == ObjectType.FEATURE
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.getForceFetch()

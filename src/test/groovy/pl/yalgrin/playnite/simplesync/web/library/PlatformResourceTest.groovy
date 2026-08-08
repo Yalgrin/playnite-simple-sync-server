@@ -11,9 +11,9 @@ import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.client.enums.MessageType
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
-import pl.yalgrin.playnite.simplesync.dto.objects.PlatformDTO
-import pl.yalgrin.playnite.simplesync.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.library.domain.Platform
+import pl.yalgrin.playnite.simplesync.library.dto.PlatformDTO
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.library.repository.PlatformRepository
 import pl.yalgrin.playnite.simplesync.service.MetadataService
@@ -143,8 +143,8 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         given:
         PlatformDTO toSave = PlatformFactoryUtil.randomPlatform()
         def files = PlatformFactoryUtil.randomFiles()
-        PlatformDTO modified = toSave.toBuilder().name("some other name").build()
-        PlatformDTO removed = modified.toBuilder().removed(true).build()
+        PlatformDTO modified = toSave.withName("some other name")
+        PlatformDTO removed = modified.withRemoved(true)
 
         when:
         def changeRequest = makeConnectRequest(otherClientInfo)
@@ -173,7 +173,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Platform
+                    assert change.getType() == ObjectType.PLATFORM
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.getForceFetch()
@@ -197,7 +197,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.PlatformDiff
+                    assert change.getType() == ObjectType.PLATFORM_DIFF
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get() + 1
                     assert !change.getForceFetch()
@@ -220,7 +220,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Platform
+                    assert change.getType() == ObjectType.PLATFORM
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.getForceFetch()

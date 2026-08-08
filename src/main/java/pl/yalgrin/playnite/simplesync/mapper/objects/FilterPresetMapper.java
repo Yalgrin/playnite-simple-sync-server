@@ -6,12 +6,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.Strings;
 import org.springframework.stereotype.Component;
-import pl.yalgrin.playnite.simplesync.dto.filter.FilterPresetSettingsDTO;
-import pl.yalgrin.playnite.simplesync.dto.filter.IdItemPropertiesDTO;
-import pl.yalgrin.playnite.simplesync.dto.filter.IntItemPropertiesDTO;
-import pl.yalgrin.playnite.simplesync.dto.filter.StringItemPropertiesDTO;
-import pl.yalgrin.playnite.simplesync.dto.objects.FilterPresetDTO;
 import pl.yalgrin.playnite.simplesync.library.domain.FilterPreset;
+import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.filter.FilterPresetSettingsDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.filter.IdItemPropertiesDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.filter.IntItemPropertiesDTO;
+import pl.yalgrin.playnite.simplesync.library.dto.filter.StringItemPropertiesDTO;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
@@ -51,15 +51,15 @@ public class FilterPresetMapper extends AbstractObjectMapper<FilterPreset, Filte
                 || !Strings.CS.equals(previousDTO.getSortingOrder(), dto.getSortingOrder())
                 || !Strings.CS.equals(previousDTO.getSortingOrderDirection(), dto.getSortingOrderDirection())
                 || !Strings.CS.equals(previousDTO.getGroupingOrder(), dto.getGroupingOrder())
-                || !Objects.equals(previousDTO.isShowInFullscreenQuickSelection(),
-                dto.isShowInFullscreenQuickSelection())
+                || !Objects.equals(previousDTO.getShowInFullscreenQuickSelection(),
+                dto.getShowInFullscreenQuickSelection())
                 || areSettingsDifferent(previousDTO.getSettings(), dto.getSettings());
     }
 
     private boolean areSettingsDifferent(FilterPresetSettingsDTO previousDTO, FilterPresetSettingsDTO newDTO) {
         return (previousDTO == null) != (newDTO == null)
                 || (previousDTO != null && (
-                !Objects.equals(previousDTO.isUseAndFilteringStyle(), newDTO.isUseAndFilteringStyle())
+                !Objects.equals(previousDTO.getUseAndFilteringStyle(), newDTO.getUseAndFilteringStyle())
                         || !Objects.equals(previousDTO.isInstalled(), newDTO.isInstalled())
                         || !Objects.equals(previousDTO.isUninstalled(), newDTO.isUninstalled())
                         || !Objects.equals(previousDTO.isHidden(), newDTO.isHidden())

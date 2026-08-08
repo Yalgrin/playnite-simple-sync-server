@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.GenreDTO
 import pl.yalgrin.playnite.simplesync.library.domain.Genre
+import pl.yalgrin.playnite.simplesync.library.dto.GenreDTO
 
 class GenreAssertionUtil {
     static boolean assertGenre(GenreDTO expectedDTO, GenreDTO resultDTO) {

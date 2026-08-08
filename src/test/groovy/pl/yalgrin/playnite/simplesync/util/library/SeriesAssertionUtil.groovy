@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.SeriesDTO
 import pl.yalgrin.playnite.simplesync.library.domain.Series
+import pl.yalgrin.playnite.simplesync.library.dto.SeriesDTO
 
 class SeriesAssertionUtil {
     static boolean assertSeries(SeriesDTO expectedDTO, SeriesDTO resultDTO) {

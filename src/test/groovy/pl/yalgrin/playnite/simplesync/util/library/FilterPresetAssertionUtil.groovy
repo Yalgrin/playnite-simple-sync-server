@@ -1,15 +1,16 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.filter.FilterPresetSettingsDTO
-import pl.yalgrin.playnite.simplesync.dto.filter.IdItemPropertiesDTO
-import pl.yalgrin.playnite.simplesync.dto.filter.IntItemPropertiesDTO
-import pl.yalgrin.playnite.simplesync.dto.filter.StringItemPropertiesDTO
-import pl.yalgrin.playnite.simplesync.dto.objects.FilterPresetDTO
+import pl.yalgrin.playnite.simplesync.common.config.JsonMapperProviderKt
 import pl.yalgrin.playnite.simplesync.library.domain.FilterPreset
+import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDTO
+import pl.yalgrin.playnite.simplesync.library.dto.filter.FilterPresetSettingsDTO
+import pl.yalgrin.playnite.simplesync.library.dto.filter.IdItemPropertiesDTO
+import pl.yalgrin.playnite.simplesync.library.dto.filter.IntItemPropertiesDTO
+import pl.yalgrin.playnite.simplesync.library.dto.filter.StringItemPropertiesDTO
 import tools.jackson.databind.json.JsonMapper
 
 class FilterPresetAssertionUtil {
-    private static final JsonMapper objectMapper = pl.yalgrin.playnite.simplesync.common.config.JsonMapperProviderKt.buildJsonMapper()
+    private static final JsonMapper objectMapper = JsonMapperProviderKt.buildJsonMapper()
 
     static boolean assertFilterPreset(FilterPresetDTO expectedDTO, FilterPresetDTO resultDTO) {
         if (expectedDTO == null) {
@@ -24,7 +25,7 @@ class FilterPresetAssertionUtil {
         assert resultDTO.getSortingOrder() == expectedDTO.getSortingOrder()
         assert resultDTO.getSortingOrderDirection() == expectedDTO.getSortingOrderDirection()
         assert resultDTO.getGroupingOrder() == expectedDTO.getGroupingOrder()
-        assert resultDTO.isShowInFullscreenQuickSelection() == expectedDTO.isShowInFullscreenQuickSelection()
+        assert resultDTO.getShowInFullscreenQuickSelection() == expectedDTO.getShowInFullscreenQuickSelection()
         true
     }
 
@@ -43,7 +44,7 @@ class FilterPresetAssertionUtil {
     }
 
     static boolean settingsMatch(FilterPresetSettingsDTO resultDTO, FilterPresetSettingsDTO expectedDTO) {
-        assert resultDTO?.isUseAndFilteringStyle() == expectedDTO?.isUseAndFilteringStyle()
+        assert resultDTO?.getUseAndFilteringStyle() == expectedDTO?.getUseAndFilteringStyle()
         assert resultDTO?.isInstalled() == expectedDTO?.isInstalled()
         assert resultDTO?.isUninstalled() == expectedDTO?.isUninstalled()
         assert resultDTO?.isHidden() == expectedDTO?.isHidden()

@@ -3,12 +3,12 @@ package pl.yalgrin.playnite.simplesync.service.objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
-import pl.yalgrin.playnite.simplesync.dto.objects.AgeRatingDTO;
-import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeService;
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.library.domain.AgeRating;
+import pl.yalgrin.playnite.simplesync.library.dto.AgeRatingDTO;
 import pl.yalgrin.playnite.simplesync.library.repository.AgeRatingRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.AgeRatingMapper;
-import pl.yalgrin.playnite.simplesync.service.ChangeService;
 
 @Service
 public class AgeRatingService extends AbstractObjectService<AgeRating, AgeRatingDTO> {
@@ -27,6 +27,6 @@ public class AgeRatingService extends AbstractObjectService<AgeRating, AgeRating
 
     @Override
     protected ObjectType getObjectType() {
-        return ObjectType.AgeRating;
+        return ObjectType.AGE_RATING;
     }
 }

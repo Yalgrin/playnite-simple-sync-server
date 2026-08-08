@@ -13,11 +13,12 @@ import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.client.enums.MessageType
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
-import pl.yalgrin.playnite.simplesync.dto.objects.GameDTO
-import pl.yalgrin.playnite.simplesync.dto.objects.GameDiffDTO
-import pl.yalgrin.playnite.simplesync.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.helper.MetadataTestHelper
 import pl.yalgrin.playnite.simplesync.library.domain.Game
+import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
+import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.service.MetadataService
@@ -63,9 +64,9 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         and:
         checkFiles(dto, { id ->
-            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "Icon.png")
-            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "CoverImage.jpeg")
-            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "BackgroundImage.tif")
+            assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "BackgroundImage.tif")
         })
     }
 
@@ -73,7 +74,12 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         given:
         List<Tuple2<GameDTO, List<MultipartFile>>> list = new ArrayList<>()
         for (int i = 0; i < 1000; i++) {
-            list.add(Tuple.of(GameFactoryUtil.gameWithIndex(i), GameFactoryUtil.randomFiles()))
+            def game = GameFactoryUtil.gameWithIndex(i)
+            def files = GameFactoryUtil.randomFiles()
+            game.setHasIcon(files.any { it.name.startsWith("Icon") })
+            game.setHasCoverImage(files.any { it.name.startsWith("CoverImage") })
+            game.setHasBackgroundImage(files.any { it.name.startsWith("BackgroundImage") })
+            list.add(Tuple.of(game, files))
         }
 
         when:
@@ -156,8 +162,8 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         given:
         GameDTO toSave = GameFactoryUtil.randomGame()
         def files = GameFactoryUtil.randomFiles()
-        GameDTO modified = toSave.toBuilder().name("some other name").build()
-        GameDTO removed = modified.toBuilder().removed(true).build()
+        GameDTO modified = toSave.withName("some other name")
+        GameDTO removed = modified.withRemoved(true)
 
         when:
         def changeRequest = makeConnectRequest(otherClientInfo)
@@ -185,14 +191,14 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
-                    change.getType() != ObjectType.Game
+                    change.getType() != ObjectType.GAME
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Game
+                    assert change.getType() == ObjectType.GAME
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
                     assert !change.getForceFetch()
@@ -216,7 +222,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.GameDiff
+                    assert change.getType() == ObjectType.GAME_DIFF
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get() + 1
                     assert !change.getForceFetch()
@@ -239,7 +245,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert change.messageType == MessageType.CHANGE
                     assert change instanceof ChangeMessage
                     assert change.getId() != null
-                    assert change.getType() == ObjectType.Game
+                    assert change.getType() == ObjectType.GAME
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
                     assert !change.getForceFetch()
@@ -282,18 +288,17 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         and:
         checkFiles(dto, { id ->
-            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "Icon.png")
-            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "CoverImage.jpeg")
-            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "BackgroundImage.tif")
+            assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "BackgroundImage.tif")
         })
 
         when:
-        GameDiffDTO diffDTO = GameDiffDTO.builder()
-                .id(dto.getId())
-                .gameId(dto.getGameId())
-                .pluginId(dto.getPluginId())
-                .changedFields(List.of("Icon", "CoverImage", "BackgroundImage"))
-                .build()
+        GameDiffDTO diffDTO = new GameDiffDTO()
+        diffDTO.setId(dto.getId())
+        diffDTO.setGameId(dto.getGameId())
+        diffDTO.setPluginId(dto.getPluginId())
+        diffDTO.setChangedFields(List.of("Icon", "CoverImage", "BackgroundImage"))
 
         def diffResponse = makeSaveDiffRequest(diffDTO, List.of())
 
@@ -302,9 +307,9 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         and:
         checkFiles(dto, { id ->
-            assert metadataTestHelper.fileDoesNotExist(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "Icon.png")
-            assert metadataTestHelper.fileDoesNotExist(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "CoverImage.jpeg")
-            assert metadataTestHelper.fileDoesNotExist(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, id, "BackgroundImage.tif")
+            assert metadataTestHelper.fileDoesNotExist(ConstantsKt.GAME, id, "Icon.png")
+            assert metadataTestHelper.fileDoesNotExist(ConstantsKt.GAME, id, "CoverImage.jpeg")
+            assert metadataTestHelper.fileDoesNotExist(ConstantsKt.GAME, id, "BackgroundImage.tif")
         })
     }
 
@@ -314,7 +319,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         return "/api/game"
     }
 
-    protected String diffUri() {
+    protected static String diffUri() {
         return "/api/game-diff"
     }
 
@@ -374,7 +379,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         }
 
         for (final def file in files) {
-            assert metadataTestHelper.fileExists(pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.GAME, savedEntity.getId(), file.name)
+            assert metadataTestHelper.fileExists(ConstantsKt.GAME, savedEntity.getId(), file.name)
         }
 
         true

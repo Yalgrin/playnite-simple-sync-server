@@ -3,12 +3,12 @@ package pl.yalgrin.playnite.simplesync.service.objects;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.reactive.TransactionalOperator;
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService;
-import pl.yalgrin.playnite.simplesync.dto.objects.GenreDTO;
-import pl.yalgrin.playnite.simplesync.enums.ObjectType;
+import pl.yalgrin.playnite.simplesync.change.service.ChangeService;
+import pl.yalgrin.playnite.simplesync.common.enums.ObjectType;
 import pl.yalgrin.playnite.simplesync.library.domain.Genre;
+import pl.yalgrin.playnite.simplesync.library.dto.GenreDTO;
 import pl.yalgrin.playnite.simplesync.library.repository.GenreRepository;
 import pl.yalgrin.playnite.simplesync.mapper.objects.GenreMapper;
-import pl.yalgrin.playnite.simplesync.service.ChangeService;
 
 @Service
 public class GenreService extends AbstractObjectService<Genre, GenreDTO> {
@@ -26,6 +26,6 @@ public class GenreService extends AbstractObjectService<Genre, GenreDTO> {
 
     @Override
     protected ObjectType getObjectType() {
-        return ObjectType.Genre;
+        return ObjectType.GENRE;
     }
 }

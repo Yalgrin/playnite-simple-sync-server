@@ -1,27 +1,17 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.CategoryDTO
+import pl.yalgrin.playnite.simplesync.library.dto.CategoryDTO
 
 class CategoryFactoryUtil {
     static CategoryDTO createCategory(String id, String name, boolean removed = false) {
-        return CategoryDTO.builder()
-                .id(id)
-                .name(name)
-                .removed(removed)
-                .build()
+        return new CategoryDTO(id, name, removed)
     }
 
     static CategoryDTO randomCategory() {
-        return CategoryDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .build()
+        return createCategory(UUID.randomUUID().toString(), UUID.randomUUID().toString())
     }
 
     static CategoryDTO categoryWithIndex(int idx) {
-        return CategoryDTO.builder()
-                .id("id-$idx")
-                .name("name-$idx")
-                .build()
+        return createCategory("id-$idx", "name-$idx")
     }
 }

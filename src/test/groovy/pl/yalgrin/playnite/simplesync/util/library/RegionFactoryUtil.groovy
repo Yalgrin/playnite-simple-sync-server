@@ -1,30 +1,18 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
-import pl.yalgrin.playnite.simplesync.dto.objects.RegionDTO
+import pl.yalgrin.playnite.simplesync.library.dto.RegionDTO
 
 class RegionFactoryUtil {
     static RegionDTO createRegion(String id, String name, boolean removed = false) {
-        return RegionDTO.builder()
-                .id(id)
-                .name(name)
-                .specificationId(UUID.randomUUID().toString())
-                .removed(removed)
-                .build()
+        return new RegionDTO(id, name, removed, UUID.randomUUID().toString())
     }
 
     static RegionDTO randomRegion() {
-        return RegionDTO.builder()
-                .id(UUID.randomUUID().toString())
-                .name(UUID.randomUUID().toString())
-                .specificationId(UUID.randomUUID().toString())
-                .build()
+        return createRegion(UUID.randomUUID().toString(), UUID.randomUUID().toString())
+
     }
 
     static RegionDTO regionWithIndex(int idx) {
-        return RegionDTO.builder()
-                .id("id-$idx")
-                .name("name-$idx")
-                .specificationId(UUID.randomUUID().toString())
-                .build()
+        return createRegion("id-$idx", "name-$idx")
     }
 }
