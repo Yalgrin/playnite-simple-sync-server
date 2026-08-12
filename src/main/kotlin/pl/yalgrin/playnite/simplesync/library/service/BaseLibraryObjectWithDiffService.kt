@@ -72,7 +72,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             }
     }
 
-    protected fun findOrCreateEntity(dto: DTO): Mono<E> {
+    protected open fun findOrCreateEntity(dto: DTO): Mono<E> {
         return Mono.justOrEmpty(dto.id)
             .flatMapMany { playniteId -> repository.findByPlayniteId(playniteId) }
             .first()
@@ -201,7 +201,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                             applyFileChange(entity, fileData.fieldName, fileData.md5)
                         }.map { SaveResult(fileData.fieldName, true) }
                 } else {
-                    Mono.fromRunnable<Void> {
+                    Mono.fromRunnable<Unit> {
                         log.debug("saveOrDeleteMetadataFiles > skipping file: {}", fileData.fieldName)
                     }
                         .then(
@@ -323,7 +323,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             }
     }
 
-    protected fun findOrCreateEntity(dto: DIFF_DTO): Mono<E> {
+    protected open fun findOrCreateEntity(dto: DIFF_DTO): Mono<E> {
         return dto.id.toMono()
             .flatMap { repository.findByPlayniteId(it).first() }
             .doOnNext { e ->
@@ -383,7 +383,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             .thenAny()
     }
 
-    override fun deleteObjectAndPublishChanges(dto: DTO): Mono<Void> {
+    override fun deleteObjectAndPublishChanges(dto: DTO): Mono<Unit> {
         return getSessionClientId()
             .flatMap { clientId ->
                 doDeleteObject(dto, clientId)
@@ -409,7 +409,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             .flatMap { entity -> repository.save(entity) }
             .flatMap { e -> changeService.saveChange(createDeleteChange(clientId, e)) }
             .collectList()
-            .doOnSuccess { d -> log.debug("deleteObject > END") }
+            .doOnSuccess { log.debug("deleteObject > END") }
     }
 
     protected open fun findObjectToDelete(dto: DTO): Flux<E> {

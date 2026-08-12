@@ -24,7 +24,7 @@ class TagResource(
     }
 
     @PostMapping("/delete")
-    fun deleteTag(@RequestBody dto: TagDTO): Mono<Void> {
+    fun deleteTag(@RequestBody dto: TagDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

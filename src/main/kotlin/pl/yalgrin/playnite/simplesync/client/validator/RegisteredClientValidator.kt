@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono
 
 @Component
 class RegisteredClientValidator {
-    fun validateRegisterRequestMono(info: RegistrationRequestDTO): Mono<Void> {
+    fun validateRegisterRequestMono(info: RegistrationRequestDTO): Mono<Unit> {
         return Mono.fromRunnable {
             validateRegisterRequest(info)
         }
@@ -23,7 +23,7 @@ class RegisteredClientValidator {
         }
     }
 
-    fun validateChangeNameRequestMono(newName: String): Mono<Void> {
+    fun validateChangeNameRequestMono(newName: String): Mono<Unit> {
         return Mono.fromRunnable {
             validateChangeNameRequest(newName)
         }

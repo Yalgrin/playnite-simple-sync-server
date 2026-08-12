@@ -24,7 +24,7 @@ class GenreResource(
     }
 
     @PostMapping("/delete")
-    fun deleteGenre(@RequestBody dto: GenreDTO): Mono<Void> {
+    fun deleteGenre(@RequestBody dto: GenreDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

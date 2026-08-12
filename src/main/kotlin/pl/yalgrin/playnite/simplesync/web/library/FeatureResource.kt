@@ -24,7 +24,7 @@ class FeatureResource(
     }
 
     @PostMapping("/delete")
-    fun deleteFeature(@RequestBody dto: FeatureDTO): Mono<Void> {
+    fun deleteFeature(@RequestBody dto: FeatureDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

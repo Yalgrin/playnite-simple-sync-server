@@ -24,7 +24,7 @@ class CategoryResource(
     }
 
     @PostMapping("/delete")
-    fun deleteCategory(@RequestBody dto: CategoryDTO): Mono<Void> {
+    fun deleteCategory(@RequestBody dto: CategoryDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

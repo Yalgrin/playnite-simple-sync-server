@@ -68,7 +68,7 @@ class GameResource(
     }
 
     @PostMapping("/game/delete")
-    fun deleteGame(@RequestBody dto: GameDTO): Mono<Void> {
+    fun deleteGame(@RequestBody dto: GameDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

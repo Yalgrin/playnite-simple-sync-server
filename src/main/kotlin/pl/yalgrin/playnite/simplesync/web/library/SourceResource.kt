@@ -24,7 +24,7 @@ class SourceResource(
     }
 
     @PostMapping("/delete")
-    fun deleteSource(@RequestBody dto: SourceDTO): Mono<Void> {
+    fun deleteSource(@RequestBody dto: SourceDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

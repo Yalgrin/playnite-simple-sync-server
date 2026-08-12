@@ -24,7 +24,7 @@ class SeriesResource(
     }
 
     @PostMapping("/delete")
-    fun deleteSeries(@RequestBody dto: SeriesDTO): Mono<Void> {
+    fun deleteSeries(@RequestBody dto: SeriesDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

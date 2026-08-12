@@ -24,7 +24,7 @@ class AgeRatingResource(
     }
 
     @PostMapping("/delete")
-    fun deleteAgeRating(@RequestBody dto: AgeRatingDTO): Mono<Void> {
+    fun deleteAgeRating(@RequestBody dto: AgeRatingDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

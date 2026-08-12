@@ -24,7 +24,7 @@ class CompanyResource(
     }
 
     @PostMapping("/delete")
-    fun deleteCompany(@RequestBody dto: CompanyDTO): Mono<Void> {
+    fun deleteCompany(@RequestBody dto: CompanyDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

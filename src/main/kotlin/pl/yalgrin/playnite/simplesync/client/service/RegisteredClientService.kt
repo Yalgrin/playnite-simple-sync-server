@@ -84,7 +84,7 @@ class RegisteredClientService(
         }
 
     @Transactional(rollbackFor = [Throwable::class])
-    fun changeName(newName: String): Mono<Void> {
+    fun changeName(newName: String): Mono<Unit> {
         return validator.validateChangeNameRequestMono(newName)
             .then(getSessionInfo())
             .flatMap { sessionInfo ->
@@ -96,7 +96,7 @@ class RegisteredClientService(
                     .flatMap { registeredClient ->
                         registeredClientRepository.save(registeredClient)
                     }
-                    .then()
+                    .thenAny()
             }
     }
 

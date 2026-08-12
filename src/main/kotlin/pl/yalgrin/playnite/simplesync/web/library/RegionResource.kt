@@ -24,7 +24,7 @@ class RegionResource(
     }
 
     @PostMapping("/delete")
-    fun deleteRegion(@RequestBody dto: RegionDTO): Mono<Void> {
+    fun deleteRegion(@RequestBody dto: RegionDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

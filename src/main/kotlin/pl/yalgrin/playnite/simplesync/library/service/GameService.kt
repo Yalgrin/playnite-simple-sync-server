@@ -12,7 +12,10 @@ import pl.yalgrin.playnite.simplesync.common.config.COVER_IMAGE
 import pl.yalgrin.playnite.simplesync.common.config.GAME
 import pl.yalgrin.playnite.simplesync.common.config.ICON
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.util.first
 import pl.yalgrin.playnite.simplesync.common.util.transactional
+import pl.yalgrin.playnite.simplesync.exception.ForceFetchRequiredException
+import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.domain.GameDiff
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
@@ -55,6 +58,7 @@ class GameService(
     metadataService,
     transactionManager
 ) {
+
     override fun saveObjectAndPublishChanges(
         dto: GameDTO,
         fileParts: Flux<FilePart>,
@@ -127,6 +131,59 @@ class GameService(
             }
             .doOnNext { result -> dtoSetter(dto, result.savedObject) }
             .map { it.generatedChanges }
+    }
+
+    override fun findOrCreateEntity(dto: GameDTO): Mono<Game> {
+        return Mono.justOrEmpty(dto)
+            .filter { d -> d.gameId != null && d.pluginId != null }
+            .flatMap { d ->
+                gameRepository.findByGameIdAndPluginId(
+                    d.gameId!!,
+                    d.pluginId!!
+                ).first()
+            }
+            .flatMap { e ->
+                log.debug(
+                    "findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
+                    e.id,
+                    dto.gameId, dto.pluginId
+                )
+                if (!e.isRemoved && !Strings.CS.equals(e.playniteId, dto.id)) {
+                    Mono.error(ForceFetchRequiredException("Force fetch required!"))
+                } else {
+                    Mono.just(e)
+                }
+            }
+            .switchIfEmpty(
+                Mono.fromSupplier { createEntityFromDTO(dto) }
+                    .doOnNext { log.debug("findOrCreateEntity > creating new entity...") }
+            )
+    }
+
+    override fun findOrCreateEntity(dto: GameDiffDTO): Mono<Game> {
+        return Mono.justOrEmpty(dto)
+            .filter { d -> d.gameId != null && d.pluginId != null }
+            .flatMap { gameRepository.findByGameIdAndPluginId(dto.gameId!!, dto.pluginId!!).first() }
+            .flatMap { e ->
+                log.debug(
+                    "findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
+                    e.id,
+                    dto.gameId, dto.pluginId
+                )
+                if (e.isRemoved) {
+                    return@flatMap Mono.error(
+                        ManualSynchronizationRequiredException("Manual synchronization required!")
+                    )
+                }
+                if (!Strings.CS.equals(e.playniteId, dto.id)) {
+                    Mono.error<Game>(ForceFetchRequiredException("Force fetch required!"))
+                } else {
+                    Mono.just(e)
+                }
+            }
+            .switchIfEmpty(
+                Mono.error(ManualSynchronizationRequiredException("Manual synchronization required!"))
+            )
     }
 
     override fun saveObjectDiffAndPublishChanges(

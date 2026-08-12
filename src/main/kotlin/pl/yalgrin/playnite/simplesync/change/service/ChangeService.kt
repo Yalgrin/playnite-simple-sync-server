@@ -10,6 +10,7 @@ import pl.yalgrin.playnite.simplesync.change.repository.ChangeRepository
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.common.util.asObject
+import pl.yalgrin.playnite.simplesync.common.util.thenAny
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.library.repository.*
@@ -184,7 +185,7 @@ class ChangeService(
         targetDto.completionStatus?.id?.let { collectedIds.getUuids(ObjectType.COMPLETION_STATUS).add(it) }
     }
 
-    private fun findIdsForUuids(collectedIds: CollectedIds): Mono<Void> {
+    private fun findIdsForUuids(collectedIds: CollectedIds): Mono<Unit> {
         return Flux.fromIterable(relatedObjectRepositories.keys)
             .flatMap { objectType ->
                 Mono.fromCallable {
@@ -195,7 +196,7 @@ class ChangeService(
                     .flatMap { relatedObjectRepositories[objectType]?.findIdsByPlayniteIdIn(it) ?: Flux.empty() }
                     .doOnNext { id -> collectedIds.getIds(objectType).add(id) }
             }
-            .then()
+            .thenAny()
     }
 
     private fun findChangesForObjectType(ids: Collection<Long>, maxId: Long?, type: ObjectType): Flux<ChangeMessage> {

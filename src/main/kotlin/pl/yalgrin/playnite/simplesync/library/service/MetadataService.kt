@@ -161,7 +161,9 @@ class MetadataService(
             files.forEach { path ->
                 val baseName = FilenameUtils.getBaseName(path.toString())
                 if (baseName == fieldName || FilenameUtils.getExtension(path.toString()).equals("tmp", true)) {
-                    if (deleteIfExists(path)) deletedAnything.set(true)
+                    if (deleteIfExists(path)) {
+                        deletedAnything.set(true)
+                    }
                 }
             }
         }

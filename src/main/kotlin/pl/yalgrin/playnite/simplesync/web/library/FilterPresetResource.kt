@@ -24,7 +24,7 @@ class FilterPresetResource(
     }
 
     @PostMapping("/delete")
-    fun deleteFilterPreset(@RequestBody dto: FilterPresetDTO): Mono<Void> {
+    fun deleteFilterPreset(@RequestBody dto: FilterPresetDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

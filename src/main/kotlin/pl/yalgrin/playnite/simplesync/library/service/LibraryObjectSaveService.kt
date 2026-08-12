@@ -8,7 +8,7 @@ interface LibraryObjectSaveService<DTO : LibraryObjectDTO> {
 
     fun saveObject(dto: DTO): Mono<LibrarySaveResult<DTO>>
 
-    fun deleteObjectAndPublishChanges(dto: DTO): Mono<Void>
+    fun deleteObjectAndPublishChanges(dto: DTO): Mono<Unit>
 
     fun findById(id: Long): Mono<DTO>
 }

@@ -98,10 +98,15 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
 
     private fun createChange(clientId: String, entity: E): ChangeDTO? {
         val id = entity.id ?: return null
-        return ChangeDTO(null, getObjectType(), clientId, id, entity.isNotifyAll)
+        return ChangeDTO(
+            type = getObjectType(),
+            clientId = clientId,
+            objectId = id,
+            isForceFetch = entity.isNotifyAll
+        )
     }
 
-    override fun deleteObjectAndPublishChanges(dto: D): Mono<Void> {
+    override fun deleteObjectAndPublishChanges(dto: D): Mono<Unit> {
         return deleteObject(dto)
             .transactional(transactionManager)
             .flatMap { dtoList ->
@@ -130,15 +135,10 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
                     e
                 }
                 .flatMap { entity -> repository.save(entity) }
-                .mapNotNull { e -> createDeleteChange(clientId, e) }
+                .mapNotNull { e -> createChange(clientId, e) }
                 .flatMap { changeDTO -> changeService.saveChange(changeDTO) }
                 .collectList()
         }
-    }
-
-    private fun createDeleteChange(clientId: String, entity: E): ChangeDTO? {
-        val id = entity.id ?: return null
-        return ChangeDTO(null, getObjectType(), clientId, id, entity.isNotifyAll)
     }
 
     protected abstract fun getObjectType(): ObjectType

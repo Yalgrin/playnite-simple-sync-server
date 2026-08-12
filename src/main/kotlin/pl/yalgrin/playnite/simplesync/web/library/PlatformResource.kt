@@ -74,7 +74,7 @@ class PlatformResource(
     }
 
     @PostMapping("/platform/delete")
-    fun deletePlatform(@RequestBody dto: PlatformDTO): Mono<Void> {
+    fun deletePlatform(@RequestBody dto: PlatformDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

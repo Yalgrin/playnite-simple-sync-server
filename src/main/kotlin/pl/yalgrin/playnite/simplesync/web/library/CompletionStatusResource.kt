@@ -24,7 +24,7 @@ class CompletionStatusResource(
     }
 
     @PostMapping("/delete")
-    fun deleteCompletionStatus(@RequestBody dto: CompletionStatusDTO): Mono<Void> {
+    fun deleteCompletionStatus(@RequestBody dto: CompletionStatusDTO): Mono<Unit> {
         return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.change.service
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Service
 import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO
+import pl.yalgrin.playnite.simplesync.common.util.thenAny
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
@@ -18,17 +19,17 @@ class ChangeListenerService {
         private val log = LoggerFactory.getLogger(ChangeListenerService::class.java)
     }
 
-    fun publishChange(dto: ChangeDTO): Mono<Void> {
+    fun publishChange(dto: ChangeDTO): Mono<Unit> {
         return Mono.fromRunnable<Unit> {
             log.debug("publishing {}", dto)
             sink.tryEmitNext(dto)
-        }.subscribeOn(scheduler).then()
+        }.subscribeOn(scheduler).thenAny()
     }
 
-    fun publishChanges(dtoList: Collection<ChangeDTO>): Mono<Void> {
+    fun publishChanges(dtoList: Collection<ChangeDTO>): Mono<Unit> {
         return dtoList.toFlux()
             .concatMap { dto -> publishChange(dto) }
-            .then()
+            .thenAny()
     }
 
     fun modificationFlux(): Flux<ChangeDTO> {
