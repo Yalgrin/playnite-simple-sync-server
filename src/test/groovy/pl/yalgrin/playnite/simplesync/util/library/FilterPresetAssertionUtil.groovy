@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.util.library
 import pl.yalgrin.playnite.simplesync.common.config.JsonMapperProviderKt
 import pl.yalgrin.playnite.simplesync.library.domain.FilterPreset
 import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDTO
+import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDatabaseModel
 import pl.yalgrin.playnite.simplesync.library.dto.filter.FilterPresetSettingsDTO
 import pl.yalgrin.playnite.simplesync.library.dto.filter.IdItemPropertiesDTO
 import pl.yalgrin.playnite.simplesync.library.dto.filter.IntItemPropertiesDTO
@@ -29,6 +30,23 @@ class FilterPresetAssertionUtil {
         true
     }
 
+    static boolean assertFilterPreset(FilterPresetDTO expectedDTO, FilterPresetDatabaseModel resultDTO) {
+        if (expectedDTO == null) {
+            assert resultDTO == null
+            return true
+        }
+        assert resultDTO != null
+        assert resultDTO.getId() == expectedDTO.getId()
+        assert resultDTO.getName() == expectedDTO.getName()
+        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
+        assert settingsMatch(resultDTO.getSettings(), expectedDTO.getSettings())
+        assert resultDTO.getSortingOrder() == expectedDTO.getSortingOrder()
+        assert resultDTO.getSortingOrderDirection() == expectedDTO.getSortingOrderDirection()
+        assert resultDTO.getGroupingOrder() == expectedDTO.getGroupingOrder()
+        assert resultDTO.getShowInFullscreenQuickSelection() == expectedDTO.getShowInFullscreenQuickSelection()
+        true
+    }
+
     static boolean assertFilterPresetEntity(FilterPresetDTO expectedDTO, FilterPreset resultEntity) {
         if (expectedDTO == null) {
             assert resultEntity == null
@@ -39,7 +57,7 @@ class FilterPresetAssertionUtil {
         assert resultEntity.getName() == expectedDTO.getName()
         assert resultEntity.isRemoved() == expectedDTO.isRemoved()
 
-        FilterPresetDTO resultDTO = objectMapper.readValue(resultEntity.getSavedData().asArray(), FilterPresetDTO.class)
+        FilterPresetDatabaseModel resultDTO = objectMapper.readValue(resultEntity.getSavedData().asArray(), FilterPresetDatabaseModel.class)
         assertFilterPreset(expectedDTO, resultDTO)
     }
 

@@ -21,7 +21,6 @@ import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
-import pl.yalgrin.playnite.simplesync.service.MetadataService
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import pl.yalgrin.playnite.simplesync.util.JsonMapperUtil
 import pl.yalgrin.playnite.simplesync.util.library.GameAssertionUtil
@@ -39,6 +38,8 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
     private GameRepository gameRepository
     @Autowired
     private MetadataTestHelper metadataTestHelper
+
+    //TODO cover the rest of the paths
 
     def "save single game"() {
         given:
@@ -201,7 +202,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert change.getType() == ObjectType.GAME
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     newObjectId.set(change.getObjectId())
                     true
                 }
@@ -225,7 +226,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert change.getType() == ObjectType.GAME_DIFF
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get() + 1
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     true
                 }
                 .then {
@@ -248,7 +249,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert change.getType() == ObjectType.GAME
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     true
                 }
                 .then {
@@ -363,7 +364,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         for (final def file in files) {
             expectedFileMap.put(FilenameUtils.getBaseName(file.getName()), file)
         }
-        for (final def filename in MetadataService.ALLOWED_FILE_NAMES) {
+        for (final def filename in ConstantsKt.ALLOWED_FILE_NAMES) {
             def expectedFile = expectedFileMap.get(filename)
             def metadataRequest = makeGetMetadataRequest(savedEntity.getId(), filename)
             if (expectedFile != null) {

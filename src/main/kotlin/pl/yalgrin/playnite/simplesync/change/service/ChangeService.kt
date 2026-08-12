@@ -9,11 +9,11 @@ import pl.yalgrin.playnite.simplesync.change.mapper.ChangeMessageMapper
 import pl.yalgrin.playnite.simplesync.change.repository.ChangeRepository
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.library.repository.*
 import pl.yalgrin.playnite.simplesync.security.getSessionClientId
-import pl.yalgrin.playnite.simplesync.util.asObject
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
@@ -43,7 +43,6 @@ class ChangeService(
     private val relatedObjectRepositories: Map<ObjectType, ObjectRepository<*>>
 
     init {
-
         val repositoryMap: MutableMap<ObjectType, ObjectRepository<*>> = LinkedHashMap()
         repositoryMap[ObjectType.CATEGORY] = categoryRepository
         repositoryMap[ObjectType.GENRE] = genreRepository
@@ -96,7 +95,7 @@ class ChangeService(
     @Transactional(readOnly = true)
     fun generateChangesForGames(dto: GameChangeRequestDTO): Flux<ChangeMessage> {
         return dto.toMono()
-            .filter { !it.ids.isNullOrEmpty() || !it.gameIds.isNullOrEmpty() }
+            .filter { it.ids.isNotEmpty() || it.gameIds.isNotEmpty() }
             .flatMapMany { d ->
                 val collectedIds = CollectedIds()
                 fetchGames(d)
@@ -138,12 +137,10 @@ class ChangeService(
         dto: GameChangeRequestDTO,
         alreadyFetchedIds: MutableSet<String>
     ): Mono<List<Game>> {
-        if (dto.gameIds.isNullOrEmpty()) {
+        if (dto.gameIds.isEmpty()) {
             return Mono.just(emptyList())
         }
-        //TODO !!
         return Flux.fromIterable(dto.gameIds)
-            .filter { i -> i?.gameId != null && i.pluginId != null }
             .flatMap { i ->
                 gameRepository.findByGameIdAndPluginId(
                     i.gameId,
@@ -156,9 +153,6 @@ class ChangeService(
     }
 
     private fun getByIds(dto: GameChangeRequestDTO, alreadyFetchedIds: Set<String>): Flux<Game> {
-        if (dto.ids == null) {
-            return Flux.empty()
-        }
         return Flux.fromIterable(dto.ids)
             .filter { i -> !alreadyFetchedIds.contains(i) }
             .buffer(100)
@@ -166,46 +160,26 @@ class ChangeService(
     }
 
     private fun extractObjectUuids(targetDto: GameDTO, collectedIds: CollectedIds) {
-        targetDto.categories?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.CATEGORY).add(it) } }
-        }
-        targetDto.genres?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.GENRE).add(it) } }
-        }
-        targetDto.platforms?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.PLATFORM).add(it) } }
-        }
-        targetDto.publishers?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.COMPANY).add(it) } }
-        }
-        targetDto.developers?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.COMPANY).add(it) } }
-        }
-        targetDto.features?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.FEATURE).add(it) } }
-        }
-        targetDto.tags?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.TAG).add(it) } }
-        }
-        targetDto.series?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.SERIES).add(it) } }
-        }
-        targetDto.ageRatings?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.AGE_RATING).add(it) } }
-        }
-        targetDto.regions?.let { l ->
-            l.stream().map { obj -> obj.id }
-                .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.REGION).add(it) } }
-        }
+        targetDto.categories.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.CATEGORY).add(it) } }
+        targetDto.genres.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.GENRE).add(it) } }
+        targetDto.platforms.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.PLATFORM).add(it) } }
+        targetDto.publishers.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.COMPANY).add(it) } }
+        targetDto.developers.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.COMPANY).add(it) } }
+        targetDto.features.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.FEATURE).add(it) } }
+        targetDto.tags.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.TAG).add(it) } }
+        targetDto.series.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.SERIES).add(it) } }
+        targetDto.ageRatings.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.AGE_RATING).add(it) } }
+        targetDto.regions.stream().map { obj -> obj.id }
+            .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.REGION).add(it) } }
         targetDto.source?.id?.let { collectedIds.getUuids(ObjectType.SOURCE).add(it) }
         targetDto.completionStatus?.id?.let { collectedIds.getUuids(ObjectType.COMPLETION_STATUS).add(it) }
     }

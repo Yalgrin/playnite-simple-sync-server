@@ -1,7 +1,7 @@
 package pl.yalgrin.playnite.simplesync.library.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import pl.yalgrin.playnite.simplesync.common.utils.ToStringUtils
+import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import java.io.Serial
 
 data class RegionDTO(
@@ -19,7 +19,7 @@ data class RegionDTO(
     fun withRemoved(isRemoved: Boolean) = copy(isRemoved = isRemoved)
 
     override fun toString(): String {
-        return ToStringUtils.createBuilder(this)
+        return ToStringUtil.createBuilder(this)
             .append("id", id)
             .append("name", name)
             .append("specificationId", specificationId)

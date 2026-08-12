@@ -1,6 +1,8 @@
 package pl.yalgrin.playnite.simplesync.common.config
 
 import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.annotation.JsonSetter
+import com.fasterxml.jackson.annotation.Nulls
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer
 import tools.jackson.databind.DeserializationFeature
 import tools.jackson.databind.json.JsonMapper
@@ -18,6 +20,7 @@ fun JsonMapper.Builder.customize(): JsonMapper.Builder {
             )
         }
         builder.changeDefaultPropertyInclusion { value -> value.withContentInclusion(JsonInclude.Include.NON_DEFAULT) }
+        builder.withConfigOverride(List::class.java) { o -> o.setNullHandling(JsonSetter.Value.forValueNulls(Nulls.AS_EMPTY)) }
     }.customize(this)
 
     return this

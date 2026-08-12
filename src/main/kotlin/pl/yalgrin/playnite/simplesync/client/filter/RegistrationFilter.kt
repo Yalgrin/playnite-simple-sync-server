@@ -7,11 +7,11 @@ import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
+import pl.yalgrin.playnite.simplesync.common.util.toSha1
 import pl.yalgrin.playnite.simplesync.exception.AuthException
 import pl.yalgrin.playnite.simplesync.exception.AuthExceptionType
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.security.withSessionInfo
-import pl.yalgrin.playnite.simplesync.util.toSha1
 import reactor.core.publisher.Mono
 import java.util.*
 

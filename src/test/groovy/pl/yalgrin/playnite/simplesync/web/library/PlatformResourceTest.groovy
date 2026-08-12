@@ -11,12 +11,12 @@ import org.springframework.web.multipart.MultipartFile
 import pl.yalgrin.playnite.simplesync.client.enums.MessageType
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.client.message.InitializationMessage
+import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.library.domain.Platform
 import pl.yalgrin.playnite.simplesync.library.dto.PlatformDTO
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.library.repository.PlatformRepository
-import pl.yalgrin.playnite.simplesync.service.MetadataService
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import pl.yalgrin.playnite.simplesync.util.JsonMapperUtil
 import pl.yalgrin.playnite.simplesync.util.library.GameFactoryUtil
@@ -176,7 +176,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                     assert change.getType() == ObjectType.PLATFORM
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     newObjectId.set(change.getObjectId())
                     true
                 }
@@ -200,7 +200,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                     assert change.getType() == ObjectType.PLATFORM_DIFF
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get() + 1
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     true
                 }
                 .then {
@@ -223,7 +223,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                     assert change.getType() == ObjectType.PLATFORM
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     true
                 }
                 .then {
@@ -283,7 +283,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         for (final def file in files) {
             expectedFileMap.put(FilenameUtils.getBaseName(file.getName()), file)
         }
-        for (final def filename in MetadataService.ALLOWED_FILE_NAMES) {
+        for (final def filename in ConstantsKt.ALLOWED_FILE_NAMES) {
             def expectedFile = expectedFileMap.get(filename)
             def metadataRequest = makeGetMetadataRequest(savedEntity.getId(), filename)
             if (expectedFile != null) {

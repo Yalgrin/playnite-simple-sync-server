@@ -34,5 +34,8 @@ data class GameDiff(
     var notifyAll: Boolean = false,
 
     @Transient
-    var changed: Boolean = false
+    var changed: Boolean = false,
+
+    @Transient
+    override var isForEntireObject: Boolean = false
 ) : LibraryObjectDiffEntity

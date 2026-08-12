@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.library
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.FeatureDTO
-import pl.yalgrin.playnite.simplesync.service.objects.FeatureService
+import pl.yalgrin.playnite.simplesync.library.service.FeatureService
 import reactor.core.publisher.Mono
 
 @RestController
@@ -20,11 +20,11 @@ class FeatureResource(
 
     @PostMapping("/save")
     fun saveFeature(@RequestBody dto: FeatureDTO): Mono<FeatureDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto))
     }
 
     @PostMapping("/delete")
     fun deleteFeature(@RequestBody dto: FeatureDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

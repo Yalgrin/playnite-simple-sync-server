@@ -162,7 +162,7 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
                     assert change.getType() == ObjectType.SERIES
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     newObjectId.set(change.getObjectId())
                     true
                 }
@@ -186,7 +186,7 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
                     assert change.getType() == ObjectType.SERIES
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     true
                 }
                 .then {
@@ -209,7 +209,7 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
                     assert change.getType() == ObjectType.SERIES
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     true
                 }
                 .then {

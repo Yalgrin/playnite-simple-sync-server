@@ -10,21 +10,21 @@ class ChangeMapper {
     fun toEntity(dto: ChangeDTO): Change {
         return Change(
             id = dto.id,
-            type = dto.type!!,
+            type = dto.type,
             clientId = dto.clientId!!,
-            objectId = dto.objectId!!,
+            objectId = dto.objectId,
             notifyAll = dto.isForceFetch,
             createdAt = Instant.now()
         )
     }
 
     fun toDTO(entity: Change): ChangeDTO {
-        val dto = ChangeDTO()
-        dto.id = entity.id
-        dto.type = entity.type
-        dto.clientId = entity.clientId
-        dto.objectId = entity.objectId
-        dto.isForceFetch = entity.notifyAll
-        return dto
+        return ChangeDTO(
+            id = entity.id,
+            type = entity.type,
+            clientId = entity.clientId,
+            objectId = entity.objectId,
+            isForceFetch = entity.notifyAll
+        )
     }
 }

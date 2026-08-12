@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.library
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.CategoryDTO
-import pl.yalgrin.playnite.simplesync.service.objects.CategoryService
+import pl.yalgrin.playnite.simplesync.library.service.CategoryService
 import reactor.core.publisher.Mono
 
 @RestController
@@ -20,11 +20,11 @@ class CategoryResource(
 
     @PostMapping("/save")
     fun saveCategory(@RequestBody dto: CategoryDTO): Mono<CategoryDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto))
     }
 
     @PostMapping("/delete")
     fun deleteCategory(@RequestBody dto: CategoryDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

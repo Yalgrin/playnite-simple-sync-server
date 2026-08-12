@@ -5,9 +5,9 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import pl.yalgrin.playnite.simplesync.common.util.toErrorDTO
 import pl.yalgrin.playnite.simplesync.dto.ErrorDTO
 import pl.yalgrin.playnite.simplesync.exception.*
-import pl.yalgrin.playnite.simplesync.util.toErrorDTO
 import reactor.core.publisher.Mono
 
 @RestControllerAdvice

@@ -12,4 +12,6 @@ interface LibraryObjectDiffEntity {
     var diffData: Json?
 
     var isRemoved: Boolean
+
+    var isForEntireObject: Boolean
 }

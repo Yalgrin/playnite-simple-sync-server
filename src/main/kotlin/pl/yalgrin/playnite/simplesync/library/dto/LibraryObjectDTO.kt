@@ -4,7 +4,6 @@ import java.io.Serializable
 
 //TODO: separate DB models and frontend DTOs
 //TODO: migrate to new format: filters presets, platform diffs, games, game diffs
-//TODO: finish moving remaining services to Kotlin
 
 interface LibraryObjectDTO : Serializable {
     var id: String?

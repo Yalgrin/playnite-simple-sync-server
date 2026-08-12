@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.library
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.CompanyDTO
-import pl.yalgrin.playnite.simplesync.service.objects.CompanyService
+import pl.yalgrin.playnite.simplesync.library.service.CompanyService
 import reactor.core.publisher.Mono
 
 @RestController
@@ -20,11 +20,11 @@ class CompanyResource(
 
     @PostMapping("/save")
     fun saveCompany(@RequestBody dto: CompanyDTO): Mono<CompanyDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto))
     }
 
     @PostMapping("/delete")
     fun deleteCompany(@RequestBody dto: CompanyDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

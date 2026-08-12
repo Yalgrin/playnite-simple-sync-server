@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.library
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.SeriesDTO
-import pl.yalgrin.playnite.simplesync.service.objects.SeriesService
+import pl.yalgrin.playnite.simplesync.library.service.SeriesService
 import reactor.core.publisher.Mono
 
 @RestController
@@ -20,11 +20,11 @@ class SeriesResource(
 
     @PostMapping("/save")
     fun saveSeries(@RequestBody dto: SeriesDTO): Mono<SeriesDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto))
     }
 
     @PostMapping("/delete")
     fun deleteSeries(@RequestBody dto: SeriesDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

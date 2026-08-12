@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.library
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.RegionDTO
-import pl.yalgrin.playnite.simplesync.service.objects.RegionService
+import pl.yalgrin.playnite.simplesync.library.service.RegionService
 import reactor.core.publisher.Mono
 
 @RestController
@@ -20,11 +20,11 @@ class RegionResource(
 
     @PostMapping("/save")
     fun saveRegion(@RequestBody dto: RegionDTO): Mono<RegionDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto))
     }
 
     @PostMapping("/delete")
     fun deleteRegion(@RequestBody dto: RegionDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

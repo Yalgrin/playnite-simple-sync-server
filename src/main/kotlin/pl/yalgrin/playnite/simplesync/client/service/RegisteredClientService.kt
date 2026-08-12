@@ -11,11 +11,11 @@ import pl.yalgrin.playnite.simplesync.client.enums.CheckResult
 import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
 import pl.yalgrin.playnite.simplesync.client.validator.RegisteredClientValidator
 import pl.yalgrin.playnite.simplesync.common.config.CURRENT_API_VERSION
+import pl.yalgrin.playnite.simplesync.common.util.thenAny
+import pl.yalgrin.playnite.simplesync.common.util.toSha1
 import pl.yalgrin.playnite.simplesync.exception.ApiVersionException
 import pl.yalgrin.playnite.simplesync.exception.ApiVersionExceptionType
 import pl.yalgrin.playnite.simplesync.security.getSessionInfo
-import pl.yalgrin.playnite.simplesync.util.thenAny
-import pl.yalgrin.playnite.simplesync.util.toSha1
 import reactor.core.publisher.Mono
 import java.util.*
 import kotlin.time.Clock

@@ -7,9 +7,9 @@ import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebExceptionHandler
+import pl.yalgrin.playnite.simplesync.common.util.toErrorDTO
 import pl.yalgrin.playnite.simplesync.dto.ErrorDTO
 import pl.yalgrin.playnite.simplesync.exception.AuthException
-import pl.yalgrin.playnite.simplesync.util.toErrorDTO
 import reactor.core.publisher.Mono
 import tools.jackson.databind.json.JsonMapper
 

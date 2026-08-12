@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.library
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.CompletionStatusDTO
-import pl.yalgrin.playnite.simplesync.service.objects.CompletionStatusService
+import pl.yalgrin.playnite.simplesync.library.service.CompletionStatusService
 import reactor.core.publisher.Mono
 
 @RestController
@@ -20,11 +20,11 @@ class CompletionStatusResource(
 
     @PostMapping("/save")
     fun saveCompletionStatus(@RequestBody dto: CompletionStatusDTO): Mono<CompletionStatusDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto))
     }
 
     @PostMapping("/delete")
     fun deleteCompletionStatus(@RequestBody dto: CompletionStatusDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

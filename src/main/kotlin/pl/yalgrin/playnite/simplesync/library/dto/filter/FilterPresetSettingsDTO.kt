@@ -27,7 +27,9 @@ data class FilterPresetSettingsDTO(
     var isFavorite: Boolean = false,
     var name: String? = null,
     var version: String? = null,
+
     var releaseYear: StringItemPropertiesDTO? = null,
+
     var genre: IdItemPropertiesDTO? = null,
     var platform: IdItemPropertiesDTO? = null,
     var publisher: IdItemPropertiesDTO? = null,
@@ -41,6 +43,7 @@ data class FilterPresetSettingsDTO(
     var library: IdItemPropertiesDTO? = null,
     var completionStatuses: IdItemPropertiesDTO? = null,
     var feature: IdItemPropertiesDTO? = null,
+
     var userScore: IntItemPropertiesDTO? = null,
     var criticScore: IntItemPropertiesDTO? = null,
     var communityScore: IntItemPropertiesDTO? = null,

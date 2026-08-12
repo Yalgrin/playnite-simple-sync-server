@@ -28,5 +28,8 @@ data class PlatformDiff(
     var isNotifyAll: Boolean = false,
 
     @Transient
-    var isChanged: Boolean = false
+    var isChanged: Boolean = false,
+
+    @Transient
+    override var isForEntireObject: Boolean = false
 ) : LibraryObjectDiffEntity

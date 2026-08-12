@@ -8,13 +8,12 @@ import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 @Component
 class ChangeMessageMapper {
     fun toMessage(dto: ChangeDTO): ChangeMessage {
-        //TODO
         return ChangeMessage(
             id = dto.id,
-            type = dto.type!!,
+            type = dto.type,
             clientId = dto.clientId,
-            objectId = dto.objectId!!,
-            forceFetch = dto.isForceFetch
+            objectId = dto.objectId,
+            isForceFetch = dto.isForceFetch
         )
     }
 
@@ -24,7 +23,7 @@ class ChangeMessageMapper {
             type = entity.type,
             clientId = entity.clientId,
             objectId = entity.objectId,
-            forceFetch = entity.notifyAll
+            isForceFetch = entity.notifyAll
         )
     }
 }

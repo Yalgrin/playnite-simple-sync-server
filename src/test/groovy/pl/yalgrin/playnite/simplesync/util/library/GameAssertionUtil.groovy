@@ -1,5 +1,6 @@
 package pl.yalgrin.playnite.simplesync.util.library
 
+import pl.yalgrin.playnite.simplesync.common.config.JsonMapperProviderKt
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import tools.jackson.databind.json.JsonMapper
@@ -7,7 +8,7 @@ import tools.jackson.databind.json.JsonMapper
 import java.util.function.BiPredicate
 
 class GameAssertionUtil {
-    private static final JsonMapper objectMapper = pl.yalgrin.playnite.simplesync.common.config.JsonMapperProviderKt.buildJsonMapper()
+    private static final JsonMapper objectMapper = JsonMapperProviderKt.buildJsonMapper()
 
     static boolean assertGame(GameDTO expectedDTO, GameDTO resultDTO) {
         if (expectedDTO == null) {

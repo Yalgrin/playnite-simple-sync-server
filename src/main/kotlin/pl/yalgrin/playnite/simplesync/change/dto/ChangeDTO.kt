@@ -3,14 +3,14 @@ package pl.yalgrin.playnite.simplesync.change.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import pl.yalgrin.playnite.simplesync.common.dto.AbstractDTO
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
-import pl.yalgrin.playnite.simplesync.common.utils.ToStringUtils
+import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import java.io.Serial
 
 data class ChangeDTO(
     var id: Long? = null,
-    var type: ObjectType? = null,
+    var type: ObjectType,
     var clientId: String? = null,
-    var objectId: Long? = null,
+    var objectId: Long,
     @param:JsonProperty("isForceFetch")
     @get:JsonProperty("isForceFetch")
     @field:JsonProperty("isForceFetch")
@@ -18,7 +18,7 @@ data class ChangeDTO(
 ) : AbstractDTO() {
 
     override fun toString(): String {
-        return ToStringUtils.createBuilder(this)
+        return ToStringUtil.createBuilder(this)
             .append("id", id)
             .append("type", type)
             .append("clientId", clientId)

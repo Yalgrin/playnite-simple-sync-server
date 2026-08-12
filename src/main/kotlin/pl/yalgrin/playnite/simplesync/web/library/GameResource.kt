@@ -10,8 +10,8 @@ import pl.yalgrin.playnite.simplesync.common.config.GAME
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
-import pl.yalgrin.playnite.simplesync.service.MetadataService
-import pl.yalgrin.playnite.simplesync.service.objects.GameService
+import pl.yalgrin.playnite.simplesync.library.service.GameService
+import pl.yalgrin.playnite.simplesync.library.service.MetadataService
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.nio.file.NoSuchFileException
@@ -55,20 +55,20 @@ class GameResource(
     }
 
     @PostMapping("/game/save")
-    fun saveGame(@RequestPart dto: GameDTO, @RequestPart(required = false) files: Flux<FilePart>?): Mono<GameDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, files, true))
+    fun saveGame(@RequestPart dto: GameDTO, @RequestPart(required = false) files: Flux<FilePart>): Mono<GameDTO> {
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto, files, true))
     }
 
     @PostMapping("/game-diff/save")
     fun saveGameDiff(
         @RequestPart dto: GameDiffDTO,
-        @RequestPart(required = false) files: Flux<FilePart>?
+        @RequestPart(required = false) files: Flux<FilePart>
     ): Mono<GameDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObjectDiff(dto, files))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectDiffAndPublishChanges(dto, files))
     }
 
     @PostMapping("/game/delete")
     fun deleteGame(@RequestBody dto: GameDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

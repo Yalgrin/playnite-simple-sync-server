@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.library
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.TagDTO
-import pl.yalgrin.playnite.simplesync.service.objects.TagService
+import pl.yalgrin.playnite.simplesync.library.service.TagService
 import reactor.core.publisher.Mono
 
 @RestController
@@ -20,11 +20,11 @@ class TagResource(
 
     @PostMapping("/save")
     fun saveTag(@RequestBody dto: TagDTO): Mono<TagDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto))
     }
 
     @PostMapping("/delete")
     fun deleteTag(@RequestBody dto: TagDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

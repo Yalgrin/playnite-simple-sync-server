@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.library
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.GenreDTO
-import pl.yalgrin.playnite.simplesync.service.objects.GenreService
+import pl.yalgrin.playnite.simplesync.library.service.GenreService
 import reactor.core.publisher.Mono
 
 @RestController
@@ -20,11 +20,11 @@ class GenreResource(
 
     @PostMapping("/save")
     fun saveGenre(@RequestBody dto: GenreDTO): Mono<GenreDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto))
     }
 
     @PostMapping("/delete")
     fun deleteGenre(@RequestBody dto: GenreDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

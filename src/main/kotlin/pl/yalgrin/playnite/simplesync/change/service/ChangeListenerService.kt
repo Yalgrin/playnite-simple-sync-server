@@ -25,7 +25,7 @@ class ChangeListenerService {
         }.subscribeOn(scheduler).then()
     }
 
-    fun publishChanges(dtoList: List<ChangeDTO>): Mono<Void> {
+    fun publishChanges(dtoList: Collection<ChangeDTO>): Mono<Void> {
         return dtoList.toFlux()
             .concatMap { dto -> publishChange(dto) }
             .then()

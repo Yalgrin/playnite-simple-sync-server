@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.library
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDTO
-import pl.yalgrin.playnite.simplesync.service.objects.FilterPresetService
+import pl.yalgrin.playnite.simplesync.library.service.FilterPresetService
 import reactor.core.publisher.Mono
 
 @RestController
@@ -20,11 +20,11 @@ class FilterPresetResource(
 
     @PostMapping("/save")
     fun saveFilterPreset(@RequestBody dto: FilterPresetDTO): Mono<FilterPresetDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto))
     }
 
     @PostMapping("/delete")
     fun deleteFilterPreset(@RequestBody dto: FilterPresetDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

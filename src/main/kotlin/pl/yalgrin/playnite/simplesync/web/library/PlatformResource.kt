@@ -10,8 +10,8 @@ import pl.yalgrin.playnite.simplesync.common.config.PLATFORM
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.dto.PlatformDTO
 import pl.yalgrin.playnite.simplesync.library.dto.PlatformDiffDTO
-import pl.yalgrin.playnite.simplesync.service.MetadataService
-import pl.yalgrin.playnite.simplesync.service.objects.PlatformService
+import pl.yalgrin.playnite.simplesync.library.service.MetadataService
+import pl.yalgrin.playnite.simplesync.library.service.PlatformService
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.nio.file.NoSuchFileException
@@ -60,21 +60,21 @@ class PlatformResource(
     @PostMapping("/platform/save")
     fun savePlatform(
         @RequestPart dto: PlatformDTO,
-        @RequestPart(required = false) files: Flux<FilePart>?
+        @RequestPart(required = false) files: Flux<FilePart>
     ): Mono<PlatformDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObject(dto, files, true))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectAndPublishChanges(dto, files, true))
     }
 
     @PostMapping("/platform-diff/save")
     fun savePlatformDiff(
         @RequestPart dto: PlatformDiffDTO,
-        @RequestPart(required = false) files: Flux<FilePart>?
+        @RequestPart(required = false) files: Flux<FilePart>
     ): Mono<PlatformDTO> {
-        return singleExecutorHelper.runOnExecutor(service.saveObjectDiff(dto, files))
+        return singleExecutorHelper.runOnExecutor(service.saveObjectDiffAndPublishChanges(dto, files))
     }
 
     @PostMapping("/platform/delete")
     fun deletePlatform(@RequestBody dto: PlatformDTO): Mono<Void> {
-        return singleExecutorHelper.runOnExecutor(service.deleteObject(dto))
+        return singleExecutorHelper.runOnExecutor(service.deleteObjectAndPublishChanges(dto))
     }
 }

@@ -162,7 +162,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
                     assert change.getType() == ObjectType.TAG
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     newObjectId.set(change.getObjectId())
                     true
                 }
@@ -186,7 +186,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
                     assert change.getType() == ObjectType.TAG
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     true
                 }
                 .then {
@@ -209,7 +209,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
                     assert change.getType() == ObjectType.TAG
                     assert change.getClientId() == clientId
                     assert change.getObjectId() == newObjectId.get()
-                    assert !change.getForceFetch()
+                    assert !change.isForceFetch()
                     true
                 }
                 .then {

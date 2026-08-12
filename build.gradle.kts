@@ -1,9 +1,7 @@
 plugins {
-    java
     groovy
     kotlin("jvm") version "2.3.21"
     kotlin("plugin.spring") version "2.3.21"
-    kotlin("plugin.lombok") version "2.3.21"
     id("org.springframework.boot") version "4.1.0"
     id("io.spring.dependency-management") version "1.1.7"
     id("org.sonarqube") version "6.3.1.5724"
@@ -17,12 +15,6 @@ val vavrVersion = "1.0.1"
 val spockVersion = "2.4-groovy-5.0"
 val testcontainersVersion = "1.21.3"
 
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(25))
-    }
-}
-
 kotlin {
     jvmToolchain(25)
 }
@@ -34,12 +26,6 @@ tasks.bootJar {
 
 tasks.jar {
     enabled = false
-}
-
-configurations {
-    compileOnly {
-        extendsFrom(configurations.annotationProcessor.get())
-    }
 }
 
 repositories {
@@ -64,9 +50,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-reactor")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310")
-
-    compileOnly("org.projectlombok:lombok")
-    annotationProcessor("org.projectlombok:lombok")
 
     testImplementation(platform("org.testcontainers:testcontainers-bom:$testcontainersVersion"))
     testImplementation("org.springframework.boot:spring-boot-starter-test")
