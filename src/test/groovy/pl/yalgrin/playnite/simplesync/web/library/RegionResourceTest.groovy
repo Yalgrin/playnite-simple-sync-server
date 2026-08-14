@@ -29,6 +29,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
     def "save single region"() {
         given:
         RegionDTO dto = RegionFactoryUtil.createRegion(UUID.randomUUID().toString(), "test")
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def response = makeSaveRequest(dto)
@@ -38,11 +39,15 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
 
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, RegionDTO.class))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, newObjectId.get())
     }
 
     def "save multiple regions"() {
@@ -51,6 +56,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
         for (int i = 0; i < 1000; i++) {
             list.add(RegionFactoryUtil.regionWithIndex(i))
         }
+        List<Long> createdIds = new ArrayList<>()
 
         when:
         List<CompletableFuture<WebTestClient.ResponseSpec>> futures = list.stream()
@@ -69,25 +75,39 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
         and:
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), RegionDTO.class))
-                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())) }
+                    .expectNextMatches {
+                        assert it.externalId != null
+                        createdIds.add(it.externalId)
+                        objectMatches(it, list.get(tuple.getV2()))
+                    }
                     .verifyComplete()
             true
         }
 
         and:
-        list.stream().allMatch { dto -> assertEntityAndGetResponse(dto) }
+        list.withIndex().stream().allMatch { tuple -> assertEntityAndGetResponse(tuple.getV1(), createdIds.get(tuple.getV2())) }
     }
 
     def "save region and then delete it"() {
         given:
         RegionDTO dto = RegionFactoryUtil.randomRegion()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, RegionDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -104,13 +124,23 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
     def "save and then remove repeatedly"() {
         given:
         RegionDTO dto = RegionFactoryUtil.randomRegion()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, RegionDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)

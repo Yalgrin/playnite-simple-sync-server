@@ -44,6 +44,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
     def "save single game"() {
         given:
         GameDTO dto = GameFactoryUtil.createGame(UUID.randomUUID().toString(), "test")
+        AtomicLong newObjectId = new AtomicLong(-1)
         def icon = GameFactoryUtil.randomFile("Icon.png", 2048)
         def coverImage = GameFactoryUtil.randomFile("CoverImage.jpeg", 2048)
         def backgroundImage = GameFactoryUtil.randomFile("BackgroundImage.tif", 2048)
@@ -57,11 +58,15 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GameDTO.class))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto, files)
+        assertEntityAndGetResponse(dto, files, newObjectId.get())
 
         and:
         checkFiles(dto, { id ->
@@ -82,6 +87,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
             game.setHasBackgroundImage(files.any { it.name.startsWith("BackgroundImage") })
             list.add(Tuple.of(game, files))
         }
+        List<Long> createdIds = new ArrayList<>()
 
         when:
         List<CompletableFuture<WebTestClient.ResponseSpec>> futures = list.stream()
@@ -100,26 +106,40 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         and:
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), GameDTO.class))
-                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())._1()) }
+                    .expectNextMatches {
+                        assert it.externalId != null
+                        createdIds.add(it.externalId)
+                        objectMatches(it, list.get(tuple.getV2())._1())
+                    }
                     .verifyComplete()
             true
         }
 
         and:
-        list.stream().allMatch { tuple -> assertEntityAndGetResponse(tuple._1(), tuple._2()) }
+        list.withIndex().stream().allMatch { tuple -> assertEntityAndGetResponse(tuple.getV1()._1(), tuple.getV1()._2(), createdIds.get(tuple.getV2())) }
     }
 
     def "save game and then delete it"() {
         given:
         GameDTO dto = GameFactoryUtil.randomGame()
         def files = GameFactoryUtil.randomFiles()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto, files)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto, files)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, GameDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, files, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -137,13 +157,23 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         given:
         GameDTO dto = GameFactoryUtil.randomGame()
         def files = GameFactoryUtil.randomFiles()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto, files)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto, files)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, GameDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, files, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -272,6 +302,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         def coverImage = GameFactoryUtil.randomFile("CoverImage.jpeg", 2048)
         def backgroundImage = GameFactoryUtil.randomFile("BackgroundImage.tif", 2048)
         def files = List.of(icon, coverImage, backgroundImage)
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def response = makeSaveRequest(dto, files)
@@ -281,11 +312,15 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GameDTO.class))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto, files)
+        assertEntityAndGetResponse(dto, files, newObjectId.get())
 
         and:
         checkFiles(dto, { id ->
@@ -345,7 +380,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         GameAssertionUtil.assertGameEntity(expectedDTO, resultDTO)
     }
 
-    protected assertEntityAndGetResponse(GameDTO dto, List<MultipartFile> files) {
+    protected assertEntityAndGetResponse(GameDTO dto, List<MultipartFile> files, Long id) {
         def savedEntities = repository().findByPlayniteId(dto.id).collectList().block()
         assert savedEntities.size() == 1
 
@@ -357,7 +392,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         getResponse.expectStatus().is2xxSuccessful()
 
         StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, dtoClass()))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId == id
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
 
         Map<String, MultipartFile> expectedFileMap = new HashMap<>()

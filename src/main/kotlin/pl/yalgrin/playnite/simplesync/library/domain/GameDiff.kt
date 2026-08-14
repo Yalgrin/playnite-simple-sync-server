@@ -5,6 +5,9 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import pl.yalgrin.playnite.simplesync.common.util.asObject
+import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDatabaseModel
+import reactor.core.publisher.Mono
 
 @Table("playnite_game_diff")
 data class GameDiff(
@@ -39,3 +42,8 @@ data class GameDiff(
     @Transient
     override var isForEntireObject: Boolean = false
 ) : LibraryObjectDiffEntity
+
+fun GameDiff.extractDbModelOrEmpty(): Mono<GameDiffDatabaseModel> {
+    return this.diffData.asObject(GameDiffDatabaseModel::class.java)
+        .switchIfEmpty(Mono.fromSupplier { GameDiffDatabaseModel() })
+}

@@ -5,6 +5,7 @@ import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import java.io.Serial
 
 data class PlatformDTO(
+    override var externalId: Long? = null,
     override var id: String? = null,
     override var name: String? = null,
     @param:JsonProperty("isRemoved")

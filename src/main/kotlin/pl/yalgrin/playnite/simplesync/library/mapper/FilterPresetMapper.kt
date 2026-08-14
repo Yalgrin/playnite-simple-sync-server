@@ -3,8 +3,8 @@ package pl.yalgrin.playnite.simplesync.library.mapper
 import org.apache.commons.lang3.Strings
 import org.springframework.stereotype.Component
 import pl.yalgrin.playnite.simplesync.common.util.asJson
-import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.domain.FilterPreset
+import pl.yalgrin.playnite.simplesync.library.domain.extractDbModelOrEmpty
 import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDTO
 import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDatabaseModel
 import pl.yalgrin.playnite.simplesync.library.dto.filter.FilterPresetSettingsDTO
@@ -17,8 +17,7 @@ import reactor.core.publisher.Mono
 class FilterPresetMapper : LibraryObjectMapperImpl<FilterPreset, FilterPresetDTO>() {
 
     override fun fillOtherFields(entity: FilterPreset, dto: FilterPresetDTO): Mono<FilterPreset> {
-        return entity.savedData.asObject(FilterPresetDatabaseModel::class.java)
-            .switchIfEmpty(Mono.fromSupplier { FilterPresetDatabaseModel() })
+        return entity.extractDbModelOrEmpty()
             .map { fillDbModelFields(it, dto) }
             .flatMap { dbModel -> dbModel.asJson() }
             .map { json -> entity.savedData = json }
@@ -26,9 +25,6 @@ class FilterPresetMapper : LibraryObjectMapperImpl<FilterPreset, FilterPresetDTO
     }
 
     private fun fillDbModelFields(dbModel: FilterPresetDatabaseModel, dto: FilterPresetDTO): FilterPresetDatabaseModel {
-        dbModel.id = dto.id
-        dbModel.name = dto.name
-        dbModel.isRemoved = dto.isRemoved
         dbModel.sortingOrder = dto.sortingOrder
         dbModel.sortingOrderDirection = dto.sortingOrderDirection
         dbModel.groupingOrder = dto.groupingOrder
@@ -43,12 +39,9 @@ class FilterPresetMapper : LibraryObjectMapperImpl<FilterPreset, FilterPresetDTO
     }
 
     private fun isPreviousDataDifferent(target: FilterPreset, dto: FilterPresetDTO): Mono<Boolean> {
-        return target.savedData.asObject(FilterPresetDatabaseModel::class.java)
+        return target.extractDbModelOrEmpty()
             .map { previousDTO ->
-                !Strings.CS.equals(previousDTO.id, dto.id) || !Strings.CS.equals(
-                    previousDTO.name,
-                    dto.name
-                ) || (previousDTO.isRemoved != dto.isRemoved) || !Strings.CS.equals(
+                !Strings.CS.equals(
                     previousDTO.sortingOrder,
                     dto.sortingOrder
                 ) || !Strings.CS.equals(
@@ -138,7 +131,7 @@ class FilterPresetMapper : LibraryObjectMapperImpl<FilterPreset, FilterPresetDTO
     override fun createDTO(): FilterPresetDTO = FilterPresetDTO()
 
     override fun fillOtherDtoFields(dto: FilterPresetDTO, entity: FilterPreset): Mono<FilterPresetDTO> {
-        return entity.savedData.asObject(FilterPresetDatabaseModel::class.java)
+        return entity.extractDbModelOrEmpty()
             .map { dbModel ->
                 dto.sortingOrder = dbModel.sortingOrder
                 dto.sortingOrderDirection = dbModel.sortingOrderDirection

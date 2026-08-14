@@ -4,7 +4,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.SeriesDTO
 
 class SeriesFactoryUtil {
     static SeriesDTO createSeries(String id, String name, boolean removed = false) {
-        return new SeriesDTO(id, name, removed)
+        return new SeriesDTO(null, id, name, removed)
     }
 
     static SeriesDTO randomSeries() {

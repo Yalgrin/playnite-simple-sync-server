@@ -4,7 +4,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.TagDTO
 
 class TagFactoryUtil {
     static TagDTO createTag(String id, String name, boolean removed = false) {
-        return new TagDTO(id, name, removed)
+        return new TagDTO(null, id, name, removed)
     }
 
     static TagDTO randomTag() {

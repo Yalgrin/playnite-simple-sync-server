@@ -5,6 +5,9 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import pl.yalgrin.playnite.simplesync.common.util.asObject
+import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDatabaseModel
+import reactor.core.publisher.Mono
 
 @Table("playnite_filter_preset")
 data class FilterPreset(
@@ -30,3 +33,8 @@ data class FilterPreset(
     @Transient
     override var isChanged: Boolean = false
 ) : LibraryObjectEntity
+
+fun FilterPreset.extractDbModelOrEmpty(): Mono<FilterPresetDatabaseModel> {
+    return this.savedData.asObject(FilterPresetDatabaseModel::class.java)
+        .switchIfEmpty(Mono.fromSupplier { FilterPresetDatabaseModel() })
+}

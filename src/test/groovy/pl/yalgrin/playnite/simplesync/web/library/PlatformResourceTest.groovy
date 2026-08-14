@@ -40,6 +40,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         def coverImage = GameFactoryUtil.randomFile("CoverImage.jpeg", 2048)
         def backgroundImage = GameFactoryUtil.randomFile("BackgroundImage.tif", 2048)
         def files = List.of(backgroundImage, coverImage, icon)
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def response = makeSaveRequest(dto, files)
@@ -49,11 +50,15 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
 
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, PlatformDTO.class))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto, files)
+        assertEntityAndGetResponse(dto, files, newObjectId.get())
     }
 
     def "save multiple platforms"() {
@@ -62,6 +67,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         for (int i = 0; i < 1000; i++) {
             list.add(Tuple.of(PlatformFactoryUtil.platformWithIndex(i), PlatformFactoryUtil.randomFiles()))
         }
+        List<Long> createdIds = new ArrayList<>()
 
         when:
         List<CompletableFuture<WebTestClient.ResponseSpec>> futures = list.stream()
@@ -80,26 +86,40 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         and:
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), PlatformDTO.class))
-                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())._1()) }
+                    .expectNextMatches {
+                        assert it.externalId != null
+                        createdIds.add(it.externalId)
+                        objectMatches(it, list.get(tuple.getV2())._1())
+                    }
                     .verifyComplete()
             true
         }
 
         and:
-        list.stream().allMatch { tuple -> assertEntityAndGetResponse(tuple._1(), tuple._2()) }
+        list.withIndex().stream().allMatch { tuple -> assertEntityAndGetResponse(tuple.getV1()._1(), tuple.getV1()._2(), createdIds.get(tuple.getV2())) }
     }
 
     def "save platform and then delete it"() {
         given:
         PlatformDTO dto = PlatformFactoryUtil.randomPlatform()
         def files = PlatformFactoryUtil.randomFiles()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto, files)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto, files)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, PlatformDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, files, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -117,13 +137,23 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         given:
         PlatformDTO dto = PlatformFactoryUtil.randomPlatform()
         def files = PlatformFactoryUtil.randomFiles()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto, files)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto, files)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, PlatformDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, files, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -264,7 +294,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         PlatformAssertionUtil.assertPlatformEntity(expectedDTO, resultDTO)
     }
 
-    protected assertEntityAndGetResponse(PlatformDTO dto, List<MultipartFile> files) {
+    protected assertEntityAndGetResponse(PlatformDTO dto, List<MultipartFile> files, Long id) {
         def savedEntities = repository().findByPlayniteId(dto.id).collectList().block()
         assert savedEntities.size() == 1
 
@@ -276,7 +306,10 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         getResponse.expectStatus().is2xxSuccessful()
 
         StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, dtoClass()))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId == id
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
 
         Map<String, MultipartFile> expectedFileMap = new HashMap<>()

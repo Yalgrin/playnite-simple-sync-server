@@ -29,6 +29,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
     def "save single completion status"() {
         given:
         CompletionStatusDTO dto = CompletionStatusFactoryUtil.createCompletionStatus(UUID.randomUUID().toString(), "test")
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def response = makeSaveRequest(dto)
@@ -38,11 +39,15 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
 
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, CompletionStatusDTO.class))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, newObjectId.get())
     }
 
     def "save multiple completion statuses"() {
@@ -51,6 +56,7 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
         for (int i = 0; i < 1000; i++) {
             list.add(CompletionStatusFactoryUtil.completionStatusWithIndex(i))
         }
+        List<Long> createdIds = new ArrayList<>()
 
         when:
         List<CompletableFuture<WebTestClient.ResponseSpec>> futures = list.stream()
@@ -69,25 +75,39 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
         and:
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), CompletionStatusDTO.class))
-                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())) }
+                    .expectNextMatches {
+                        assert it.externalId != null
+                        createdIds.add(it.externalId)
+                        objectMatches(it, list.get(tuple.getV2()))
+                    }
                     .verifyComplete()
             true
         }
 
         and:
-        list.stream().allMatch { dto -> assertEntityAndGetResponse(dto) }
+        list.withIndex().stream().allMatch { tuple -> assertEntityAndGetResponse(tuple.getV1(), createdIds.get(tuple.getV2())) }
     }
 
     def "save completion status and then delete it"() {
         given:
         CompletionStatusDTO dto = CompletionStatusFactoryUtil.randomCompletionStatus()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, CompletionStatusDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -104,13 +124,23 @@ class CompletionStatusResourceTest extends AbstractObjectTest<CompletionStatus, 
     def "save and then remove repeatedly"() {
         given:
         CompletionStatusDTO dto = CompletionStatusFactoryUtil.randomCompletionStatus()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, CompletionStatusDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)

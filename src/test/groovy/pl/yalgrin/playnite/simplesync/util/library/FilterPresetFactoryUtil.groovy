@@ -12,6 +12,7 @@ import java.util.concurrent.ThreadLocalRandom
 class FilterPresetFactoryUtil {
     static FilterPresetDTO createFilterPreset(String id, String name, boolean removed = false) {
         return new FilterPresetDTO(
+                null,
                 id,
                 name,
                 removed,
@@ -37,6 +38,7 @@ class FilterPresetFactoryUtil {
     static FilterPresetDTO randomFilterPreset() {
         def random = ThreadLocalRandom.current()
         return new FilterPresetDTO(
+                null,
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 false,
@@ -51,6 +53,7 @@ class FilterPresetFactoryUtil {
     static FilterPresetDTO filterPresetWithIndex(int idx) {
         def random = ThreadLocalRandom.current()
         return new FilterPresetDTO(
+                null,
                 "id-$idx",
                 "name-$idx",
                 false,

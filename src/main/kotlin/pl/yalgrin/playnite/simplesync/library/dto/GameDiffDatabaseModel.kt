@@ -1,20 +1,13 @@
 package pl.yalgrin.playnite.simplesync.library.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
-import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import java.io.Serial
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
 data class GameDiffDatabaseModel(
-    override var id: String? = null,
-    override var name: String? = null,
     override var baseObjectId: Long? = null,
     override var changedFields: List<String> = emptyList(),
-    @param:JsonProperty("isRemoved")
-    @get:JsonProperty("isRemoved")
-    @field:JsonProperty("isRemoved")
-    override var isRemoved: Boolean = false,
     var description: String? = null,
     var notes: String? = null,
     var genres: List<GenreDTO> = emptyList(),
@@ -56,15 +49,7 @@ data class GameDiffDatabaseModel(
     var criticScore: Int? = null,
     var communityScore: Int? = null,
     var manual: String? = null
-) : LibraryObjectDiffDTO {
-
-    override fun toString(): String {
-        return ToStringUtil.createBuilder(this)
-            .append("id", id)
-            .append("name", name)
-            .append("isRemoved", isRemoved)
-            .toString()
-    }
+) : LibraryDatabaseModelDTO {
 
     companion object {
         @Serial

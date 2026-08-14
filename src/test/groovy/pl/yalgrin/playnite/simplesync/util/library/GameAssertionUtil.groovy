@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.util.library
 import pl.yalgrin.playnite.simplesync.common.config.JsonMapperProviderKt
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
+import pl.yalgrin.playnite.simplesync.library.dto.GameDatabaseModel
 import tools.jackson.databind.json.JsonMapper
 
 import java.util.function.BiPredicate
@@ -79,6 +80,70 @@ class GameAssertionUtil {
         true
     }
 
+    static boolean assertGame(GameDTO expectedDTO, GameDatabaseModel resultDTO) {
+        if (expectedDTO == null) {
+            assert resultDTO == null
+            return true
+        }
+        assert resultDTO != null
+        assert resultDTO.getDescription() == expectedDTO.getDescription()
+        assert resultDTO.getNotes() == expectedDTO.getNotes()
+        assert assertListMatches(expectedDTO.getGenres(), resultDTO.getGenres(), { expected, result ->
+            GenreAssertionUtil.assertGenre(expected, result)
+        })
+        assert resultDTO.isHidden() == expectedDTO.isHidden()
+        assert resultDTO.isFavorite() == expectedDTO.isFavorite()
+        assert resultDTO.getLastActivity()?.toEpochSecond() == expectedDTO.getLastActivity()?.toEpochSecond()
+        assert resultDTO.getSortingName() == expectedDTO.getSortingName()
+        assert assertListMatches(expectedDTO.getPlatforms(), resultDTO.getPlatforms(), { expected, result ->
+            PlatformAssertionUtil.assertPlatform(expected, result)
+        })
+        assert assertListMatches(expectedDTO.getPublishers(), resultDTO.getPublishers(), { expected, result ->
+            CompanyAssertionUtil.assertCompany(expected, result)
+        })
+        assert assertListMatches(expectedDTO.getDevelopers(), resultDTO.getDevelopers(), { expected, result ->
+            CompanyAssertionUtil.assertCompany(expected, result)
+        })
+        assert resultDTO.getReleaseDate() == expectedDTO.getReleaseDate()
+        assert assertListMatches(expectedDTO.getCategories(), resultDTO.getCategories(), { expected, result ->
+            CategoryAssertionUtil.assertCategory(expected, result)
+        })
+        assert assertListMatches(expectedDTO.getTags(), resultDTO.getTags(), { expected, result ->
+            TagAssertionUtil.assertTag(expected, result)
+        })
+        assert assertListMatches(expectedDTO.getFeatures(), resultDTO.getFeatures(), { expected, result ->
+            FeatureAssertionUtil.assertFeature(expected, result)
+        })
+        assert assertListMatches(expectedDTO.getLinks(), resultDTO.getLinks(), { expected, result ->
+            assert expected.getName() == result.getName()
+            assert expected.getUrl() == result.getUrl()
+            true
+        })
+        assert resultDTO.getPlaytime() == expectedDTO.getPlaytime()
+        assert resultDTO.getAdded()?.toEpochSecond() == expectedDTO.getAdded()?.toEpochSecond()
+        assert resultDTO.getModified()?.toEpochSecond() == expectedDTO.getModified()?.toEpochSecond()
+        assert resultDTO.getPlayCount() == expectedDTO.getPlayCount()
+        assert resultDTO.getInstallSize() == expectedDTO.getInstallSize()
+        assert resultDTO.getLastSizeScanDate()?.toEpochSecond() == expectedDTO.getLastSizeScanDate()?.toEpochSecond()
+        assert assertListMatches(expectedDTO.getSeries(), resultDTO.getSeries(), { expected, result ->
+            SeriesAssertionUtil.assertSeries(expected, result)
+        })
+        assert resultDTO.getVersion() == expectedDTO.getVersion()
+        assert assertListMatches(expectedDTO.getAgeRatings(), resultDTO.getAgeRatings(), { expected, result ->
+            AgeRatingAssertionUtil.assertAgeRating(expected, result)
+        })
+        assert assertListMatches(expectedDTO.getRegions(), resultDTO.getRegions(), { expected, result ->
+            RegionAssertionUtil.assertRegion(expected, result)
+        })
+        assert SourceAssertionUtil.assertSource(expectedDTO.getSource(), resultDTO.getSource())
+        assert CompletionStatusAssertionUtil.assertCompletionStatus(expectedDTO.getCompletionStatus(), resultDTO.getCompletionStatus())
+        assert resultDTO.getUserScore() == expectedDTO.getUserScore()
+        assert resultDTO.getCriticScore() == expectedDTO.getCriticScore()
+        assert resultDTO.getCommunityScore() == expectedDTO.getCommunityScore()
+        assert resultDTO.getManual() == expectedDTO.getManual()
+        true
+    }
+
     static boolean assertGameEntity(GameDTO expectedDTO, Game resultEntity) {
         if (expectedDTO == null) {
             assert resultEntity == null
@@ -91,7 +156,7 @@ class GameAssertionUtil {
         assert resultEntity.getPluginId() == expectedDTO.getPluginId()
         assert resultEntity.isRemoved() == expectedDTO.isRemoved()
 
-        GameDTO resultDTO = objectMapper.readValue(resultEntity.getSavedData().asArray(), GameDTO.class)
+        GameDatabaseModel resultDTO = objectMapper.readValue(resultEntity.getSavedData().asArray(), GameDatabaseModel.class)
         assertGame(expectedDTO, resultDTO)
     }
 

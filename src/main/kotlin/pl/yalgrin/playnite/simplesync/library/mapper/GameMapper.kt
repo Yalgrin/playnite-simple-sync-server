@@ -3,177 +3,207 @@ package pl.yalgrin.playnite.simplesync.library.mapper
 import org.springframework.stereotype.Component
 import pl.yalgrin.playnite.simplesync.common.util.MapperUtil
 import pl.yalgrin.playnite.simplesync.common.util.asJson
-import pl.yalgrin.playnite.simplesync.common.util.asObject
+import pl.yalgrin.playnite.simplesync.common.util.pairWith
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.domain.GameDiff
+import pl.yalgrin.playnite.simplesync.library.domain.extractDbModelOrEmpty
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
 import pl.yalgrin.playnite.simplesync.library.dto.GameFields
-import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectFields
 import reactor.core.publisher.Mono
 
 @Component
-class GameMapper : LibraryObjectWithDiffMapper<Game, GameDiff, GameDTO, GameDiffDTO>() {
+class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, GameDiffDTO>() {
     override fun fillBasicFields(
         dto: GameDTO,
         entity: Game,
-        diffDTO: GameDiffDTO
+        generatedDiffDTO: GameDiffDTO
     ): Triple<Game, GameDiffDTO, MutableList<String>> {
-        val result = super.fillBasicFields(dto, entity, diffDTO)
-        result.second.gameId = result.first.gameId
-        result.second.pluginId = result.first.pluginId
+        val result = super.fillBasicFields(dto, entity, generatedDiffDTO)
+        val changedEntity = result.first
+        val changedFields = result.third
+        if (MapperUtil.hasChanged(changedEntity.gameId, dto.gameId)) {
+            changedEntity.gameId = dto.gameId
+            changedFields.add(GameFields.GAME_ID)
+        }
+        if (MapperUtil.hasChanged(changedEntity.pluginId, dto.pluginId)) {
+            changedEntity.pluginId = dto.pluginId
+            changedFields.add(GameFields.PLUGIN_ID)
+        }
         return result
     }
 
     override fun fillOtherFields(
         entity: Game,
         dto: GameDTO,
-        diffDTO: GameDiffDTO,
+        generatedDiffDTO: GameDiffDTO,
         changedFields: MutableList<String>
     ): Mono<Triple<Game, GameDiffDTO, MutableList<String>>> {
-        return entity.savedData.asObject(GameDTO::class.java)
-            .switchIfEmpty(Mono.fromSupplier { GameDTO() })
-            .map { targetDto ->
-                if (MapperUtil.hasChanged(targetDto.description, dto.description)) {
-                    diffDTO.description = dto.description
+        return entity.extractDbModelOrEmpty()
+            .map { databaseModel ->
+                if (MapperUtil.hasChanged(databaseModel.description, dto.description)) {
+                    generatedDiffDTO.description = dto.description
+                    databaseModel.description = dto.description
                     changedFields.add(GameFields.DESCRIPTION)
                 }
-                if (MapperUtil.hasChanged(targetDto.notes, dto.notes)) {
-                    diffDTO.notes = dto.notes
+                if (MapperUtil.hasChanged(databaseModel.notes, dto.notes)) {
+                    generatedDiffDTO.notes = dto.notes
+                    databaseModel.notes = dto.notes
                     changedFields.add(GameFields.NOTES)
                 }
-                if (MapperUtil.hasChanged(targetDto.genres, dto.genres)) {
-                    diffDTO.genres = dto.genres
+                if (MapperUtil.hasChanged(databaseModel.genres, dto.genres)) {
+                    generatedDiffDTO.genres = dto.genres
+                    databaseModel.genres = dto.genres
                     changedFields.add(GameFields.GENRES)
                 }
-                if (MapperUtil.hasChanged(targetDto.isHidden, dto.isHidden)) {
-                    diffDTO.isHidden = dto.isHidden
+                if (MapperUtil.hasChanged(databaseModel.isHidden, dto.isHidden)) {
+                    generatedDiffDTO.isHidden = dto.isHidden
+                    databaseModel.isHidden = dto.isHidden
                     changedFields.add(GameFields.HIDDEN)
                 }
-                if (MapperUtil.hasChanged(targetDto.isFavorite, dto.isFavorite)) {
-                    diffDTO.isFavorite = dto.isFavorite
+                if (MapperUtil.hasChanged(databaseModel.isFavorite, dto.isFavorite)) {
+                    generatedDiffDTO.isFavorite = dto.isFavorite
+                    databaseModel.isFavorite = dto.isFavorite
                     changedFields.add(GameFields.FAVORITE)
                 }
-                if (MapperUtil.hasChanged(targetDto.lastActivity, dto.lastActivity)) {
-                    diffDTO.lastActivity = dto.lastActivity
+                if (MapperUtil.hasChanged(databaseModel.lastActivity, dto.lastActivity)) {
+                    generatedDiffDTO.lastActivity = dto.lastActivity
+                    databaseModel.lastActivity = dto.lastActivity
                     changedFields.add(GameFields.LAST_ACTIVITY)
                 }
-                if (MapperUtil.hasChanged(targetDto.sortingName, dto.sortingName)) {
-                    diffDTO.sortingName = dto.sortingName
+                if (MapperUtil.hasChanged(databaseModel.sortingName, dto.sortingName)) {
+                    generatedDiffDTO.sortingName = dto.sortingName
+                    databaseModel.sortingName = dto.sortingName
                     changedFields.add(GameFields.SORTING_NAME)
                 }
-                if (MapperUtil.hasChanged(targetDto.gameId, dto.gameId)) {
-                    entity.gameId = dto.gameId
-                    changedFields.add(GameFields.GAME_ID)
-                }
-                if (MapperUtil.hasChanged(targetDto.pluginId, dto.pluginId)) {
-                    entity.pluginId = dto.pluginId
-                    changedFields.add(GameFields.PLUGIN_ID)
-                }
-                if (MapperUtil.hasChanged(targetDto.platforms, dto.platforms)) {
-                    diffDTO.platforms = dto.platforms
+                if (MapperUtil.hasChanged(databaseModel.platforms, dto.platforms)) {
+                    generatedDiffDTO.platforms = dto.platforms
+                    databaseModel.platforms = dto.platforms
                     changedFields.add(GameFields.PLATFORMS)
                 }
-                if (MapperUtil.hasChanged(targetDto.publishers, dto.publishers)) {
-                    diffDTO.publishers = dto.publishers
+                if (MapperUtil.hasChanged(databaseModel.publishers, dto.publishers)) {
+                    generatedDiffDTO.publishers = dto.publishers
+                    databaseModel.publishers = dto.publishers
                     changedFields.add(GameFields.PUBLISHERS)
                 }
-                if (MapperUtil.hasChanged(targetDto.developers, dto.developers)) {
-                    diffDTO.developers = dto.developers
+                if (MapperUtil.hasChanged(databaseModel.developers, dto.developers)) {
+                    generatedDiffDTO.developers = dto.developers
+                    databaseModel.developers = dto.developers
                     changedFields.add(GameFields.DEVELOPERS)
                 }
-                if (MapperUtil.hasChanged(targetDto.releaseDate, dto.releaseDate)) {
-                    diffDTO.releaseDate = dto.releaseDate
+                if (MapperUtil.hasChanged(databaseModel.releaseDate, dto.releaseDate)) {
+                    generatedDiffDTO.releaseDate = dto.releaseDate
+                    databaseModel.releaseDate = dto.releaseDate
                     changedFields.add(GameFields.RELEASE_DATE)
                 }
-                if (MapperUtil.hasChanged(targetDto.categories, dto.categories)) {
-                    diffDTO.categories = dto.categories
+                if (MapperUtil.hasChanged(databaseModel.categories, dto.categories)) {
+                    generatedDiffDTO.categories = dto.categories
+                    databaseModel.categories = dto.categories
                     changedFields.add(GameFields.CATEGORIES)
                 }
-                if (MapperUtil.hasChanged(targetDto.tags, dto.tags)) {
-                    diffDTO.tags = dto.tags
+                if (MapperUtil.hasChanged(databaseModel.tags, dto.tags)) {
+                    generatedDiffDTO.tags = dto.tags
+                    databaseModel.tags = dto.tags
                     changedFields.add(GameFields.TAGS)
                 }
-                if (MapperUtil.hasChanged(targetDto.features, dto.features)) {
-                    diffDTO.features = dto.features
+                if (MapperUtil.hasChanged(databaseModel.features, dto.features)) {
+                    generatedDiffDTO.features = dto.features
+                    databaseModel.features = dto.features
                     changedFields.add(GameFields.FEATURES)
                 }
-                if (MapperUtil.haveLinksChanged(targetDto.links, dto.links)) {
-                    diffDTO.links = dto.links
+                if (MapperUtil.haveLinksChanged(databaseModel.links, dto.links)) {
+                    generatedDiffDTO.links = dto.links
+                    databaseModel.links = dto.links
                     changedFields.add(GameFields.LINKS)
                 }
-                if (MapperUtil.hasChanged(targetDto.playtime, dto.playtime)) {
-                    diffDTO.playtime = dto.playtime
+                if (MapperUtil.hasChanged(databaseModel.playtime, dto.playtime)) {
+                    generatedDiffDTO.playtime = dto.playtime
+                    databaseModel.playtime = dto.playtime
                     changedFields.add(GameFields.PLAYTIME)
                 }
-                if (MapperUtil.hasChanged(targetDto.added, dto.added)) {
-                    diffDTO.added = dto.added
+                if (MapperUtil.hasChanged(databaseModel.added, dto.added)) {
+                    generatedDiffDTO.added = dto.added
+                    databaseModel.added = dto.added
                     changedFields.add(GameFields.ADDED)
                 }
-                if (MapperUtil.hasChanged(targetDto.modified, dto.modified)) {
-                    diffDTO.modified = dto.modified
+                if (MapperUtil.hasChanged(databaseModel.modified, dto.modified)) {
+                    generatedDiffDTO.modified = dto.modified
+                    databaseModel.modified = dto.modified
                     changedFields.add(GameFields.MODIFIED)
                 }
-                if (MapperUtil.hasChanged(targetDto.playCount, dto.playCount)) {
-                    diffDTO.playCount = dto.playCount
+                if (MapperUtil.hasChanged(databaseModel.playCount, dto.playCount)) {
+                    generatedDiffDTO.playCount = dto.playCount
+                    databaseModel.playCount = dto.playCount
                     changedFields.add(GameFields.PLAY_COUNT)
                 }
-                if (MapperUtil.hasChanged(targetDto.installSize, dto.installSize)) {
-                    diffDTO.installSize = dto.installSize
+                if (MapperUtil.hasChanged(databaseModel.installSize, dto.installSize)) {
+                    generatedDiffDTO.installSize = dto.installSize
+                    databaseModel.installSize = dto.installSize
                     changedFields.add(GameFields.INSTALL_SIZE)
                 }
-                if (MapperUtil.hasChanged(targetDto.lastSizeScanDate, dto.lastSizeScanDate)) {
-                    diffDTO.lastSizeScanDate = dto.lastSizeScanDate
+                if (MapperUtil.hasChanged(databaseModel.lastSizeScanDate, dto.lastSizeScanDate)) {
+                    generatedDiffDTO.lastSizeScanDate = dto.lastSizeScanDate
+                    databaseModel.lastSizeScanDate = dto.lastSizeScanDate
                     changedFields.add(GameFields.LAST_SIZE_SCAN_DATE)
                 }
-                if (MapperUtil.hasChanged(targetDto.series, dto.series)) {
-                    diffDTO.series = dto.series
+                if (MapperUtil.hasChanged(databaseModel.series, dto.series)) {
+                    generatedDiffDTO.series = dto.series
+                    databaseModel.series = dto.series
                     changedFields.add(GameFields.SERIES)
                 }
-                if (MapperUtil.hasChanged(targetDto.version, dto.version)) {
-                    diffDTO.version = dto.version
+                if (MapperUtil.hasChanged(databaseModel.version, dto.version)) {
+                    generatedDiffDTO.version = dto.version
+                    databaseModel.version = dto.version
                     changedFields.add(GameFields.VERSION)
                 }
-                if (MapperUtil.hasChanged(targetDto.ageRatings, dto.ageRatings)) {
-                    diffDTO.ageRatings = dto.ageRatings
+                if (MapperUtil.hasChanged(databaseModel.ageRatings, dto.ageRatings)) {
+                    generatedDiffDTO.ageRatings = dto.ageRatings
+                    databaseModel.ageRatings = dto.ageRatings
                     changedFields.add(GameFields.AGE_RATINGS)
                 }
-                if (MapperUtil.hasChanged(targetDto.regions, dto.regions)) {
-                    diffDTO.regions = dto.regions
+                if (MapperUtil.hasChanged(databaseModel.regions, dto.regions)) {
+                    generatedDiffDTO.regions = dto.regions
+                    databaseModel.regions = dto.regions
                     changedFields.add(GameFields.REGIONS)
                 }
-                if (MapperUtil.hasChanged(targetDto.source?.id, dto.source?.id)) {
-                    diffDTO.source = dto.source
+                if (MapperUtil.hasChanged(databaseModel.source?.id, dto.source?.id)) {
+                    generatedDiffDTO.source = dto.source
+                    databaseModel.source = dto.source
                     changedFields.add(GameFields.SOURCE)
                 }
                 if (MapperUtil.hasChanged(
-                        targetDto.completionStatus?.id,
+                        databaseModel.completionStatus?.id,
                         dto.completionStatus?.id
                     )
                 ) {
-                    diffDTO.completionStatus = dto.completionStatus
+                    generatedDiffDTO.completionStatus = dto.completionStatus
+                    databaseModel.completionStatus = dto.completionStatus
                     changedFields.add(GameFields.COMPLETION_STATUS)
                 }
-                if (MapperUtil.hasChanged(targetDto.userScore, dto.userScore)) {
-                    diffDTO.userScore = dto.userScore
+                if (MapperUtil.hasChanged(databaseModel.userScore, dto.userScore)) {
+                    generatedDiffDTO.userScore = dto.userScore
+                    databaseModel.userScore = dto.userScore
                     changedFields.add(GameFields.USER_SCORE)
                 }
-                if (MapperUtil.hasChanged(targetDto.criticScore, dto.criticScore)) {
-                    diffDTO.criticScore = dto.criticScore
+                if (MapperUtil.hasChanged(databaseModel.criticScore, dto.criticScore)) {
+                    generatedDiffDTO.criticScore = dto.criticScore
+                    databaseModel.criticScore = dto.criticScore
                     changedFields.add(GameFields.CRITIC_SCORE)
                 }
-                if (MapperUtil.hasChanged(targetDto.communityScore, dto.communityScore)) {
-                    diffDTO.communityScore = dto.communityScore
+                if (MapperUtil.hasChanged(databaseModel.communityScore, dto.communityScore)) {
+                    generatedDiffDTO.communityScore = dto.communityScore
+                    databaseModel.communityScore = dto.communityScore
                     changedFields.add(GameFields.COMMUNITY_SCORE)
                 }
-                if (MapperUtil.hasChanged(targetDto.manual, dto.manual)) {
-                    diffDTO.manual = dto.manual
+                if (MapperUtil.hasChanged(databaseModel.manual, dto.manual)) {
+                    generatedDiffDTO.manual = dto.manual
+                    databaseModel.manual = dto.manual
                     changedFields.add(GameFields.MANUAL)
                 }
-                dto
+                databaseModel
             }.flatMap { it.asJson() }
             .doOnNext { entity.savedData = it }
-            .thenReturn(Triple(entity, diffDTO, changedFields))
+            .thenReturn(Triple(entity, generatedDiffDTO, changedFields))
     }
 
     override fun fillBasicFields(
@@ -182,8 +212,16 @@ class GameMapper : LibraryObjectWithDiffMapper<Game, GameDiff, GameDTO, GameDiff
         newDTO: GameDiffDTO
     ): Triple<Game, GameDiffDTO, MutableList<String>> {
         val result = super.fillBasicFields(referenceDTO, entity, newDTO)
-        result.second.gameId = referenceDTO.gameId
-        result.second.pluginId = referenceDTO.pluginId
+        val changedEntity = result.first
+        val changedFields = result.third
+        if (MapperUtil.hasChanged(changedEntity.gameId, referenceDTO.gameId)) {
+            changedEntity.gameId = referenceDTO.gameId
+            changedFields.add(GameFields.GAME_ID)
+        }
+        if (MapperUtil.hasChanged(changedEntity.pluginId, referenceDTO.pluginId)) {
+            changedEntity.pluginId = referenceDTO.pluginId
+            changedFields.add(GameFields.PLUGIN_ID)
+        }
         return result
     }
 
@@ -197,308 +235,301 @@ class GameMapper : LibraryObjectWithDiffMapper<Game, GameDiff, GameDTO, GameDiff
             if (referenceDTO.changedFields.isEmpty()) {
                 return@defer Mono.just(Triple(entity, diffDTO, changedFields))
             }
-            entity.savedData.asObject(GameDTO::class.java)
-                .switchIfEmpty(Mono.fromSupplier { GameDTO() })
-                .map { targetDto ->
-                    if (changedFields.contains(LibraryObjectFields.NAME)) {
-                        targetDto.name = entity.name
-                    }
-                    if (changedFields.contains(LibraryObjectFields.REMOVED)) {
-                        targetDto.isRemoved = entity.isRemoved
-                    }
+            entity.extractDbModelOrEmpty()
+                .map { databaseModel ->
                     if (referenceDTO.changedFields.contains(GameFields.DESCRIPTION) && MapperUtil.hasChanged(
-                            targetDto.description,
+                            databaseModel.description,
                             referenceDTO.description
                         )
                     ) {
-                        targetDto.description = referenceDTO.description
+                        databaseModel.description = referenceDTO.description
                         diffDTO.description = referenceDTO.description
                         changedFields.add(GameFields.DESCRIPTION)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.NOTES) && MapperUtil.hasChanged(
-                            targetDto.notes,
+                            databaseModel.notes,
                             referenceDTO.notes
                         )
                     ) {
-                        targetDto.notes = referenceDTO.notes
+                        databaseModel.notes = referenceDTO.notes
                         diffDTO.notes = referenceDTO.notes
                         changedFields.add(GameFields.NOTES)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.GENRES) && MapperUtil.hasChanged(
-                            targetDto.genres,
+                            databaseModel.genres,
                             referenceDTO.genres
                         )
                     ) {
-                        targetDto.genres = referenceDTO.genres
+                        databaseModel.genres = referenceDTO.genres
                         diffDTO.genres = referenceDTO.genres
                         changedFields.add(GameFields.GENRES)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.HIDDEN) && MapperUtil.hasChanged(
-                            targetDto.isHidden,
+                            databaseModel.isHidden,
                             referenceDTO.isHidden
                         )
                     ) {
-                        targetDto.isHidden = referenceDTO.isHidden
+                        databaseModel.isHidden = referenceDTO.isHidden
                         diffDTO.isHidden = referenceDTO.isHidden
                         changedFields.add(GameFields.HIDDEN)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.FAVORITE) && MapperUtil.hasChanged(
-                            targetDto.isFavorite,
+                            databaseModel.isFavorite,
                             referenceDTO.isFavorite
                         )
                     ) {
-                        targetDto.isFavorite = referenceDTO.isFavorite
+                        databaseModel.isFavorite = referenceDTO.isFavorite
                         diffDTO.isFavorite = referenceDTO.isFavorite
                         changedFields.add(GameFields.FAVORITE)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.LAST_ACTIVITY) && MapperUtil.hasChanged(
-                            targetDto.lastActivity,
+                            databaseModel.lastActivity,
                             referenceDTO.lastActivity
                         )
                     ) {
-                        targetDto.lastActivity = referenceDTO.lastActivity
+                        databaseModel.lastActivity = referenceDTO.lastActivity
                         diffDTO.lastActivity = referenceDTO.lastActivity
                         changedFields.add(GameFields.LAST_ACTIVITY)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.SORTING_NAME) && MapperUtil.hasChanged(
-                            targetDto.sortingName,
+                            databaseModel.sortingName,
                             referenceDTO.sortingName
                         )
                     ) {
-                        targetDto.sortingName = referenceDTO.sortingName
+                        databaseModel.sortingName = referenceDTO.sortingName
                         diffDTO.sortingName = referenceDTO.sortingName
                         changedFields.add(GameFields.SORTING_NAME)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.PLATFORMS) && MapperUtil.hasChanged(
-                            targetDto.platforms,
+                            databaseModel.platforms,
                             referenceDTO.platforms
                         )
                     ) {
-                        targetDto.platforms = referenceDTO.platforms
+                        databaseModel.platforms = referenceDTO.platforms
                         diffDTO.platforms = referenceDTO.platforms
                         changedFields.add(GameFields.PLATFORMS)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.PUBLISHERS) && MapperUtil.hasChanged(
-                            targetDto.publishers,
+                            databaseModel.publishers,
                             referenceDTO.publishers
                         )
                     ) {
-                        targetDto.publishers = referenceDTO.publishers
+                        databaseModel.publishers = referenceDTO.publishers
                         diffDTO.publishers = referenceDTO.publishers
                         changedFields.add(GameFields.PUBLISHERS)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.DEVELOPERS) && MapperUtil.hasChanged(
-                            targetDto.developers,
+                            databaseModel.developers,
                             referenceDTO.developers
                         )
                     ) {
-                        targetDto.developers = referenceDTO.developers
+                        databaseModel.developers = referenceDTO.developers
                         diffDTO.developers = referenceDTO.developers
                         changedFields.add(GameFields.DEVELOPERS)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.RELEASE_DATE) && MapperUtil.hasChanged(
-                            targetDto.releaseDate,
+                            databaseModel.releaseDate,
                             referenceDTO.releaseDate
                         )
                     ) {
-                        targetDto.releaseDate = referenceDTO.releaseDate
+                        databaseModel.releaseDate = referenceDTO.releaseDate
                         diffDTO.releaseDate = referenceDTO.releaseDate
                         changedFields.add(GameFields.RELEASE_DATE)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.CATEGORIES) && MapperUtil.hasChanged(
-                            targetDto.categories,
+                            databaseModel.categories,
                             referenceDTO.categories
                         )
                     ) {
-                        targetDto.categories = referenceDTO.categories
+                        databaseModel.categories = referenceDTO.categories
                         diffDTO.categories = referenceDTO.categories
                         changedFields.add(GameFields.CATEGORIES)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.TAGS) && MapperUtil.hasChanged(
-                            targetDto.tags,
+                            databaseModel.tags,
                             referenceDTO.tags
                         )
                     ) {
-                        targetDto.tags = referenceDTO.tags
+                        databaseModel.tags = referenceDTO.tags
                         diffDTO.tags = referenceDTO.tags
                         changedFields.add(GameFields.TAGS)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.FEATURES) && MapperUtil.hasChanged(
-                            targetDto.features,
+                            databaseModel.features,
                             referenceDTO.features
                         )
                     ) {
-                        targetDto.features = referenceDTO.features
+                        databaseModel.features = referenceDTO.features
                         diffDTO.features = referenceDTO.features
                         changedFields.add(GameFields.FEATURES)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.LINKS) && MapperUtil.haveLinksChanged(
-                            targetDto.links,
+                            databaseModel.links,
                             referenceDTO.links
                         )
                     ) {
-                        targetDto.links = referenceDTO.links
+                        databaseModel.links = referenceDTO.links
                         diffDTO.links = referenceDTO.links
                         changedFields.add(GameFields.LINKS)
                     }
-                    val playtimeDiff = referenceDTO.playtimeDiff
+                    val playtimeDiff = referenceDTO.playtimeDiff ?: 0
                     if (referenceDTO.changedFields.contains(GameFields.PLAYTIME) && (MapperUtil.hasChanged(
-                            targetDto.playtime,
+                            databaseModel.playtime,
                             referenceDTO.playtime
-                        ) || (playtimeDiff != null && playtimeDiff > 0))
+                        ) || playtimeDiff > 0)
                     ) {
-                        if (playtimeDiff != null && playtimeDiff > 0) {
-                            targetDto.playtime += playtimeDiff
+                        if (playtimeDiff > 0) {
+                            databaseModel.playtime += playtimeDiff
                             diffDTO.playtimeDiff = playtimeDiff
-                            diffDTO.playtime = targetDto.playtime
+                            diffDTO.playtime = databaseModel.playtime
                         } else {
-                            targetDto.playtime = referenceDTO.playtime
+                            databaseModel.playtime = referenceDTO.playtime
                             diffDTO.playtime = referenceDTO.playtime
                         }
                         changedFields.add(GameFields.PLAYTIME)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.ADDED) && referenceDTO.added != null && MapperUtil.hasChanged(
-                            targetDto.added,
+                            databaseModel.added,
                             referenceDTO.added
                         )
                     ) {
-                        targetDto.added = referenceDTO.added
+                        databaseModel.added = referenceDTO.added
                         diffDTO.added = referenceDTO.added
                         changedFields.add(GameFields.ADDED)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.MODIFIED) && referenceDTO.modified != null && MapperUtil.hasChanged(
-                            targetDto.modified, referenceDTO.modified
+                            databaseModel.modified, referenceDTO.modified
                         )
                     ) {
-                        targetDto.modified = referenceDTO.modified
+                        databaseModel.modified = referenceDTO.modified
                         diffDTO.modified = referenceDTO.modified
                         changedFields.add(GameFields.MODIFIED)
                     }
-                    val playCountDiff = referenceDTO.playCountDiff
+                    val playCountDiff = referenceDTO.playCountDiff ?: 0
                     if (referenceDTO.changedFields.contains(GameFields.PLAY_COUNT) && (MapperUtil.hasChanged(
-                            targetDto.playCount,
+                            databaseModel.playCount,
                             referenceDTO.playCount
-                        ) || (playCountDiff != null && playCountDiff > 0))
+                        ) || playCountDiff > 0)
                     ) {
-                        if (playCountDiff != null && playCountDiff > 0) {
-                            targetDto.playCount += playCountDiff
+                        if (playCountDiff > 0) {
+                            databaseModel.playCount += playCountDiff
                             diffDTO.playCountDiff = playCountDiff
-                            diffDTO.playCount = targetDto.playCount
+                            diffDTO.playCount = databaseModel.playCount
                         } else {
-                            targetDto.playCount = referenceDTO.playCount
+                            databaseModel.playCount = referenceDTO.playCount
                             diffDTO.playCount = referenceDTO.playCount
                         }
                         changedFields.add(GameFields.PLAY_COUNT)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.INSTALL_SIZE) && MapperUtil.hasChanged(
-                            targetDto.installSize,
+                            databaseModel.installSize,
                             referenceDTO.installSize
                         )
                     ) {
-                        targetDto.installSize = referenceDTO.installSize
+                        databaseModel.installSize = referenceDTO.installSize
                         diffDTO.installSize = referenceDTO.installSize
                         changedFields.add(GameFields.INSTALL_SIZE)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.LAST_SIZE_SCAN_DATE) && MapperUtil.hasChanged(
-                            targetDto.lastSizeScanDate,
+                            databaseModel.lastSizeScanDate,
                             referenceDTO.lastSizeScanDate
                         )
                     ) {
-                        targetDto.lastSizeScanDate = referenceDTO.lastSizeScanDate
+                        databaseModel.lastSizeScanDate = referenceDTO.lastSizeScanDate
                         diffDTO.lastSizeScanDate = referenceDTO.lastSizeScanDate
                         changedFields.add(GameFields.LAST_SIZE_SCAN_DATE)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.SERIES) && MapperUtil.hasChanged(
-                            targetDto.series,
+                            databaseModel.series,
                             referenceDTO.series
                         )
                     ) {
-                        targetDto.series = referenceDTO.series
+                        databaseModel.series = referenceDTO.series
                         diffDTO.series = referenceDTO.series
                         changedFields.add(GameFields.SERIES)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.VERSION) && MapperUtil.hasChanged(
-                            targetDto.version,
+                            databaseModel.version,
                             referenceDTO.version
                         )
                     ) {
-                        targetDto.version = referenceDTO.version
+                        databaseModel.version = referenceDTO.version
                         diffDTO.version = referenceDTO.version
                         changedFields.add(GameFields.VERSION)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.AGE_RATINGS) && MapperUtil.hasChanged(
-                            targetDto.ageRatings,
+                            databaseModel.ageRatings,
                             referenceDTO.ageRatings
                         )
                     ) {
-                        targetDto.ageRatings = referenceDTO.ageRatings
+                        databaseModel.ageRatings = referenceDTO.ageRatings
                         diffDTO.ageRatings = referenceDTO.ageRatings
                         changedFields.add(GameFields.AGE_RATINGS)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.REGIONS) && MapperUtil.hasChanged(
-                            targetDto.regions,
+                            databaseModel.regions,
                             referenceDTO.regions
                         )
                     ) {
-                        targetDto.regions = referenceDTO.regions
+                        databaseModel.regions = referenceDTO.regions
                         diffDTO.regions = referenceDTO.regions
                         changedFields.add(GameFields.REGIONS)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.SOURCE) && MapperUtil.hasChanged(
-                            targetDto.source?.id,
+                            databaseModel.source?.id,
                             referenceDTO.source?.id
                         )
                     ) {
-                        targetDto.source = referenceDTO.source
+                        databaseModel.source = referenceDTO.source
                         diffDTO.source = referenceDTO.source
                         changedFields.add(GameFields.SOURCE)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.COMPLETION_STATUS) && MapperUtil.hasChanged(
-                            targetDto.completionStatus?.id,
+                            databaseModel.completionStatus?.id,
                             referenceDTO.completionStatus?.id
                         )
                     ) {
-                        targetDto.completionStatus = referenceDTO.completionStatus
+                        databaseModel.completionStatus = referenceDTO.completionStatus
                         diffDTO.completionStatus = referenceDTO.completionStatus
                         changedFields.add(GameFields.COMPLETION_STATUS)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.USER_SCORE) && MapperUtil.hasChanged(
-                            targetDto.userScore,
+                            databaseModel.userScore,
                             referenceDTO.userScore
                         )
                     ) {
-                        targetDto.userScore = referenceDTO.userScore
+                        databaseModel.userScore = referenceDTO.userScore
                         diffDTO.userScore = referenceDTO.userScore
                         changedFields.add(GameFields.USER_SCORE)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.CRITIC_SCORE) && MapperUtil.hasChanged(
-                            targetDto.criticScore,
+                            databaseModel.criticScore,
                             referenceDTO.criticScore
                         )
                     ) {
-                        targetDto.criticScore = referenceDTO.criticScore
+                        databaseModel.criticScore = referenceDTO.criticScore
                         diffDTO.criticScore = referenceDTO.criticScore
                         changedFields.add(GameFields.CRITIC_SCORE)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.COMMUNITY_SCORE) && MapperUtil.hasChanged(
-                            targetDto.communityScore,
+                            databaseModel.communityScore,
                             referenceDTO.communityScore
                         )
                     ) {
-                        targetDto.communityScore = referenceDTO.communityScore
+                        databaseModel.communityScore = referenceDTO.communityScore
                         diffDTO.communityScore = referenceDTO.communityScore
                         changedFields.add(GameFields.COMMUNITY_SCORE)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.MANUAL) && MapperUtil.hasChanged(
-                            targetDto.manual,
+                            databaseModel.manual,
                             referenceDTO.manual
                         )
                     ) {
-                        targetDto.manual = referenceDTO.manual
+                        databaseModel.manual = referenceDTO.manual
                         diffDTO.manual = referenceDTO.manual
                         changedFields.add(GameFields.MANUAL)
                     }
-                    targetDto
+                    databaseModel
                 }
                 .flatMap { it.asJson() }
                 .doOnNext { entity.savedData = it }
@@ -517,41 +548,90 @@ class GameMapper : LibraryObjectWithDiffMapper<Game, GameDiff, GameDTO, GameDiff
     }
 
     override fun fillOtherDtoFields(entity: Game, dto: GameDTO): Mono<GameDTO> {
-        return entity.savedData.asObject(GameDTO::class.java)
-            .doOnNext { targetDto ->
-                dto.description = targetDto.description
-                dto.notes = targetDto.notes
-                dto.genres = targetDto.genres
-                dto.isHidden = targetDto.isHidden
-                dto.isFavorite = targetDto.isFavorite
-                dto.lastActivity = targetDto.lastActivity
-                dto.sortingName = targetDto.sortingName
-                dto.platforms = targetDto.platforms
-                dto.publishers = targetDto.publishers
-                dto.developers = targetDto.developers
-                dto.releaseDate = targetDto.releaseDate
-                dto.categories = targetDto.categories
-                dto.tags = targetDto.tags
-                dto.features = targetDto.features
-                dto.links = targetDto.links
-                dto.playtime = targetDto.playtime
-                dto.added = targetDto.added
-                dto.modified = targetDto.modified
-                dto.playCount = targetDto.playCount
-                dto.installSize = targetDto.installSize
-                dto.lastSizeScanDate = targetDto.lastSizeScanDate
-                dto.series = targetDto.series
-                dto.version = targetDto.version
-                dto.ageRatings = targetDto.ageRatings
-                dto.regions = targetDto.regions
-                dto.source = targetDto.source
-                dto.completionStatus = targetDto.completionStatus
-                dto.userScore = targetDto.userScore
-                dto.criticScore = targetDto.criticScore
-                dto.communityScore = targetDto.communityScore
-                dto.manual = targetDto.manual
+        return entity.extractDbModelOrEmpty()
+            .doOnNext { databaseModel ->
+                dto.description = databaseModel.description
+                dto.notes = databaseModel.notes
+                dto.genres = databaseModel.genres
+                dto.isHidden = databaseModel.isHidden
+                dto.isFavorite = databaseModel.isFavorite
+                dto.lastActivity = databaseModel.lastActivity
+                dto.sortingName = databaseModel.sortingName
+                dto.platforms = databaseModel.platforms
+                dto.publishers = databaseModel.publishers
+                dto.developers = databaseModel.developers
+                dto.releaseDate = databaseModel.releaseDate
+                dto.categories = databaseModel.categories
+                dto.tags = databaseModel.tags
+                dto.features = databaseModel.features
+                dto.links = databaseModel.links
+                dto.playtime = databaseModel.playtime
+                dto.added = databaseModel.added
+                dto.modified = databaseModel.modified
+                dto.playCount = databaseModel.playCount
+                dto.installSize = databaseModel.installSize
+                dto.lastSizeScanDate = databaseModel.lastSizeScanDate
+                dto.series = databaseModel.series
+                dto.version = databaseModel.version
+                dto.ageRatings = databaseModel.ageRatings
+                dto.regions = databaseModel.regions
+                dto.source = databaseModel.source
+                dto.completionStatus = databaseModel.completionStatus
+                dto.userScore = databaseModel.userScore
+                dto.criticScore = databaseModel.criticScore
+                dto.communityScore = databaseModel.communityScore
+                dto.manual = databaseModel.manual
             }
             .thenReturn(dto)
+    }
+
+    override fun fillBasicDiffEntityFields(diffEntity: GameDiff, dto: GameDiffDTO): GameDiff {
+        val result = super.fillBasicDiffEntityFields(diffEntity, dto)
+        result.gameId = dto.gameId
+        result.pluginId = dto.pluginId
+        return result
+    }
+
+    override fun fillOtherDiffEntityFields(entity: GameDiff, dto: GameDiffDTO): Mono<GameDiff> {
+        return entity.extractDbModelOrEmpty()
+            .map { databaseModel ->
+                databaseModel.baseObjectId = dto.baseObjectId
+                databaseModel.changedFields = dto.changedFields
+                databaseModel.description = dto.description
+                databaseModel.notes = dto.notes
+                databaseModel.genres = dto.genres
+                databaseModel.isHidden = dto.isHidden
+                databaseModel.isFavorite = dto.isFavorite
+                databaseModel.lastActivity = dto.lastActivity
+                databaseModel.sortingName = dto.sortingName
+                databaseModel.platforms = dto.platforms
+                databaseModel.publishers = dto.publishers
+                databaseModel.developers = dto.developers
+                databaseModel.releaseDate = dto.releaseDate
+                databaseModel.categories = dto.categories
+                databaseModel.tags = dto.tags
+                databaseModel.features = dto.features
+                databaseModel.links = dto.links
+                databaseModel.playtime = dto.playtime
+                databaseModel.added = dto.added
+                databaseModel.modified = dto.modified
+                databaseModel.playCount = dto.playCount
+                databaseModel.installSize = dto.installSize
+                databaseModel.lastSizeScanDate = dto.lastSizeScanDate
+                databaseModel.series = dto.series
+                databaseModel.version = dto.version
+                databaseModel.ageRatings = dto.ageRatings
+                databaseModel.regions = dto.regions
+                databaseModel.source = dto.source
+                databaseModel.completionStatus = dto.completionStatus
+                databaseModel.userScore = dto.userScore
+                databaseModel.criticScore = dto.criticScore
+                databaseModel.communityScore = dto.communityScore
+                databaseModel.manual = dto.manual
+            }
+            .flatMap { it.asJson() }
+            .doOnNext { entity.diffData = it }
+            .thenReturn(entity)
     }
 
     override fun fillBasicDiffDtoFields(diffDto: GameDiffDTO, entity: Game): GameDiffDTO {
@@ -571,9 +651,9 @@ class GameMapper : LibraryObjectWithDiffMapper<Game, GameDiff, GameDTO, GameDiff
         entity: Game,
         diffEntity: GameDiff
     ): Mono<GameDiffDTO> {
-        return entity.savedData.asObject(GameDTO::class.java)
-            .doOnNext { targetDto ->
-                val changedFields = diffDTO.changedFields
+        return entity.extractDbModelOrEmpty()
+            .pairWith(diffEntity.extractDbModelOrEmpty().map { it.changedFields }.defaultIfEmpty(emptyList()))
+            .doOnNext { (targetDto, changedFields) ->
                 if (changedFields.contains(GameFields.DESCRIPTION)) {
                     diffDTO.description = targetDto.description
                 }
@@ -671,18 +751,9 @@ class GameMapper : LibraryObjectWithDiffMapper<Game, GameDiff, GameDTO, GameDiff
             .thenReturn(diffDTO)
     }
 
-    override fun fillBasicDiffEntityFields(diffEntity: GameDiff, dto: GameDiffDTO): GameDiff {
-        val result = super.fillBasicDiffEntityFields(diffEntity, dto)
-        result.gameId = dto.gameId
-        result.pluginId = dto.pluginId
-        return result
-    }
-
     override fun createDTO(): GameDTO = GameDTO()
 
     override fun createDiffDTO(): GameDiffDTO = GameDiffDTO()
 
     override fun createDiffEntity(): GameDiff = GameDiff()
-
-    override fun getDiffClass(): Class<GameDiffDTO> = GameDiffDTO::class.java
 }

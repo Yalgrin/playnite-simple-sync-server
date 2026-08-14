@@ -1,8 +1,6 @@
 package pl.yalgrin.playnite.simplesync.library.mapper
 
 import org.apache.commons.lang3.Strings
-import pl.yalgrin.playnite.simplesync.common.util.asJson
-import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectDiffEntity
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity
 import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
@@ -11,13 +9,21 @@ import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectFields
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
 
-abstract class LibraryObjectWithDiffMapper<
+interface LibraryObjectWithDiffMapper<E : LibraryObjectEntity, DIFF_E : LibraryObjectDiffEntity, DTO : LibraryObjectDTO, DIFF_DTO : LibraryObjectDiffDTO> {
+    fun fillEntityAndGenerateDiff(dto: DTO, entity: E): Mono<Pair<E, DIFF_DTO>>
+    fun toDTO(entity: E): Mono<DTO>
+    fun toEntity(dto: DIFF_DTO): Mono<DIFF_E>
+    fun toDiffDTO(entity: E, diffEntity: DIFF_E): Mono<DIFF_DTO>
+    fun fillEntityAndGenerateDiff(dto: DIFF_DTO, entity: E): Mono<Pair<E, DIFF_DTO>>
+}
+
+abstract class LibraryObjectWithDiffMapperImpl<
         E : LibraryObjectEntity,
         DIFF_E : LibraryObjectDiffEntity,
         DTO : LibraryObjectDTO,
-        DIFF_DTO : LibraryObjectDiffDTO> {
+        DIFF_DTO : LibraryObjectDiffDTO> : LibraryObjectWithDiffMapper<E, DIFF_E, DTO, DIFF_DTO> {
 
-    open fun fillEntityAndGenerateDiff(dto: DTO, entity: E): Mono<Pair<E, DIFF_DTO>> {
+    override fun fillEntityAndGenerateDiff(dto: DTO, entity: E): Mono<Pair<E, DIFF_DTO>> {
         return Mono.fromSupplier { createDiffDTO() }
             .map { diffDTO -> fillBasicFields(dto, entity, diffDTO) }
             .flatMap { (entity, diffDTO, changedFields) -> fillOtherFields(entity, dto, diffDTO, changedFields) }
@@ -31,11 +37,11 @@ abstract class LibraryObjectWithDiffMapper<
     protected open fun fillBasicFields(
         dto: DTO,
         entity: E,
-        diffDTO: DIFF_DTO
+        generatedDiffDTO: DIFF_DTO
     ): Triple<E, DIFF_DTO, MutableList<String>> {
         val changedFields = mutableListOf<String>()
-        diffDTO.id = dto.id
-        diffDTO.name = dto.name
+        generatedDiffDTO.id = dto.id
+        generatedDiffDTO.name = dto.name
         if (entity.id == null) {
             changedFields.add(LibraryObjectFields.ID)
         }
@@ -46,28 +52,29 @@ abstract class LibraryObjectWithDiffMapper<
         if (entity.isRemoved) {
             entity.isRemoved = false
             entity.playniteId = dto.id
-            diffDTO.isRemoved = dto.isRemoved
+            generatedDiffDTO.isRemoved = dto.isRemoved
             changedFields.add(LibraryObjectFields.REMOVED)
         }
-        return Triple(entity, diffDTO, changedFields)
+        return Triple(entity, generatedDiffDTO, changedFields)
     }
 
     protected open fun fillOtherFields(
         entity: E,
         dto: DTO,
-        diffDTO: DIFF_DTO,
+        generatedDiffDTO: DIFF_DTO,
         changedFields: MutableList<String>
     ): Mono<Triple<E, DIFF_DTO, MutableList<String>>> {
-        return Triple(entity, diffDTO, changedFields).toMono()
+        return Triple(entity, generatedDiffDTO, changedFields).toMono()
     }
 
-    fun toDTO(entity: E): Mono<DTO> {
+    override fun toDTO(entity: E): Mono<DTO> {
         return Mono.fromSupplier { createDTO() }
             .map { fillBasicDtoFields(it, entity) }
             .flatMap { fillOtherDtoFields(entity, it) }
     }
 
     protected open fun fillBasicDtoFields(dto: DTO, entity: E): DTO {
+        dto.externalId = entity.id
         dto.id = entity.playniteId
         dto.name = entity.name
         dto.isRemoved = entity.isRemoved
@@ -78,15 +85,12 @@ abstract class LibraryObjectWithDiffMapper<
         return dto.toMono()
     }
 
-    fun toEntity(dto: DIFF_DTO): Mono<DIFF_E> {
+    override fun toEntity(dto: DIFF_DTO): Mono<DIFF_E> {
         return Mono.fromSupplier { createDiffEntity() }
             .map { fillBasicDiffEntityFields(it, dto) }
             .flatMap { fillOtherDiffEntityFields(it, dto) }
-            .flatMap { entity ->
+            .doOnNext { entity ->
                 entity.isForEntireObject = dto.changedFields.contains("Id") || dto.changedFields.contains("Removed")
-                dto.asJson()
-                    .doOnNext { entity.diffData = it }
-                    .thenReturn(entity)
             }
     }
 
@@ -101,9 +105,8 @@ abstract class LibraryObjectWithDiffMapper<
         return entity.toMono()
     }
 
-    fun toDiffDTO(entity: E, diffEntity: DIFF_E): Mono<DIFF_DTO> {
-        return diffEntity.diffData.asObject(getDiffClass())
-            .switchIfEmpty(Mono.fromSupplier { createDiffDTO() })
+    override fun toDiffDTO(entity: E, diffEntity: DIFF_E): Mono<DIFF_DTO> {
+        return Mono.fromSupplier { createDiffDTO() }
             .map { diffDto -> fillBasicDiffDtoFields(diffDto, entity) }
             .flatMap { diffDto ->
                 fillOtherFieldsFromDiffEntity(diffDto, entity, diffEntity)
@@ -132,7 +135,7 @@ abstract class LibraryObjectWithDiffMapper<
         return diffDTO.toMono()
     }
 
-    fun fillEntityAndGenerateDiff(dto: DIFF_DTO, entity: E): Mono<Pair<E, DIFF_DTO>> {
+    override fun fillEntityAndGenerateDiff(dto: DIFF_DTO, entity: E): Mono<Pair<E, DIFF_DTO>> {
         return Mono.fromSupplier { createDiffDTO() }
             .map { diffDTO -> fillBasicFields(dto, entity, diffDTO) }
             .flatMap { (entity, diffDTO, changedFields) -> fillOtherFields(entity, dto, diffDTO, changedFields) }
@@ -178,6 +181,4 @@ abstract class LibraryObjectWithDiffMapper<
     protected abstract fun createDiffDTO(): DIFF_DTO
 
     protected abstract fun createDiffEntity(): DIFF_E
-
-    protected abstract fun getDiffClass(): Class<DIFF_DTO>
 }

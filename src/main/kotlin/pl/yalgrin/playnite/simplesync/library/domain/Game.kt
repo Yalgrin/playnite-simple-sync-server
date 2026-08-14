@@ -5,6 +5,9 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import pl.yalgrin.playnite.simplesync.common.util.asObject
+import pl.yalgrin.playnite.simplesync.library.dto.GameDatabaseModel
+import reactor.core.publisher.Mono
 
 @Table("playnite_game")
 data class Game(
@@ -45,3 +48,8 @@ data class Game(
     @Transient
     override var isChanged: Boolean = false
 ) : LibraryObjectEntity
+
+fun Game.extractDbModelOrEmpty(): Mono<GameDatabaseModel> {
+    return this.savedData.asObject(GameDatabaseModel::class.java)
+        .switchIfEmpty(Mono.fromSupplier { GameDatabaseModel() })
+}

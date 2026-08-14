@@ -7,6 +7,7 @@ import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
 data class GameDTO(
+    override var externalId: Long? = null,
     override var id: String? = null,
     override var name: String? = null,
     @param:JsonProperty("isRemoved")

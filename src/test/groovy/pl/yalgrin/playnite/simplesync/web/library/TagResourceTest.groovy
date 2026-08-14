@@ -29,6 +29,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
     def "save single tag"() {
         given:
         TagDTO dto = TagFactoryUtil.createTag(UUID.randomUUID().toString(), "test")
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def response = makeSaveRequest(dto)
@@ -38,11 +39,15 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
 
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, TagDTO.class))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, newObjectId.get())
     }
 
     def "save multiple tags"() {
@@ -51,6 +56,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
         for (int i = 0; i < 1000; i++) {
             list.add(TagFactoryUtil.tagWithIndex(i))
         }
+        List<Long> createdIds = new ArrayList<>()
 
         when:
         List<CompletableFuture<WebTestClient.ResponseSpec>> futures = list.stream()
@@ -69,25 +75,39 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
         and:
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), TagDTO.class))
-                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())) }
+                    .expectNextMatches {
+                        assert it.externalId != null
+                        createdIds.add(it.externalId)
+                        objectMatches(it, list.get(tuple.getV2()))
+                    }
                     .verifyComplete()
             true
         }
 
         and:
-        list.stream().allMatch { dto -> assertEntityAndGetResponse(dto) }
+        list.withIndex().stream().allMatch { tuple -> assertEntityAndGetResponse(tuple.getV1(), createdIds.get(tuple.getV2())) }
     }
 
     def "save tag and then delete it"() {
         given:
         TagDTO dto = TagFactoryUtil.randomTag()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, TagDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -104,13 +124,23 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
     def "save and then remove repeatedly"() {
         given:
         TagDTO dto = TagFactoryUtil.randomTag()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, TagDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)

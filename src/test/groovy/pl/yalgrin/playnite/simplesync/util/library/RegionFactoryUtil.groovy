@@ -4,7 +4,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.RegionDTO
 
 class RegionFactoryUtil {
     static RegionDTO createRegion(String id, String name, boolean removed = false) {
-        return new RegionDTO(id, name, removed, UUID.randomUUID().toString())
+        return new RegionDTO(null, id, name, removed, UUID.randomUUID().toString())
     }
 
     static RegionDTO randomRegion() {

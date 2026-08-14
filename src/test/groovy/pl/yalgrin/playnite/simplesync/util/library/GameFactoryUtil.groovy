@@ -14,6 +14,7 @@ import java.util.concurrent.ThreadLocalRandom
 class GameFactoryUtil {
     static GameDTO createGame(String id, String name, boolean removed = false) {
         return new GameDTO(
+                null,
                 id,
                 name,
                 removed,
@@ -94,6 +95,7 @@ class GameFactoryUtil {
     static GameDTO randomGame() {
         def random = ThreadLocalRandom.current()
         return new GameDTO(
+                null,
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 false,

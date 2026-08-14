@@ -52,6 +52,7 @@ abstract class LibraryObjectMapperImpl<E : LibraryObjectEntity, D : LibraryObjec
     protected abstract fun createDTO(): D
 
     private fun fillBasicDtoFields(dto: D, entity: E): D {
+        dto.externalId = entity.id
         dto.id = entity.playniteId
         dto.name = entity.name
         dto.isRemoved = entity.isRemoved

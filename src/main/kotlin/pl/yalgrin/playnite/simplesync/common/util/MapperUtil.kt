@@ -6,7 +6,11 @@ import pl.yalgrin.playnite.simplesync.library.dto.LinkDTO
 
 object MapperUtil {
     fun hasChanged(obj1: Long?, obj2: Long?): Boolean {
-        return (obj1 ?: 0L) != (obj2 ?: 0L)
+        return obj1 != obj2
+    }
+
+    fun hasChanged(obj1: Long, obj2: Long): Boolean {
+        return obj1 != obj2
     }
 
     fun hasChanged(obj1: String?, obj2: String?): Boolean {

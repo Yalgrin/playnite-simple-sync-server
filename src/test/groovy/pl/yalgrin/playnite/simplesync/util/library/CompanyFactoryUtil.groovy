@@ -4,7 +4,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.CompanyDTO
 
 class CompanyFactoryUtil {
     static CompanyDTO createCompany(String id, String name, boolean removed = false) {
-        return new CompanyDTO(id, name, removed)
+        return new CompanyDTO(null, id, name, removed)
     }
 
     static CompanyDTO randomCompany() {

@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 class PlatformFactoryUtil {
     static PlatformDTO createPlatform(String id, String name, boolean removed = false) {
-        return new PlatformDTO(id, name, removed, UUID.randomUUID().toString(), false, false, false)
+        return new PlatformDTO(null, id, name, removed, UUID.randomUUID().toString(), false, false, false)
     }
 
     static PlatformDTO randomPlatform() {

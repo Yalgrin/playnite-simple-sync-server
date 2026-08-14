@@ -5,6 +5,9 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import pl.yalgrin.playnite.simplesync.common.util.asObject
+import pl.yalgrin.playnite.simplesync.library.dto.PlatformDiffDatabaseModel
+import reactor.core.publisher.Mono
 
 @Table("playnite_platform_diff")
 data class PlatformDiff(
@@ -33,3 +36,8 @@ data class PlatformDiff(
     @Transient
     override var isForEntireObject: Boolean = false
 ) : LibraryObjectDiffEntity
+
+fun PlatformDiff.extractDbModelOrEmpty(): Mono<PlatformDiffDatabaseModel> {
+    return this.diffData.asObject(PlatformDiffDatabaseModel::class.java)
+        .switchIfEmpty(Mono.fromSupplier { PlatformDiffDatabaseModel() })
+}

@@ -2,11 +2,7 @@ package pl.yalgrin.playnite.simplesync.library.dto
 
 import java.io.Serializable
 
-interface LibraryObjectDiffDTO : Serializable {
-    var externalId: Long?
-    var id: String?
-    var name: String?
+interface LibraryDatabaseModelDTO : Serializable {
     var baseObjectId: Long?
     var changedFields: List<String>
-    var isRemoved: Boolean
 }

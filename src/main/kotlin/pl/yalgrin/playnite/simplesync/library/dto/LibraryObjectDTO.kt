@@ -2,10 +2,10 @@ package pl.yalgrin.playnite.simplesync.library.dto
 
 import java.io.Serializable
 
-//TODO: separate DB models and frontend DTOs
 //TODO: migrate to new format: filters presets, platform diffs, games, game diffs
 
 interface LibraryObjectDTO : Serializable {
+    var externalId: Long?
     var id: String?
     var name: String?
     var isRemoved: Boolean

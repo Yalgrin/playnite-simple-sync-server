@@ -4,7 +4,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.AgeRatingDTO
 
 class AgeRatingFactoryUtil {
     static AgeRatingDTO createAgeRating(String id, String name, boolean removed = false) {
-        return new AgeRatingDTO(id, name, removed)
+        return new AgeRatingDTO(null, id, name, removed)
     }
 
     static AgeRatingDTO randomAgeRating() {

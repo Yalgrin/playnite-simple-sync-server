@@ -6,6 +6,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.filter.FilterPresetSettingsDTO
 import java.io.Serial
 
 data class FilterPresetDTO(
+    override var externalId: Long? = null,
     override var id: String? = null,
     override var name: String? = null,
     @param:JsonProperty("isRemoved")

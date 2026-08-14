@@ -36,9 +36,6 @@ class FilterPresetAssertionUtil {
             return true
         }
         assert resultDTO != null
-        assert resultDTO.getId() == expectedDTO.getId()
-        assert resultDTO.getName() == expectedDTO.getName()
-        assert resultDTO.isRemoved() == expectedDTO.isRemoved()
         assert settingsMatch(resultDTO.getSettings(), expectedDTO.getSettings())
         assert resultDTO.getSortingOrder() == expectedDTO.getSortingOrder()
         assert resultDTO.getSortingOrderDirection() == expectedDTO.getSortingOrderDirection()

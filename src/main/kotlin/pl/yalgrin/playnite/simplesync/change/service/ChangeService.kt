@@ -9,10 +9,10 @@ import pl.yalgrin.playnite.simplesync.change.mapper.ChangeMessageMapper
 import pl.yalgrin.playnite.simplesync.change.repository.ChangeRepository
 import pl.yalgrin.playnite.simplesync.client.message.ChangeMessage
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
-import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.common.util.thenAny
 import pl.yalgrin.playnite.simplesync.library.domain.Game
-import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
+import pl.yalgrin.playnite.simplesync.library.domain.extractDbModelOrEmpty
+import pl.yalgrin.playnite.simplesync.library.dto.GameDatabaseModel
 import pl.yalgrin.playnite.simplesync.library.repository.*
 import pl.yalgrin.playnite.simplesync.security.getSessionClientId
 import reactor.core.publisher.Flux
@@ -101,7 +101,7 @@ class ChangeService(
                 val collectedIds = CollectedIds()
                 fetchGames(d)
                     .flatMap { g ->
-                        g.savedData.asObject(GameDTO::class.java)
+                        g.extractDbModelOrEmpty()
                             .doOnNext { extractObjectUuids(it, collectedIds) }
                             .thenReturn(g)
                     }
@@ -160,7 +160,7 @@ class ChangeService(
             .flatMap { playniteId -> gameRepository.findByPlayniteIdIn(playniteId) }
     }
 
-    private fun extractObjectUuids(targetDto: GameDTO, collectedIds: CollectedIds) {
+    private fun extractObjectUuids(targetDto: GameDatabaseModel, collectedIds: CollectedIds) {
         targetDto.categories.stream().map { obj -> obj.id }
             .forEach { e -> e?.let { collectedIds.getUuids(ObjectType.CATEGORY).add(it) } }
         targetDto.genres.stream().map { obj -> obj.id }

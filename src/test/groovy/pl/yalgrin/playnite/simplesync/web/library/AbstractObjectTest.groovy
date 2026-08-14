@@ -119,7 +119,7 @@ abstract class AbstractObjectTest<E extends LibraryObjectEntity, D extends Libra
                 .exchange()
     }
 
-    protected assertEntityAndGetResponse(D dto) {
+    protected assertEntityAndGetResponse(D dto, Long id) {
         def savedEntities = repository().findByPlayniteId(dto.id).collectList().block()
         assert savedEntities.size() == 1
 
@@ -131,7 +131,10 @@ abstract class AbstractObjectTest<E extends LibraryObjectEntity, D extends Libra
         getResponse.expectStatus().is2xxSuccessful()
 
         StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, dtoClass()))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId == id
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
         true
     }

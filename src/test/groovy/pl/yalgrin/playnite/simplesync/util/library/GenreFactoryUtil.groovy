@@ -4,7 +4,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.GenreDTO
 
 class GenreFactoryUtil {
     static GenreDTO createGenre(String id, String name, boolean removed = false) {
-        return new GenreDTO(id, name, removed)
+        return new GenreDTO(null, id, name, removed)
     }
 
     static GenreDTO randomGenre() {

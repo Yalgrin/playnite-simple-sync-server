@@ -29,6 +29,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
     def "save single category"() {
         given:
         CategoryDTO dto = CategoryFactoryUtil.createCategory(UUID.randomUUID().toString(), "test")
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def response = makeSaveRequest(dto)
@@ -38,11 +39,15 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
 
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, CategoryDTO.class))
-                .expectNextMatches { objectMatches(it, dto) }
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto)
+        assertEntityAndGetResponse(dto, newObjectId.get())
     }
 
     def "save multiple categories"() {
@@ -51,6 +56,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         for (int i = 0; i < 1000; i++) {
             list.add(CategoryFactoryUtil.categoryWithIndex(i))
         }
+        List<Long> createdIds = new ArrayList<>()
 
         when:
         List<CompletableFuture<WebTestClient.ResponseSpec>> futures = list.stream()
@@ -69,25 +75,39 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         and:
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), CategoryDTO.class))
-                    .expectNextMatches { objectMatches(it, list.get(tuple.getV2())) }
+                    .expectNextMatches {
+                        assert it.externalId != null
+                        createdIds.add(it.externalId)
+                        objectMatches(it, list.get(tuple.getV2()))
+                    }
                     .verifyComplete()
             true
         }
 
         and:
-        list.stream().allMatch { dto -> assertEntityAndGetResponse(dto) }
+        list.withIndex().stream().allMatch { tuple -> assertEntityAndGetResponse(tuple.getV1(), createdIds.get(tuple.getV2())) }
     }
 
     def "save category and then delete it"() {
         given:
         CategoryDTO dto = CategoryFactoryUtil.randomCategory()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, CategoryDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
@@ -104,13 +124,23 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
     def "save and then remove repeatedly"() {
         given:
         CategoryDTO dto = CategoryFactoryUtil.randomCategory()
+        AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
         def saveResponse = makeSaveRequest(dto)
 
         then:
         saveResponse.expectStatus().is2xxSuccessful()
-        assertEntityAndGetResponse(dto)
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, CategoryDTO.class))
+                .expectNextMatches {
+                    assert it.externalId != null
+                    newObjectId.set(it.externalId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
 
         when:
         def deleteResponse = makeDeleteRequest(dto)
