@@ -4,6 +4,7 @@ import io.r2dbc.postgresql.codec.Json
 import pl.yalgrin.playnite.simplesync.common.config.buildJsonMapper
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import tools.jackson.databind.JsonNode
 
 private val jsonMapper = buildJsonMapper()
 
@@ -18,3 +19,17 @@ fun <T : Any> T?.asJson(): Mono<Json> = this?.let { obj ->
         jsonMapper.writeValueAsString(obj)
     }.subscribeOn(Schedulers.parallel()).map { obj -> Json.of(obj) }
 } ?: Mono.empty()
+
+fun Json?.asJsonNode(): Mono<JsonNode> = Mono.defer {
+    this?.let { json ->
+        Mono.fromCallable {
+            jsonMapper.readTree(json.asArray())
+        }.subscribeOn(Schedulers.parallel())
+    } ?: Mono.empty()
+}
+
+fun JsonNode.toJson(): Mono<Json> = Mono.defer {
+    Mono.fromCallable {
+        Json.of(jsonMapper.writeValueAsString(this))
+    }.subscribeOn(Schedulers.parallel())
+}

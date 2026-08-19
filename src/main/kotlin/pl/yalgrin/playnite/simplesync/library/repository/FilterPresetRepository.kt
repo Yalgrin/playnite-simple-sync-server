@@ -6,7 +6,7 @@ import pl.yalgrin.playnite.simplesync.library.domain.FilterPreset
 import reactor.core.publisher.Flux
 
 @Repository
-interface FilterPresetRepository : ObjectRepository<FilterPreset> {
+interface FilterPresetRepository : ObjectRepository<FilterPreset>, ModelVersionObjectRepository<FilterPreset> {
     @Query("select c.id from playnite_filter_preset c order by c.id")
     override fun findAllIds(): Flux<Long>
 }

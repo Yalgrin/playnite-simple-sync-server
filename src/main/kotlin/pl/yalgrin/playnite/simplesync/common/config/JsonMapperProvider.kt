@@ -13,7 +13,10 @@ fun buildJsonMapper(): JsonMapper {
 
 fun JsonMapper.Builder.customize(): JsonMapper.Builder {
     JsonMapperBuilderCustomizer { builder ->
-        builder.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+        builder.disable(
+            DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES,
+            DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES
+        )
         builder.changeDefaultPropertyInclusion { value ->
             value.withValueInclusion(
                 JsonInclude.Include.NON_NULL

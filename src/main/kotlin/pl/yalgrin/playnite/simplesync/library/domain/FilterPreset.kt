@@ -9,6 +9,10 @@ import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.dto.FilterPresetDatabaseModel
 import reactor.core.publisher.Mono
 
+object FilterPresetConstants {
+    const val CURRENT_MODEL_VERSION = 2L
+}
+
 @Table("playnite_filter_preset")
 data class FilterPreset(
     @Id
@@ -23,6 +27,9 @@ data class FilterPreset(
 
     @Column("contents")
     var savedData: Json? = null,
+
+    @Column("model_version")
+    var modelVersion: Long = FilterPresetConstants.CURRENT_MODEL_VERSION,
 
     @Column("removed")
     override var isRemoved: Boolean = false,

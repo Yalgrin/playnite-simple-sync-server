@@ -5,4 +5,4 @@ import org.springframework.stereotype.Repository
 import pl.yalgrin.playnite.simplesync.library.domain.PlatformDiff
 
 @Repository
-interface PlatformDiffRepository : R2dbcRepository<PlatformDiff, Long>
+interface PlatformDiffRepository : R2dbcRepository<PlatformDiff, Long>, ModelVersionObjectRepository<PlatformDiff>

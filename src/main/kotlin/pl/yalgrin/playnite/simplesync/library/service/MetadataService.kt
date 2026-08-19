@@ -1,7 +1,6 @@
 package pl.yalgrin.playnite.simplesync.library.service
 
 import io.vavr.control.Try
-import jakarta.annotation.PostConstruct
 import org.apache.commons.collections4.ListUtils
 import org.apache.commons.io.FileUtils
 import org.apache.commons.io.FilenameUtils
@@ -41,7 +40,6 @@ class MetadataService(
         const val PARTITION_SIZE = 990
     }
 
-    @PostConstruct
     fun init() {
         require(metadataFolder.isNotBlank()) { "No metadata folder set!" }
 

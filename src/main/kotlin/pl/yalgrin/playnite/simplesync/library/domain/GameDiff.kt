@@ -9,6 +9,10 @@ import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDatabaseModel
 import reactor.core.publisher.Mono
 
+object GameDiffConstants {
+    const val CURRENT_MODEL_VERSION = 2L
+}
+
 @Table("playnite_game_diff")
 data class GameDiff(
     @Id
@@ -29,6 +33,9 @@ data class GameDiff(
 
     @Column("contents")
     override var diffData: Json? = null,
+
+    @Column("model_version")
+    var modelVersion: Long = GameDiffConstants.CURRENT_MODEL_VERSION,
 
     @Column("removed")
     override var isRemoved: Boolean = false,

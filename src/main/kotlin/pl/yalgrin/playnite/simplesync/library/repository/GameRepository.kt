@@ -6,7 +6,7 @@ import pl.yalgrin.playnite.simplesync.library.domain.Game
 import reactor.core.publisher.Flux
 
 @Repository
-interface GameRepository : ObjectRepository<Game> {
+interface GameRepository : ObjectRepository<Game>, ModelVersionObjectRepository<Game> {
     @Query("select c.id from playnite_game c order by c.id")
     override fun findAllIds(): Flux<Long>
 

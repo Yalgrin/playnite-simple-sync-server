@@ -75,4 +75,60 @@
             <sql>UPDATE playnite_change SET type = 'GameDiff' WHERE type = 'GAME_DIFF'</sql>
         </rollback>
     </changeSet>
+
+    <changeSet id="000004-3" author="yalgrin">
+        <addColumn tableName="playnite_filter_preset">
+            <column name="model_version" type="bigint" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-4" author="yalgrin">
+        <createIndex tableName="playnite_filter_preset" indexName="playnite_filter_preset_model_version_idx">
+            <column name="model_version"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000004-5" author="yalgrin">
+        <addColumn tableName="playnite_platform_diff">
+            <column name="model_version" type="bigint" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-6" author="yalgrin">
+        <createIndex tableName="playnite_platform_diff" indexName="playnite_platform_diff_model_version_idx">
+            <column name="model_version"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000004-7" author="yalgrin">
+        <addColumn tableName="playnite_game">
+            <column name="model_version" type="bigint" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-8" author="yalgrin">
+        <createIndex tableName="playnite_game" indexName="playnite_game_model_version_idx">
+            <column name="model_version"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000004-9" author="yalgrin">
+        <addColumn tableName="playnite_game_diff">
+            <column name="model_version" type="bigint" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-10" author="yalgrin">
+        <createIndex tableName="playnite_game_diff" indexName="playnite_game_diff_model_version_idx">
+            <column name="model_version"/>
+        </createIndex>
+    </changeSet>
 </databaseChangeLog>

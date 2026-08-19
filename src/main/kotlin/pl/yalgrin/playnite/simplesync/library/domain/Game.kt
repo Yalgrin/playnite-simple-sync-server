@@ -9,6 +9,10 @@ import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.dto.GameDatabaseModel
 import reactor.core.publisher.Mono
 
+object GameConstants {
+    const val CURRENT_MODEL_VERSION = 2L
+}
+
 @Table("playnite_game")
 data class Game(
     @Id
@@ -29,6 +33,9 @@ data class Game(
 
     @Column("contents")
     var savedData: Json? = null,
+
+    @Column("model_version")
+    var modelVersion: Long = GameConstants.CURRENT_MODEL_VERSION,
 
     @Column("icon_md5")
     var iconMd5: String? = null,
