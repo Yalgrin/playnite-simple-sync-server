@@ -153,8 +153,11 @@ abstract class LibraryObjectWithDiffMapperImpl<
     ): Triple<E, DIFF_DTO, MutableList<String>> {
         val changedFields = mutableListOf<String>()
         newDTO.id = referenceDTO.id
-        newDTO.name = entity.name
-        if (changedFields.contains(LibraryObjectFields.NAME) && !Strings.CS.equals(entity.name, referenceDTO.name)) {
+        if (referenceDTO.changedFields.contains(LibraryObjectFields.NAME) && !Strings.CS.equals(
+                entity.name,
+                referenceDTO.name
+            )
+        ) {
             newDTO.name = referenceDTO.name
             entity.name = referenceDTO.name
             changedFields.add(LibraryObjectFields.NAME)
