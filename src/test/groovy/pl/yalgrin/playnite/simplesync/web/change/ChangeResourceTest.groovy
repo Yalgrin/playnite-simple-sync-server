@@ -230,20 +230,20 @@ class ChangeResourceTest extends SpockIntegrationTest {
 
     protected List<ChangeMessage> getAllExpectedResults() {
         List.of(
-                new ChangeMessage(1L, ObjectType.CATEGORY, clientId, 1, false),
-                new ChangeMessage(2L, ObjectType.GENRE, clientId, 1, false),
-                new ChangeMessage(3L, ObjectType.PLATFORM, clientId, 1, false),
-                new ChangeMessage(4L, ObjectType.COMPANY, clientId, 1, false),
-                new ChangeMessage(5L, ObjectType.COMPANY, clientId, 2, false),
-                new ChangeMessage(6L, ObjectType.FEATURE, clientId, 1, false),
-                new ChangeMessage(7L, ObjectType.TAG, clientId, 1, false),
-                new ChangeMessage(8L, ObjectType.SERIES, clientId, 1, false),
-                new ChangeMessage(9L, ObjectType.AGE_RATING, clientId, 1, false),
-                new ChangeMessage(10L, ObjectType.REGION, clientId, 1, false),
-                new ChangeMessage(11L, ObjectType.SOURCE, clientId, 1, false),
-                new ChangeMessage(12L, ObjectType.COMPLETION_STATUS, clientId, 1, false),
-                new ChangeMessage(13L, ObjectType.FILTER_PRESET, clientId, 1, false),
-                new ChangeMessage(14L, ObjectType.GAME, clientId, 1, false)
+                new ChangeMessage(1L, ObjectType.CATEGORY, clientId, 1, null, false),
+                new ChangeMessage(2L, ObjectType.GENRE, clientId, 1, null, false),
+                new ChangeMessage(3L, ObjectType.PLATFORM, clientId, 1, null, false),
+                new ChangeMessage(4L, ObjectType.COMPANY, clientId, 1, null, false),
+                new ChangeMessage(5L, ObjectType.COMPANY, clientId, 2, null, false),
+                new ChangeMessage(6L, ObjectType.FEATURE, clientId, 1, null, false),
+                new ChangeMessage(7L, ObjectType.TAG, clientId, 1, null, false),
+                new ChangeMessage(8L, ObjectType.SERIES, clientId, 1, null, false),
+                new ChangeMessage(9L, ObjectType.AGE_RATING, clientId, 1, null, false),
+                new ChangeMessage(10L, ObjectType.REGION, clientId, 1, null, false),
+                new ChangeMessage(11L, ObjectType.SOURCE, clientId, 1, null, false),
+                new ChangeMessage(12L, ObjectType.COMPLETION_STATUS, clientId, 1, null, false),
+                new ChangeMessage(13L, ObjectType.FILTER_PRESET, clientId, 1, null, false),
+                new ChangeMessage(14L, ObjectType.GAME, clientId, 1, null, false)
         )
     }
 

@@ -43,23 +43,25 @@ class PlatformService(
         md5: String?
     ): Mono<Boolean> {
         return Mono.fromSupplier {
+            var changed = false
             when (baseName) {
                 ICON -> {
+                    changed = entity.iconMd5 != md5
                     entity.iconMd5 = md5
-                    entity.isChanged = true
                 }
 
                 COVER_IMAGE -> {
+                    changed = entity.coverImageMd5 != md5
                     entity.coverImageMd5 = md5
-                    entity.isChanged = true
                 }
 
                 BACKGROUND_IMAGE -> {
+                    changed = entity.backgroundImageMd5 != md5
                     entity.backgroundImageMd5 = md5
-                    entity.isChanged = true
                 }
             }
-            true
+            entity.isChanged = changed || entity.isChanged
+            changed
         }
     }
 

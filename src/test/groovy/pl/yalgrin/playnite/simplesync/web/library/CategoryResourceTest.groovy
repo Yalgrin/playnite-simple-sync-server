@@ -40,8 +40,8 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, CategoryDTO.class))
                 .expectNextMatches {
-                    assert it.externalId != null
-                    newObjectId.set(it.externalId)
+                    assert it.serverId != null
+                    newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
                 .verifyComplete()
@@ -76,8 +76,8 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), CategoryDTO.class))
                     .expectNextMatches {
-                        assert it.externalId != null
-                        createdIds.add(it.externalId)
+                        assert it.serverId != null
+                        createdIds.add(it.serverId)
                         objectMatches(it, list.get(tuple.getV2()))
                     }
                     .verifyComplete()
@@ -100,8 +100,8 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         saveResponse.expectStatus().is2xxSuccessful()
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, CategoryDTO.class))
                 .expectNextMatches {
-                    assert it.externalId != null
-                    newObjectId.set(it.externalId)
+                    assert it.serverId != null
+                    newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
                 .verifyComplete()
@@ -133,8 +133,8 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         saveResponse.expectStatus().is2xxSuccessful()
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, CategoryDTO.class))
                 .expectNextMatches {
-                    assert it.externalId != null
-                    newObjectId.set(it.externalId)
+                    assert it.serverId != null
+                    newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
                 .verifyComplete()
@@ -167,7 +167,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
         def responseFlux = changeRequest.returnResult(new ParameterizedTypeReference<String>() {}).responseBody
 
         then:
-        AtomicLong newObjectId = new AtomicLong(-1)
+        List<Long> collectedIds = Collections.synchronizedList(new ArrayList<>());
         AtomicReference<String> sessionId = new AtomicReference<>()
         StepVerifier.create(responseFlux)
                 .expectSubscription()
@@ -182,7 +182,16 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
                     makeEnableChangeStreamRequest(otherClientInfo, sessionId.get())
                 }
                 .then {
-                    makeSaveRequest(toSave).expectStatus().is2xxSuccessful()
+                    def result = makeSaveRequest(toSave).expectStatus().is2xxSuccessful()
+                            .expectBody(CategoryDTO.class)
+                            .returnResult()
+                            .responseBody
+                    CategoryAssertionUtil.assertCategory(toSave, result)
+                    assert result.serverId != null
+                    collectedIds.add(result.serverId)
+                    if (collectedIds.size() > 1) {
+                        assert collectedIds.stream().distinct().size() == 1
+                    }
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -192,12 +201,16 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
                     assert change.getType() == ObjectType.CATEGORY
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
+                    assert change.getDiffParentObjectId() == null
                     assert !change.isForceFetch()
-                    newObjectId.set(change.getObjectId())
+                    collectedIds.add(change.getObjectId())
+                    if (collectedIds.size() > 1) {
+                        assert collectedIds.stream().distinct().size() == 1
+                    }
                     true
                 }
                 .then {
-                    def getResponse = makeGetRequest(newObjectId.get())
+                    def getResponse = makeGetRequest(collectedIds.first)
 
                     getResponse.expectStatus().is2xxSuccessful()
 
@@ -206,7 +219,12 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
                             .verifyComplete()
                 }
                 .then {
-                    makeSaveRequest(modified).expectStatus().is2xxSuccessful()
+                    def result = makeSaveRequest(modified).expectStatus().is2xxSuccessful()
+                            .expectBody(CategoryDTO.class)
+                            .returnResult()
+                            .responseBody
+                    CategoryAssertionUtil.assertCategory(modified, result)
+                    assert result.serverId == collectedIds.first
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -215,17 +233,21 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
                     assert change.getId() != null
                     assert change.getType() == ObjectType.CATEGORY
                     assert change.getClientId() == clientId
-                    assert change.getObjectId() == newObjectId.get()
+                    assert change.getObjectId() == collectedIds.first
                     assert !change.isForceFetch()
                     true
                 }
                 .then {
-                    def getResponse = makeGetRequest(newObjectId.get())
+                    def getResponse = makeGetRequest(collectedIds.first)
 
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, CategoryDTO.class))
-                            .expectNextMatches { objectMatches(it, modified) }
+                            .expectNextMatches {
+                                objectMatches(it, modified)
+                                assert it.serverId == collectedIds.first
+                                true
+                            }
                             .verifyComplete()
                 }
                 .then {
@@ -238,12 +260,12 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
                     assert change.getId() != null
                     assert change.getType() == ObjectType.CATEGORY
                     assert change.getClientId() == clientId
-                    assert change.getObjectId() == newObjectId.get()
+                    assert change.getObjectId() == collectedIds.first
                     assert !change.isForceFetch()
                     true
                 }
                 .then {
-                    def getResponse = makeGetRequest(newObjectId.get())
+                    def getResponse = makeGetRequest(collectedIds.first)
 
                     getResponse.expectStatus().is2xxSuccessful()
 

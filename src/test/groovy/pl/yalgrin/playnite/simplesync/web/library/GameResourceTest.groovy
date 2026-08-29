@@ -59,8 +59,8 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GameDTO.class))
                 .expectNextMatches {
-                    assert it.externalId != null
-                    newObjectId.set(it.externalId)
+                    assert it.serverId != null
+                    newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
                 .verifyComplete()
@@ -107,8 +107,8 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         responses.withIndex().stream().allMatch { tuple ->
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), GameDTO.class))
                     .expectNextMatches {
-                        assert it.externalId != null
-                        createdIds.add(it.externalId)
+                        assert it.serverId != null
+                        createdIds.add(it.serverId)
                         objectMatches(it, list.get(tuple.getV2())._1())
                     }
                     .verifyComplete()
@@ -132,8 +132,8 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         saveResponse.expectStatus().is2xxSuccessful()
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, GameDTO.class))
                 .expectNextMatches {
-                    assert it.externalId != null
-                    newObjectId.set(it.externalId)
+                    assert it.serverId != null
+                    newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
                 .verifyComplete()
@@ -166,8 +166,8 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         saveResponse.expectStatus().is2xxSuccessful()
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, GameDTO.class))
                 .expectNextMatches {
-                    assert it.externalId != null
-                    newObjectId.set(it.externalId)
+                    assert it.serverId != null
+                    newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
                 .verifyComplete()
@@ -189,19 +189,31 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         assertDeleted(dto)
     }
 
-    def "save, modify and delete and await the change stream"() {
+    def "save, modify twice and delete and await the change stream"() {
         given:
         GameDTO toSave = GameFactoryUtil.randomGame()
-        def files = GameFactoryUtil.randomFiles()
+        def files = GameFactoryUtil.randomFiles(100, 100, 100)
         GameDTO modified = toSave.withName("some other name")
+        modified.setDescription("Description")
+        GameDiffDTO modifiedViaDiffDTO = new GameDiffDTO()
+        modifiedViaDiffDTO.id = modified.id
+        modifiedViaDiffDTO.gameId = modified.gameId
+        modifiedViaDiffDTO.pluginId = modified.pluginId
+        modifiedViaDiffDTO.name = "even different name"
+        modifiedViaDiffDTO.version = "3.0"
+        modifiedViaDiffDTO.changedFields = List.of("Name", "Version")
         GameDTO removed = modified.withRemoved(true)
+        removed.name = modifiedViaDiffDTO.name
+        removed.version = modifiedViaDiffDTO.version
 
         when:
         def changeRequest = makeConnectRequest(otherClientInfo)
         def responseFlux = changeRequest.returnResult(new ParameterizedTypeReference<String>() {}).responseBody
 
         then:
-        AtomicLong newObjectId = new AtomicLong(-1)
+        List<Long> collectedIds = Collections.synchronizedList(new ArrayList<>())
+        AtomicLong newDiffObjectId = new AtomicLong(-1)
+        AtomicLong newSecondDiffObjectId = new AtomicLong(-1)
         AtomicReference<String> sessionId = new AtomicReference<>()
         StepVerifier.create(responseFlux)
                 .expectSubscription()
@@ -216,7 +228,16 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     makeEnableChangeStreamRequest(otherClientInfo, sessionId.get())
                 }
                 .then {
-                    makeSaveRequest(toSave, files).expectStatus().is2xxSuccessful()
+                    def result = makeSaveRequest(toSave, files).expectStatus().is2xxSuccessful()
+                            .expectBody(GameDTO.class)
+                            .returnResult()
+                            .responseBody
+                    GameAssertionUtil.assertGame(toSave, result)
+                    assert result.serverId != null
+                    collectedIds.add(result.serverId)
+                    if (collectedIds.size() > 1) {
+                        assert collectedIds.stream().distinct().size() == 1
+                    }
                 }
                 .thenConsumeWhile { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -232,12 +253,16 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert change.getType() == ObjectType.GAME
                     assert change.getClientId() == clientId
                     assert change.getObjectId() != null
+                    assert change.getDiffParentObjectId() == null
                     assert !change.isForceFetch()
-                    newObjectId.set(change.getObjectId())
+                    collectedIds.add(change.getObjectId())
+                    if (collectedIds.size() > 1) {
+                        assert collectedIds.stream().distinct().size() == 1
+                    }
                     true
                 }
                 .then {
-                    def getResponse = makeGetRequest(newObjectId.get())
+                    def getResponse = makeGetRequest(collectedIds.first)
 
                     getResponse.expectStatus().is2xxSuccessful()
 
@@ -246,7 +271,12 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                             .verifyComplete()
                 }
                 .then {
-                    makeSaveRequest(modified).expectStatus().is2xxSuccessful()
+                    def result = makeSaveRequest(modified, files).expectStatus().is2xxSuccessful()
+                            .expectBody(GameDTO.class)
+                            .returnResult()
+                            .responseBody
+                    GameAssertionUtil.assertGame(modified, result)
+                    assert result.serverId == collectedIds.first
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -255,21 +285,87 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert change.getId() != null
                     assert change.getType() == ObjectType.GAME_DIFF
                     assert change.getClientId() == clientId
-                    assert change.getObjectId() == newObjectId.get() + 1
+                    assert change.getObjectId() != null
+                    assert change.getDiffParentObjectId() == collectedIds.first
                     assert !change.isForceFetch()
+                    newDiffObjectId.set(change.getObjectId())
                     true
                 }
                 .then {
-                    def getResponse = makeGetRequest(newObjectId.get())
+                    def getResponse = makeGetRequest(collectedIds.first)
 
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDTO.class))
-                            .expectNextMatches { objectMatches(it, modified) }
+                            .expectNextMatches {
+                                objectMatches(it, modified)
+                                assert it.serverId == collectedIds.first
+                                true
+                            }
                             .verifyComplete()
                 }
                 .then {
-                    makeDeleteRequest(modified).expectStatus().is2xxSuccessful()
+                    assert newDiffObjectId.get() != -1
+                    def getResponse = makeGetDiffRequest(newDiffObjectId.get())
+
+                    getResponse.expectStatus().is2xxSuccessful()
+
+                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
+                            .expectNextMatches {
+                                assert it.changedFields != null
+                                assert it.changedFields.size() == 2
+                                assert it.changedFields.contains("Name")
+                                assert it.changedFields.contains("Description")
+                                assert it.name == modified.name
+                                assert it.description == modified.description
+                                assert it.version == null
+                                true
+                            }
+                            .verifyComplete()
+                }
+                .then {
+                    def result = makeSaveDiffRequest(modifiedViaDiffDTO, List.of()).expectStatus().is2xxSuccessful()
+                            .expectBody(GameDTO.class)
+                            .returnResult()
+                            .responseBody
+                    assert result.name == modifiedViaDiffDTO.name
+                    assert result.description == modified.description
+                    assert result.version == modifiedViaDiffDTO.version
+                }
+                .expectNextMatches { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
+                    assert change.getId() != null
+                    assert change.getType() == ObjectType.GAME_DIFF
+                    assert change.getClientId() == clientId
+                    assert change.getObjectId() != null
+                    assert change.getDiffParentObjectId() == collectedIds.first
+                    assert !change.isForceFetch()
+                    newSecondDiffObjectId.set(change.getObjectId())
+                    true
+                }
+                .then {
+                    assert newDiffObjectId.get() != -1
+                    def getResponse = makeGetDiffRequest(newSecondDiffObjectId.get())
+
+                    getResponse.expectStatus().is2xxSuccessful()
+
+                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
+                            .expectNextMatches {
+                                assert it.changedFields != null
+                                assert it.changedFields.size() == 2
+                                assert it.changedFields.contains("Name")
+                                assert it.changedFields.contains("Version")
+                                assert it.name == modifiedViaDiffDTO.name
+                                assert it.description == null
+                                assert it.version == modifiedViaDiffDTO.version
+                                true
+                            }
+                            .verifyComplete()
+                }
+                .then {
+                    makeDeleteRequest(removed).expectStatus().is2xxSuccessful()
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -278,17 +374,21 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert change.getId() != null
                     assert change.getType() == ObjectType.GAME
                     assert change.getClientId() == clientId
-                    assert change.getObjectId() == newObjectId.get()
+                    assert change.getObjectId() == collectedIds.first
                     assert !change.isForceFetch()
                     true
                 }
                 .then {
-                    def getResponse = makeGetRequest(newObjectId.get())
+                    def getResponse = makeGetRequest(collectedIds.first)
 
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDTO.class))
-                            .expectNextMatches { objectMatches(it, removed) }
+                            .expectNextMatches {
+                                objectMatches(it, removed)
+                                assert it.serverId == collectedIds.first
+                                true
+                            }
                             .verifyComplete()
                 }
                 .thenCancel()
@@ -313,8 +413,8 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GameDTO.class))
                 .expectNextMatches {
-                    assert it.externalId != null
-                    newObjectId.set(it.externalId)
+                    assert it.serverId != null
+                    newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
                 .verifyComplete()
@@ -393,7 +493,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
         StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, dtoClass()))
                 .expectNextMatches {
-                    assert it.externalId == id
+                    assert it.serverId == id
                     objectMatches(it, dto)
                 }
                 .verifyComplete()
@@ -461,6 +561,14 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                         .build())
                 .contentType(MediaType.MULTIPART_FORM_DATA)
                 .bodyValue(builder.build())
+                .exchange()
+    }
+
+    protected WebTestClient.ResponseSpec makeGetDiffRequest(Long id) {
+        webTestClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("${diffUri()}/$id")
+                        .build())
                 .exchange()
     }
 }

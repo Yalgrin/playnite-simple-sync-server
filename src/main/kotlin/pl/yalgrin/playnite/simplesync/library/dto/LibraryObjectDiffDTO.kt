@@ -3,7 +3,7 @@ package pl.yalgrin.playnite.simplesync.library.dto
 import java.io.Serializable
 
 interface LibraryObjectDiffDTO : Serializable {
-    var externalId: Long?
+    var serverId: Long?
     var id: String?
     var name: String?
     var baseObjectId: Long?

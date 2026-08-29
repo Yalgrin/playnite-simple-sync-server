@@ -22,6 +22,9 @@ data class Change(
     @Column("object_id")
     var objectId: Long,
 
+    @Column("diff_parent_object_id")
+    var diffParentObjectId: Long? = null,
+
     @Column("created_at")
     var createdAt: Instant = Instant.now(),
 

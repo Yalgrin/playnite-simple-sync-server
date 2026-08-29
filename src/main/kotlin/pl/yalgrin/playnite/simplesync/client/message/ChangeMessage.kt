@@ -9,6 +9,7 @@ data class ChangeMessage(
     var type: ObjectType,
     var clientId: String? = null,
     var objectId: Long,
+    var diffParentObjectId: Long? = null,
     @param:JsonProperty("isForceFetch")
     @get:JsonProperty("isForceFetch")
     @field:JsonProperty("isForceFetch")

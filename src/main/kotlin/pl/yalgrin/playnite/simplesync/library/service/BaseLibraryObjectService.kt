@@ -18,6 +18,7 @@ import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.security.getSessionClientId
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.switchIfEmpty
 import reactor.kotlin.core.publisher.toMono
 
 abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectEntity>(
@@ -51,6 +52,11 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
             .flatMap { result ->
                 mapper.toDTO(result.savedObject)
                     .map { LibrarySaveResult(it, result.generatedChanges) }
+            }
+            .switchIfEmpty {
+                findOrCreateEntity(dto)
+                    .flatMap { entity -> mapper.toDTO(entity) }
+                    .map { LibrarySaveResult(it, emptyList()) }
             }
     }
 

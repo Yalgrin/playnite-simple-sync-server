@@ -8,10 +8,12 @@ import pl.yalgrin.playnite.simplesync.library.domain.PlatformDiff
 import pl.yalgrin.playnite.simplesync.library.domain.extractDbModelOrEmpty
 import pl.yalgrin.playnite.simplesync.library.dto.PlatformDTO
 import pl.yalgrin.playnite.simplesync.library.dto.PlatformDiffDTO
+import pl.yalgrin.playnite.simplesync.library.dto.PlatformDiffDatabaseModel
 import reactor.core.publisher.Mono
 
 @Component
-class PlatformMapper : LibraryObjectWithDiffMapperImpl<Platform, PlatformDiff, PlatformDTO, PlatformDiffDTO>() {
+class PlatformMapper :
+    LibraryObjectWithDiffMapperImpl<Platform, PlatformDiff, PlatformDTO, PlatformDiffDTO, PlatformDiffDatabaseModel>() {
 
     override fun fillBasicFields(
         dto: PlatformDTO,
@@ -59,32 +61,42 @@ class PlatformMapper : LibraryObjectWithDiffMapperImpl<Platform, PlatformDiff, P
         return result
     }
 
-    override fun fillOtherDiffEntityFields(entity: PlatformDiff, dto: PlatformDiffDTO): Mono<PlatformDiff> {
-        return entity.extractDbModelOrEmpty()
+    override fun fillOtherDiffEntityFields(
+        diffEntity: PlatformDiff,
+        entity: Platform,
+        dto: PlatformDiffDTO
+    ): Mono<PlatformDiff> {
+        return diffEntity.extractDbModelOrEmpty()
             .map { databaseModel ->
                 databaseModel.baseObjectId = dto.baseObjectId
                 databaseModel.changedFields = dto.changedFields
                 databaseModel.specificationId = dto.specificationId
+                databaseModel
             }
             .flatMap { it.asJson() }
-            .doOnNext { entity.diffData = it }
-            .thenReturn(entity)
+            .doOnNext { diffEntity.diffData = it }
+            .thenReturn(diffEntity)
     }
 
-    override fun fillBasicDiffDtoFields(diffDto: PlatformDiffDTO, entity: Platform): PlatformDiffDTO {
-        val result = super.fillBasicDiffDtoFields(diffDto, entity)
+    override fun fillBasicDiffDtoFields(
+        diffDto: PlatformDiffDTO,
+        dbModel: PlatformDiffDatabaseModel,
+        entity: Platform
+    ): Pair<PlatformDiffDTO, PlatformDiffDatabaseModel> {
+        val result = super.fillBasicDiffDtoFields(diffDto, dbModel, entity)
         if (diffDto.changedFields.contains("SpecificationId")) {
-            result.specificationId = entity.specificationId
+            result.first.specificationId = entity.specificationId
         }
         return result
     }
 
     override fun fillOtherFieldsFromDiffEntity(
         diffDTO: PlatformDiffDTO,
+        dbModel: PlatformDiffDatabaseModel,
         entity: Platform,
         diffEntity: PlatformDiff
     ): Mono<PlatformDiffDTO> {
-        return diffEntity.extractDbModelOrEmpty().map { it.changedFields }.defaultIfEmpty(emptyList())
+        return Mono.fromSupplier { dbModel.changedFields }
             .doOnNext { changedFields ->
                 if (changedFields.contains("SpecificationId")) {
                     diffDTO.specificationId = entity.specificationId
@@ -98,4 +110,6 @@ class PlatformMapper : LibraryObjectWithDiffMapperImpl<Platform, PlatformDiff, P
     override fun createDiffDTO(): PlatformDiffDTO = PlatformDiffDTO()
 
     override fun createDiffEntity(): PlatformDiff = PlatformDiff()
+
+    override fun getDbModel(entity: PlatformDiff): Mono<PlatformDiffDatabaseModel> = entity.extractDbModelOrEmpty()
 }

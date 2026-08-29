@@ -1,8 +1,10 @@
 package pl.yalgrin.playnite.simplesync.library.mapper
 
 import org.apache.commons.lang3.Strings
+import pl.yalgrin.playnite.simplesync.common.util.pairWith
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectDiffEntity
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity
+import pl.yalgrin.playnite.simplesync.library.dto.LibraryDiffDatabaseModelDTO
 import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
 import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDiffDTO
 import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectFields
@@ -12,7 +14,7 @@ import reactor.kotlin.core.publisher.toMono
 interface LibraryObjectWithDiffMapper<E : LibraryObjectEntity, DIFF_E : LibraryObjectDiffEntity, DTO : LibraryObjectDTO, DIFF_DTO : LibraryObjectDiffDTO> {
     fun fillEntityAndGenerateDiff(dto: DTO, entity: E): Mono<Pair<E, DIFF_DTO>>
     fun toDTO(entity: E): Mono<DTO>
-    fun toEntity(dto: DIFF_DTO): Mono<DIFF_E>
+    fun toEntity(entity: E, dto: DIFF_DTO): Mono<DIFF_E>
     fun toDiffDTO(entity: E, diffEntity: DIFF_E): Mono<DIFF_DTO>
     fun fillEntityAndGenerateDiff(dto: DIFF_DTO, entity: E): Mono<Pair<E, DIFF_DTO>>
 }
@@ -21,7 +23,8 @@ abstract class LibraryObjectWithDiffMapperImpl<
         E : LibraryObjectEntity,
         DIFF_E : LibraryObjectDiffEntity,
         DTO : LibraryObjectDTO,
-        DIFF_DTO : LibraryObjectDiffDTO> : LibraryObjectWithDiffMapper<E, DIFF_E, DTO, DIFF_DTO> {
+        DIFF_DTO : LibraryObjectDiffDTO,
+        DB_MODEL : LibraryDiffDatabaseModelDTO> : LibraryObjectWithDiffMapper<E, DIFF_E, DTO, DIFF_DTO> {
 
     override fun fillEntityAndGenerateDiff(dto: DTO, entity: E): Mono<Pair<E, DIFF_DTO>> {
         return Mono.fromSupplier { createDiffDTO() }
@@ -74,7 +77,7 @@ abstract class LibraryObjectWithDiffMapperImpl<
     }
 
     protected open fun fillBasicDtoFields(dto: DTO, entity: E): DTO {
-        dto.externalId = entity.id
+        dto.serverId = entity.id
         dto.id = entity.playniteId
         dto.name = entity.name
         dto.isRemoved = entity.isRemoved
@@ -85,36 +88,41 @@ abstract class LibraryObjectWithDiffMapperImpl<
         return dto.toMono()
     }
 
-    override fun toEntity(dto: DIFF_DTO): Mono<DIFF_E> {
+    override fun toEntity(entity: E, dto: DIFF_DTO): Mono<DIFF_E> {
         return Mono.fromSupplier { createDiffEntity() }
-            .map { fillBasicDiffEntityFields(it, dto) }
-            .flatMap { fillOtherDiffEntityFields(it, dto) }
+            .map { fillBasicDiffEntityFields(it, entity, dto) }
+            .flatMap { fillOtherDiffEntityFields(it, entity, dto) }
             .doOnNext { entity ->
                 entity.isForEntireObject = dto.changedFields.contains("Id") || dto.changedFields.contains("Removed")
             }
     }
 
-    protected open fun fillBasicDiffEntityFields(diffEntity: DIFF_E, dto: DIFF_DTO): DIFF_E {
+    protected open fun fillBasicDiffEntityFields(diffEntity: DIFF_E, entity: E, dto: DIFF_DTO): DIFF_E {
         diffEntity.playniteId = dto.id
         diffEntity.name = dto.name
         diffEntity.isRemoved = dto.isRemoved
         return diffEntity
     }
 
-    protected open fun fillOtherDiffEntityFields(entity: DIFF_E, dto: DIFF_DTO): Mono<DIFF_E> {
-        return entity.toMono()
+    protected open fun fillOtherDiffEntityFields(diffEntity: DIFF_E, entity: E, dto: DIFF_DTO): Mono<DIFF_E> {
+        return diffEntity.toMono()
     }
 
     override fun toDiffDTO(entity: E, diffEntity: DIFF_E): Mono<DIFF_DTO> {
         return Mono.fromSupplier { createDiffDTO() }
-            .map { diffDto -> fillBasicDiffDtoFields(diffDto, entity) }
-            .flatMap { diffDto ->
-                fillOtherFieldsFromDiffEntity(diffDto, entity, diffEntity)
+            .pairWith(getDbModel(diffEntity))
+            .map { (diffDto, dbModel) -> fillBasicDiffDtoFields(diffDto, dbModel, entity) }
+            .flatMap { (diffDto, dbModel) ->
+                fillOtherFieldsFromDiffEntity(diffDto, dbModel, entity, diffEntity)
             }
     }
 
-    protected open fun fillBasicDiffDtoFields(diffDto: DIFF_DTO, entity: E): DIFF_DTO {
-        val changedFields: List<String> = diffDto.changedFields
+    protected open fun fillBasicDiffDtoFields(
+        diffDto: DIFF_DTO,
+        dbModel: DB_MODEL,
+        entity: E
+    ): Pair<DIFF_DTO, DB_MODEL> {
+        val changedFields: List<String> = dbModel.changedFields
         if (changedFields.contains(LibraryObjectFields.ID)) {
             diffDto.id = entity.playniteId
         }
@@ -124,11 +132,13 @@ abstract class LibraryObjectWithDiffMapperImpl<
         if (changedFields.contains(LibraryObjectFields.REMOVED)) {
             diffDto.isRemoved = entity.isRemoved
         }
-        return diffDto
+        diffDto.changedFields = dbModel.changedFields
+        return diffDto to dbModel
     }
 
     protected open fun fillOtherFieldsFromDiffEntity(
         diffDTO: DIFF_DTO,
+        dbModel: DB_MODEL,
         entity: E,
         diffEntity: DIFF_E
     ): Mono<DIFF_DTO> {
@@ -162,6 +172,7 @@ abstract class LibraryObjectWithDiffMapperImpl<
             entity.name = referenceDTO.name
             changedFields.add(LibraryObjectFields.NAME)
         }
+        newDTO.name = referenceDTO.name
         if (entity.isRemoved) {
             entity.isRemoved = false
             newDTO.isRemoved = referenceDTO.isRemoved
@@ -184,4 +195,6 @@ abstract class LibraryObjectWithDiffMapperImpl<
     protected abstract fun createDiffDTO(): DIFF_DTO
 
     protected abstract fun createDiffEntity(): DIFF_E
+
+    protected abstract fun getDbModel(entity: DIFF_E): Mono<DB_MODEL>
 }

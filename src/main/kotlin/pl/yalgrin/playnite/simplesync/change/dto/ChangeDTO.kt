@@ -11,6 +11,7 @@ data class ChangeDTO(
     var type: ObjectType,
     var clientId: String? = null,
     var objectId: Long,
+    var diffParentObjectId: Long? = null,
     @param:JsonProperty("isForceFetch")
     @get:JsonProperty("isForceFetch")
     @field:JsonProperty("isForceFetch")
@@ -23,6 +24,7 @@ data class ChangeDTO(
             .append("type", type)
             .append("clientId", clientId)
             .append("objectId", objectId)
+            .append("diffParentObjectId", diffParentObjectId)
             .append("isForceFetch", isForceFetch)
             .toString()
     }

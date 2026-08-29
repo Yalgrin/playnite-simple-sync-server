@@ -28,6 +28,7 @@ import pl.yalgrin.playnite.simplesync.security.getSessionClientId
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import reactor.kotlin.core.publisher.switchIfEmpty
 import reactor.kotlin.core.publisher.toMono
 
 abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
@@ -69,6 +70,11 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             .flatMap { triple ->
                 mapper.toDTO(triple.first)
                     .map { LibrarySaveResult(it, listOf(triple.third)) }
+            }
+            .switchIfEmpty {
+                findOrCreateEntity(dto)
+                    .flatMap { entity -> mapper.toDTO(entity) }
+                    .map { LibrarySaveResult(it, emptyList()) }
             }
     }
 
@@ -247,7 +253,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                 dto.baseObjectId = t.first.id
                 log.debug("saveDiffIfNeeded > diffDTO: {}", dto)
             }
-            .flatMap { dto -> mapper.toEntity(dto) }
+            .flatMap { dto -> mapper.toEntity(t.first, dto) }
             .flatMap { entity -> diffRepository.save(entity) }
             .map { e -> t.first to e }
     }
@@ -277,6 +283,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                         type = getDiffType(),
                         clientId = clientId,
                         objectId = tuple.second.id!!,
+                        diffParentObjectId = tuple.first.id,
                         isForceFetch = tuple.first.isNotifyAll
                     )
                 }
@@ -425,7 +432,13 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
     }
 
     private fun createDeleteChange(clientId: String?, entity: E): ChangeDTO {
-        return ChangeDTO(null, getObjectType(), clientId, entity.id!!, entity.isNotifyAll)
+        return ChangeDTO(
+            id = null,
+            type = getObjectType(),
+            clientId = clientId,
+            objectId = entity.id!!,
+            isForceFetch = entity.isNotifyAll
+        )
     }
 
     override fun findById(id: Long): Mono<DTO> {
@@ -472,7 +485,31 @@ private data class FileData(
     val md5: String,
     val filename: String,
     val toSave: Boolean = false
-)
+) {
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+
+        other as FileData
+
+        if (toSave != other.toSave) return false
+        if (fieldName != other.fieldName) return false
+        if (!bytes.contentEquals(other.bytes)) return false
+        if (md5 != other.md5) return false
+        if (filename != other.filename) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var result = toSave.hashCode()
+        result = 31 * result + fieldName.hashCode()
+        result = 31 * result + bytes.contentHashCode()
+        result = 31 * result + md5.hashCode()
+        result = 31 * result + filename.hashCode()
+        return result
+    }
+}
 
 private data class SaveResult(
     val fieldName: String,

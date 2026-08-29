@@ -13,6 +13,7 @@ class ChangeMapper {
             type = dto.type,
             clientId = dto.clientId!!,
             objectId = dto.objectId,
+            diffParentObjectId = dto.diffParentObjectId,
             notifyAll = dto.isForceFetch,
             createdAt = Instant.now()
         )
@@ -24,6 +25,7 @@ class ChangeMapper {
             type = entity.type,
             clientId = entity.clientId,
             objectId = entity.objectId,
+            diffParentObjectId = entity.diffParentObjectId,
             isForceFetch = entity.notifyAll
         )
     }

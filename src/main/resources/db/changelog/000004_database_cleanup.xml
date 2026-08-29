@@ -131,4 +131,10 @@
             <column name="model_version"/>
         </createIndex>
     </changeSet>
+
+    <changeSet id="000004-11" author="yalgrin">
+        <addColumn tableName="playnite_change">
+            <column name="diff_parent_object_id" type="bigint"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

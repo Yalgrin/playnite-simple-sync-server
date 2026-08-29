@@ -13,6 +13,7 @@ class ChangeMessageMapper {
             type = dto.type,
             clientId = dto.clientId,
             objectId = dto.objectId,
+            diffParentObjectId = dto.diffParentObjectId,
             isForceFetch = dto.isForceFetch
         )
     }
@@ -23,6 +24,7 @@ class ChangeMessageMapper {
             type = entity.type,
             clientId = entity.clientId,
             objectId = entity.objectId,
+            diffParentObjectId = entity.diffParentObjectId,
             isForceFetch = entity.notifyAll
         )
     }

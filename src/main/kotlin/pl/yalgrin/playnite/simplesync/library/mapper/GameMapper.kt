@@ -3,17 +3,17 @@ package pl.yalgrin.playnite.simplesync.library.mapper
 import org.springframework.stereotype.Component
 import pl.yalgrin.playnite.simplesync.common.util.MapperUtil
 import pl.yalgrin.playnite.simplesync.common.util.asJson
-import pl.yalgrin.playnite.simplesync.common.util.pairWith
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.domain.GameDiff
 import pl.yalgrin.playnite.simplesync.library.domain.extractDbModelOrEmpty
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
+import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDatabaseModel
 import pl.yalgrin.playnite.simplesync.library.dto.GameFields
 import reactor.core.publisher.Mono
 
 @Component
-class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, GameDiffDTO>() {
+class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, GameDiffDTO, GameDiffDatabaseModel>() {
     override fun fillBasicFields(
         dto: GameDTO,
         entity: Game,
@@ -585,15 +585,15 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
             .thenReturn(dto)
     }
 
-    override fun fillBasicDiffEntityFields(diffEntity: GameDiff, dto: GameDiffDTO): GameDiff {
-        val result = super.fillBasicDiffEntityFields(diffEntity, dto)
-        result.gameId = dto.gameId
-        result.pluginId = dto.pluginId
+    override fun fillBasicDiffEntityFields(diffEntity: GameDiff, entity: Game, dto: GameDiffDTO): GameDiff {
+        val result = super.fillBasicDiffEntityFields(diffEntity, entity, dto)
+        result.gameId = entity.gameId
+        result.pluginId = entity.pluginId
         return result
     }
 
-    override fun fillOtherDiffEntityFields(entity: GameDiff, dto: GameDiffDTO): Mono<GameDiff> {
-        return entity.extractDbModelOrEmpty()
+    override fun fillOtherDiffEntityFields(diffEntity: GameDiff, entity: Game, dto: GameDiffDTO): Mono<GameDiff> {
+        return diffEntity.extractDbModelOrEmpty()
             .map { databaseModel ->
                 databaseModel.baseObjectId = dto.baseObjectId
                 databaseModel.changedFields = dto.changedFields
@@ -628,32 +628,38 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                 databaseModel.criticScore = dto.criticScore
                 databaseModel.communityScore = dto.communityScore
                 databaseModel.manual = dto.manual
+                databaseModel
             }
             .flatMap { it.asJson() }
-            .doOnNext { entity.diffData = it }
-            .thenReturn(entity)
+            .doOnNext { diffEntity.diffData = it }
+            .thenReturn(diffEntity)
     }
 
-    override fun fillBasicDiffDtoFields(diffDto: GameDiffDTO, entity: Game): GameDiffDTO {
-        val changedFields = diffDto.changedFields
-        val result = super.fillBasicDiffDtoFields(diffDto, entity)
+    override fun fillBasicDiffDtoFields(
+        diffDto: GameDiffDTO,
+        dbModel: GameDiffDatabaseModel,
+        entity: Game
+    ): Pair<GameDiffDTO, GameDiffDatabaseModel> {
+        val result = super.fillBasicDiffDtoFields(diffDto, dbModel, entity)
+        val changedFields = result.second.changedFields
         if (changedFields.contains(GameFields.GAME_ID)) {
-            result.gameId = entity.gameId
+            result.first.gameId = entity.gameId
         }
         if (changedFields.contains(GameFields.PLUGIN_ID)) {
-            result.pluginId = entity.pluginId
+            result.first.pluginId = entity.pluginId
         }
         return result
     }
 
     override fun fillOtherFieldsFromDiffEntity(
         diffDTO: GameDiffDTO,
+        dbModel: GameDiffDatabaseModel,
         entity: Game,
         diffEntity: GameDiff
     ): Mono<GameDiffDTO> {
         return entity.extractDbModelOrEmpty()
-            .pairWith(diffEntity.extractDbModelOrEmpty().map { it.changedFields }.defaultIfEmpty(emptyList()))
-            .doOnNext { (targetDto, changedFields) ->
+            .doOnNext { targetDto ->
+                val changedFields = dbModel.changedFields
                 if (changedFields.contains(GameFields.DESCRIPTION)) {
                     diffDTO.description = targetDto.description
                 }
@@ -756,4 +762,6 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
     override fun createDiffDTO(): GameDiffDTO = GameDiffDTO()
 
     override fun createDiffEntity(): GameDiff = GameDiff()
+
+    override fun getDbModel(entity: GameDiff): Mono<GameDiffDatabaseModel> = entity.extractDbModelOrEmpty()
 }

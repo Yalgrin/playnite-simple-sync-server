@@ -21,8 +21,6 @@ data class GameDiffDatabaseModel(
     var isFavorite: Boolean = false,
     var lastActivity: ZonedDateTime? = null,
     var sortingName: String? = null,
-    var gameId: String? = null,
-    var pluginId: String? = null,
     var platforms: List<PlatformDTO> = emptyList(),
     var publishers: List<CompanyDTO> = emptyList(),
     var developers: List<CompanyDTO> = emptyList(),
@@ -49,7 +47,7 @@ data class GameDiffDatabaseModel(
     var criticScore: Int? = null,
     var communityScore: Int? = null,
     var manual: String? = null
-) : LibraryDatabaseModelDTO {
+) : LibraryDiffDatabaseModelDTO {
 
     companion object {
         @Serial

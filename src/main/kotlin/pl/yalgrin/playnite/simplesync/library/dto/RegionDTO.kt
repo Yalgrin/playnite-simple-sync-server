@@ -5,7 +5,7 @@ import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import java.io.Serial
 
 data class RegionDTO(
-    override var externalId: Long? = null,
+    override var serverId: Long? = null,
     override var id: String? = null,
     override var name: String? = null,
     @param:JsonProperty("isRemoved")

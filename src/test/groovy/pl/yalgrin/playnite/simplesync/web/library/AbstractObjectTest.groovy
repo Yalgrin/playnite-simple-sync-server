@@ -132,7 +132,7 @@ abstract class AbstractObjectTest<E extends LibraryObjectEntity, D extends Libra
 
         StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, dtoClass()))
                 .expectNextMatches {
-                    assert it.externalId == id
+                    assert it.serverId == id
                     objectMatches(it, dto)
                 }
                 .verifyComplete()

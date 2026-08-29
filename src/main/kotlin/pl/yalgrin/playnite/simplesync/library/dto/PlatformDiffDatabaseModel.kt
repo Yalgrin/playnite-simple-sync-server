@@ -7,7 +7,7 @@ data class PlatformDiffDatabaseModel(
     override var baseObjectId: Long? = null,
     override var changedFields: List<String> = emptyList(),
     var specificationId: String? = null
-) : LibraryDatabaseModelDTO {
+) : LibraryDiffDatabaseModelDTO {
 
     override fun toString(): String {
         return ToStringUtil.createBuilder(this)
