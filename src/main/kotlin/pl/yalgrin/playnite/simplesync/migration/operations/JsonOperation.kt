@@ -12,7 +12,7 @@ class JsonRenameOperation(val oldName: String, val newName: String) : JsonOperat
         if (node != null && node is ObjectNode) {
             val oldNameNode = node.remove(oldName)
             if (oldNameNode != null) {
-                node.set(newName, oldNameNode)
+                node[newName] = oldNameNode
             }
         }
     }
