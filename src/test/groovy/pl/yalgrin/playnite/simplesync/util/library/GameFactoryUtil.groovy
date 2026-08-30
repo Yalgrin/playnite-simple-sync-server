@@ -88,7 +88,7 @@ class GameFactoryUtil {
                 "manual",
                 true,
                 true,
-                true
+                true, null, null, null, null
         )
     }
 
@@ -134,7 +134,7 @@ class GameFactoryUtil {
                 null,
                 false,
                 false,
-                false
+                false, null, null, null, null
         )
     }
 

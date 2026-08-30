@@ -56,6 +56,10 @@ abstract class LibraryObjectMapperImpl<E : LibraryObjectEntity, D : LibraryObjec
         dto.id = entity.playniteId
         dto.name = entity.name
         dto.isRemoved = entity.isRemoved
+        dto.createdAt = entity.createdAt
+        dto.createdBy = entity.createdBy
+        dto.modifiedAt = entity.modifiedAt
+        dto.modifiedBy = entity.modifiedBy
         return dto
     }
 

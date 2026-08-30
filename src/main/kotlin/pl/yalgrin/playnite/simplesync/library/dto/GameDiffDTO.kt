@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.library.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import java.io.Serial
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
@@ -56,14 +57,19 @@ data class GameDiffDTO(
     var userScore: Int? = null,
     var criticScore: Int? = null,
     var communityScore: Int? = null,
-    var manual: String? = null
+    var manual: String? = null,
+    override var createdAt: Instant? = null,
+    override var createdBy: String? = null
 ) : LibraryObjectDiffDTO {
 
     override fun toString(): String {
         return ToStringUtil.createBuilder(this)
+            .append("serverId", serverId)
             .append("id", id)
             .append("name", name)
             .append("isRemoved", isRemoved)
+            .append("createdAt", createdAt)
+            .append("createdBy", createdBy)
             .toString()
     }
 

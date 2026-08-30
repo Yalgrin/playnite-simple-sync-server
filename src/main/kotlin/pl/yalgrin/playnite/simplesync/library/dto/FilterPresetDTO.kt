@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import pl.yalgrin.playnite.simplesync.library.dto.filter.FilterPresetSettingsDTO
 import java.io.Serial
+import java.time.Instant
 
 data class FilterPresetDTO(
     override var serverId: Long? = null,
@@ -20,7 +21,11 @@ data class FilterPresetDTO(
     @param:JsonProperty("showInFullscreenQuickSelection")
     @get:JsonProperty("showInFullscreenQuickSelection")
     @field:JsonProperty("showInFullscreenQuickSelection")
-    var showInFullscreenQuickSelection: Boolean = false
+    var showInFullscreenQuickSelection: Boolean = false,
+    override var createdAt: Instant? = null,
+    override var createdBy: String? = null,
+    override var modifiedAt: Instant? = null,
+    override var modifiedBy: String? = null
 ) : LibraryObjectDTO {
 
     fun withName(name: String) = copy(name = name)
@@ -29,6 +34,7 @@ data class FilterPresetDTO(
 
     override fun toString(): String {
         return ToStringUtil.createBuilder(this)
+            .append("serverId", serverId)
             .append("id", id)
             .append("name", name)
             .append("isRemoved", isRemoved)
@@ -37,6 +43,10 @@ data class FilterPresetDTO(
             .append("sortingOrderDirection", sortingOrderDirection)
             .append("groupingOrder", groupingOrder)
             .append("showInFullscreenQuickSelection", showInFullscreenQuickSelection)
+            .append("createdAt", createdAt)
+            .append("createdBy", createdBy)
+            .append("modifiedAt", modifiedAt)
+            .append("modifiedBy", modifiedBy)
             .toString()
     }
 

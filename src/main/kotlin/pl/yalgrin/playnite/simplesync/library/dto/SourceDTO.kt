@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.library.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import java.io.Serial
+import java.time.Instant
 
 data class SourceDTO(
     override var serverId: Long? = null,
@@ -11,7 +12,11 @@ data class SourceDTO(
     @param:JsonProperty("isRemoved")
     @get:JsonProperty("isRemoved")
     @field:JsonProperty("isRemoved")
-    override var isRemoved: Boolean = false
+    override var isRemoved: Boolean = false,
+    override var createdAt: Instant? = null,
+    override var createdBy: String? = null,
+    override var modifiedAt: Instant? = null,
+    override var modifiedBy: String? = null
 ) : LibraryObjectDTO {
 
     fun withName(name: String) = copy(name = name)
@@ -20,9 +25,14 @@ data class SourceDTO(
 
     override fun toString(): String {
         return ToStringUtil.createBuilder(this)
+            .append("serverId", serverId)
             .append("id", id)
             .append("name", name)
             .append("isRemoved", isRemoved)
+            .append("createdAt", createdAt)
+            .append("createdBy", createdBy)
+            .append("modifiedAt", modifiedAt)
+            .append("modifiedBy", modifiedBy)
             .toString()
     }
 

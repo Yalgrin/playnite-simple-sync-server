@@ -30,6 +30,7 @@ import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.switchIfEmpty
 import reactor.kotlin.core.publisher.toMono
+import java.time.Instant
 
 abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         DIFF_DTO : LibraryObjectDiffDTO,
@@ -64,6 +65,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         return dto.toMono()
             .flatMap { findOrCreateEntity(it) }
             .flatMap { entity -> mapper.fillEntityAndGenerateDiff(dto, entity) }
+            .flatMap { pair -> updateAuditingFields(pair) }
             .flatMap { pair -> saveEntityAndFiles(pair, fileParts, saveFiles) }
             .flatMap { pair -> saveDiffIfNeeded(pair) }
             .flatMap { pair -> saveChange(pair) }
@@ -254,6 +256,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                 log.debug("saveDiffIfNeeded > diffDTO: {}", dto)
             }
             .flatMap { dto -> mapper.toEntity(t.first, dto) }
+            .flatMap { entity -> updateAuditingFields(entity) }
             .flatMap { entity -> diffRepository.save(entity) }
             .map { e -> t.first to e }
     }
@@ -308,6 +311,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                     }
                     .flatMap { dto -> findOrCreateEntity(dto) }
                     .flatMap { entity -> mapper.fillEntityAndGenerateDiff(diffDto, entity) }
+                    .flatMap { pair -> updateAuditingFields(pair) }
                     .flatMap { tuple ->
                         saveEntityAndFilesFromDiff(
                             diffDto,
@@ -413,6 +417,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                 e.isRemoved = true
                 e
             }
+            .flatMap { pair -> updateAuditingFields(pair) }
             .flatMap { entity -> repository.save(entity) }
             .flatMap { e -> changeService.saveChange(createDeleteChange(clientId, e)) }
             .collectList()
@@ -440,6 +445,31 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             isForceFetch = entity.isNotifyAll
         )
     }
+
+    private fun updateAuditingFields(pair: Pair<E, DIFF_DTO>): Mono<Pair<E, DIFF_DTO>> =
+        Mono.fromSupplier { pair.first }
+            .flatMap { updateAuditingFields(it) }
+            .thenReturn(pair)
+
+    private fun updateAuditingFields(entity: E): Mono<E> = getSessionClientId()
+        .doOnNext { clientId ->
+            if (entity.id == null) {
+                entity.createdAt = Instant.now()
+                entity.createdBy = clientId
+            }
+            entity.modifiedAt = Instant.now()
+            entity.modifiedBy = clientId
+        }
+        .thenReturn(entity)
+
+    private fun updateAuditingFields(entity: DIFF_E): Mono<DIFF_E> = getSessionClientId()
+        .doOnNext { clientId ->
+            if (entity.id == null) {
+                entity.createdAt = Instant.now()
+                entity.createdBy = clientId
+            }
+        }
+        .thenReturn(entity)
 
     override fun findById(id: Long): Mono<DTO> {
         return repository.findById(id).flatMap { entity -> mapper.toDTO(entity) }

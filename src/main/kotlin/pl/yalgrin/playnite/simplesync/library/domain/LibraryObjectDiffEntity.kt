@@ -1,6 +1,7 @@
 package pl.yalgrin.playnite.simplesync.library.domain
 
 import io.r2dbc.postgresql.codec.Json
+import java.time.Instant
 
 interface LibraryObjectDiffEntity {
     var id: Long?
@@ -14,4 +15,8 @@ interface LibraryObjectDiffEntity {
     var isRemoved: Boolean
 
     var isForEntireObject: Boolean
+
+    var createdAt: Instant
+
+    var createdBy: String?
 }

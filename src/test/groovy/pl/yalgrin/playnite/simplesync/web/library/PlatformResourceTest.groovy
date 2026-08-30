@@ -55,6 +55,10 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, PlatformDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -91,6 +95,10 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), PlatformDTO.class))
                     .expectNextMatches {
                         assert it.serverId != null
+                        assert it.createdAt != null
+                        assert it.createdBy != null
+                        assert it.modifiedAt != null
+                        assert it.modifiedBy != null
                         createdIds.add(it.serverId)
                         objectMatches(it, list.get(tuple.getV2())._1())
                     }
@@ -116,6 +124,10 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, PlatformDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -150,6 +162,10 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, PlatformDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -214,6 +230,10 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                             .responseBody
                     PlatformAssertionUtil.assertPlatform(toSave, result)
                     assert result.serverId != null
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                     collectedIds.add(result.serverId)
                     if (collectedIds.size() > 1) {
                         assert collectedIds.stream().distinct().size() == 1
@@ -241,7 +261,14 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PlatformDTO.class))
-                            .expectNextMatches { objectMatches(it, toSave) }
+                            .expectNextMatches {
+                                assert it.serverId == collectedIds.first
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, toSave)
+                            }
                             .verifyComplete()
                 }
                 .then {
@@ -251,6 +278,10 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                             .responseBody
                     PlatformAssertionUtil.assertPlatform(modified, result)
                     assert result.serverId == collectedIds.first
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -272,9 +303,12 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PlatformDTO.class))
                             .expectNextMatches {
-                                objectMatches(it, modified)
                                 assert it.serverId == collectedIds.first
-                                true
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, modified)
                             }
                             .verifyComplete()
                 }
@@ -286,10 +320,13 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PlatformDiffDTO.class))
                             .expectNextMatches {
+                                assert it.serverId != null
                                 assert it.changedFields != null
                                 assert it.changedFields.size() == 1
                                 assert it.changedFields.contains("Name")
                                 assert it.name == modified.name
+                                assert it.createdAt != null
+                                assert it.createdBy != null
                                 true
                             }
                             .verifyComplete()
@@ -301,6 +338,10 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                             .responseBody
                     assert result.name == modifiedViaDiffDTO.name
                     assert result.specificationId == modifiedViaDiffDTO.specificationId
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -323,12 +364,15 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PlatformDiffDTO.class))
                             .expectNextMatches {
+                                assert it.serverId != null
                                 assert it.changedFields != null
                                 assert it.changedFields.size() == 2
                                 assert it.changedFields.contains("Name")
                                 assert it.changedFields.contains("SpecificationId")
                                 assert it.name == modifiedViaDiffDTO.name
                                 assert it.specificationId == modifiedViaDiffDTO.specificationId
+                                assert it.createdAt != null
+                                assert it.createdBy != null
                                 true
                             }
                             .verifyComplete()

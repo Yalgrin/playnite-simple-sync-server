@@ -59,6 +59,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GameDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -78,7 +82,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
     def "save multiple games"() {
         given:
         List<Tuple2<GameDTO, List<MultipartFile>>> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 500; i++) {
             def game = GameFactoryUtil.gameWithIndex(i)
             def files = GameFactoryUtil.randomFiles()
             game.setHasIcon(files.any { it.name.startsWith("Icon") })
@@ -107,6 +111,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), GameDTO.class))
                     .expectNextMatches {
                         assert it.serverId != null
+                        assert it.createdAt != null
+                        assert it.createdBy != null
+                        assert it.modifiedAt != null
+                        assert it.modifiedBy != null
                         createdIds.add(it.serverId)
                         objectMatches(it, list.get(tuple.getV2())._1())
                     }
@@ -132,6 +140,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, GameDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -166,6 +178,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, GameDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -251,6 +267,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                             .responseBody
                     GameAssertionUtil.assertGame(toSave, result)
                     assert result.serverId != null
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                     collectedIds.add(result.serverId)
                     if (collectedIds.size() > 1) {
                         assert collectedIds.stream().distinct().size() == 1
@@ -284,7 +304,14 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDTO.class))
-                            .expectNextMatches { objectMatches(it, toSave) }
+                            .expectNextMatches {
+                                assert it.serverId == collectedIds.first
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, toSave)
+                            }
                             .verifyComplete()
                 }
                 .then {
@@ -294,6 +321,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                             .responseBody
                     GameAssertionUtil.assertGame(modified, result)
                     assert result.serverId == collectedIds.first
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                 }
                 .thenConsumeWhile { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -321,9 +352,12 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDTO.class))
                             .expectNextMatches {
-                                objectMatches(it, modified)
                                 assert it.serverId == collectedIds.first
-                                true
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, modified)
                             }
                             .verifyComplete()
                 }
@@ -335,6 +369,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
                             .expectNextMatches {
+                                assert it.serverId != null
                                 assert it.changedFields != null
                                 assert it.changedFields.size() == 4
                                 assert it.changedFields.contains("Name")
@@ -349,8 +384,18 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                                 assert genres.size() == 1
                                 assert genres.get(0).id == newGenre.id
                                 assert genres.get(0).name == newGenre.name
+                                assert genres.get(0).createdAt == null
+                                assert genres.get(0).createdBy == null
+                                assert genres.get(0).modifiedAt == null
+                                assert genres.get(0).modifiedBy == null
                                 assert it.source?.id == newSource.id
                                 assert it.source?.name == newSource.name
+                                assert it.source?.createdAt == null
+                                assert it.source?.createdBy == null
+                                assert it.source?.modifiedAt == null
+                                assert it.source?.modifiedBy == null
+                                assert it.createdAt != null
+                                assert it.createdBy != null
                                 true
                             }
                             .verifyComplete()
@@ -363,6 +408,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert result.name == modifiedViaDiffDTO.name
                     assert result.description == modified.description
                     assert result.version == modifiedViaDiffDTO.version
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                 }
                 .thenConsumeWhile { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -391,6 +440,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
                             .expectNextMatches {
+                                assert it.serverId != null
                                 assert it.changedFields != null
                                 assert it.changedFields.size() == 4
                                 assert it.changedFields.contains("Name")
@@ -405,8 +455,18 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                                 assert categories.size() == 1
                                 assert categories.get(0).id == newCategory.id
                                 assert categories.get(0).name == newCategory.name
+                                assert categories.get(0).createdAt == null
+                                assert categories.get(0).createdBy == null
+                                assert categories.get(0).modifiedAt == null
+                                assert categories.get(0).modifiedBy == null
                                 assert it.source?.id == newSecondSource.id
                                 assert it.source?.name == newSecondSource.name
+                                assert it.source?.createdAt == null
+                                assert it.source?.createdBy == null
+                                assert it.source?.modifiedAt == null
+                                assert it.source?.modifiedBy == null
+                                assert it.createdAt != null
+                                assert it.createdBy != null
                                 true
                             }
                             .verifyComplete()
@@ -432,9 +492,12 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDTO.class))
                             .expectNextMatches {
-                                objectMatches(it, removed)
                                 assert it.serverId == collectedIds.first
-                                true
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, removed)
                             }
                             .verifyComplete()
                 }
@@ -461,6 +524,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GameDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }

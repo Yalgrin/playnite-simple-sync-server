@@ -4,7 +4,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.CompletionStatusDTO
 
 class CompletionStatusFactoryUtil {
     static CompletionStatusDTO createCompletionStatus(String id, String name, boolean removed = false) {
-        return new CompletionStatusDTO(null, id, name, removed)
+        return new CompletionStatusDTO(null, id, name, removed, null, null, null, null)
     }
 
     static CompletionStatusDTO randomCompletionStatus() {

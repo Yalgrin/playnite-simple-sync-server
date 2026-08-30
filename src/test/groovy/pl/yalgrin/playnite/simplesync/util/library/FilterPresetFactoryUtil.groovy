@@ -20,7 +20,7 @@ class FilterPresetFactoryUtil {
                 "Added",
                 "Descending",
                 "Category",
-                false
+                false, null, null, null, null
         )
     }
 
@@ -46,7 +46,7 @@ class FilterPresetFactoryUtil {
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
-                random.nextBoolean()
+                random.nextBoolean(), null, null, null, null
         )
     }
 
@@ -61,7 +61,7 @@ class FilterPresetFactoryUtil {
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
-                random.nextBoolean()
+                random.nextBoolean(), null, null, null, null
         )
     }
 

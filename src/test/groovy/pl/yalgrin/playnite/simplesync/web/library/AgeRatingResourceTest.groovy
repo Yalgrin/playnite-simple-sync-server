@@ -41,6 +41,10 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, AgeRatingDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -77,6 +81,10 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), AgeRatingDTO.class))
                     .expectNextMatches {
                         assert it.serverId != null
+                        assert it.createdAt != null
+                        assert it.createdBy != null
+                        assert it.modifiedAt != null
+                        assert it.modifiedBy != null
                         createdIds.add(it.serverId)
                         objectMatches(it, list.get(tuple.getV2()))
                     }
@@ -101,6 +109,10 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, AgeRatingDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -134,6 +146,10 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, AgeRatingDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -188,6 +204,10 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
                             .responseBody
                     AgeRatingAssertionUtil.assertAgeRating(toSave, result)
                     assert result.serverId != null
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                     collectedIds.add(result.serverId)
                     if (collectedIds.size() > 1) {
                         assert collectedIds.stream().distinct().size() == 1
@@ -215,7 +235,14 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, AgeRatingDTO.class))
-                            .expectNextMatches { objectMatches(it, toSave) }
+                            .expectNextMatches {
+                                assert it.serverId == collectedIds.first
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, toSave)
+                            }
                             .verifyComplete()
                 }
                 .then {
@@ -225,6 +252,10 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
                             .responseBody
                     AgeRatingAssertionUtil.assertAgeRating(modified, result)
                     assert result.serverId == collectedIds.first
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -244,9 +275,12 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, AgeRatingDTO.class))
                             .expectNextMatches {
-                                objectMatches(it, modified)
                                 assert it.serverId == collectedIds.first
-                                true
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, modified)
                             }
                             .verifyComplete()
                 }
@@ -270,7 +304,14 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, AgeRatingDTO.class))
-                            .expectNextMatches { objectMatches(it, removed) }
+                            .expectNextMatches {
+                                assert it.serverId == collectedIds.first
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, removed)
+                            }
                             .verifyComplete()
                 }
                 .thenCancel()

@@ -4,7 +4,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.FeatureDTO
 
 class FeatureFactoryUtil {
     static FeatureDTO createFeature(String id, String name, boolean removed = false) {
-        return new FeatureDTO(null, id, name, removed)
+        return new FeatureDTO(null, id, name, removed, null, null, null, null)
     }
 
     static FeatureDTO randomFeature() {

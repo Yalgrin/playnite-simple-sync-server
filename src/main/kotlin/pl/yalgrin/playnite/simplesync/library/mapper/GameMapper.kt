@@ -638,9 +638,10 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
     override fun fillBasicDiffDtoFields(
         diffDto: GameDiffDTO,
         dbModel: GameDiffDatabaseModel,
-        entity: Game
+        entity: Game,
+        diffEntity: GameDiff
     ): Pair<GameDiffDTO, GameDiffDatabaseModel> {
-        val result = super.fillBasicDiffDtoFields(diffDto, dbModel, entity)
+        val result = super.fillBasicDiffDtoFields(diffDto, dbModel, entity, diffEntity)
         val changedFields = result.second.changedFields
         if (changedFields.contains(GameFields.GAME_ID)) {
             result.first.gameId = entity.gameId

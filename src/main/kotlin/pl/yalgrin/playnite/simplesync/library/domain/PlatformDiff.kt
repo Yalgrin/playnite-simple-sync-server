@@ -8,6 +8,7 @@ import org.springframework.data.relational.core.mapping.Table
 import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.dto.PlatformDiffDatabaseModel
 import reactor.core.publisher.Mono
+import java.time.Instant
 
 object PlatformDiffConstants {
     const val CURRENT_MODEL_VERSION = 2L
@@ -33,6 +34,12 @@ data class PlatformDiff(
 
     @Column("removed")
     override var isRemoved: Boolean = false,
+
+    @Column("created_at")
+    override var createdAt: Instant = Instant.now(),
+
+    @Column("created_by")
+    override var createdBy: String? = null,
 
     @Transient
     var isNotifyAll: Boolean = false,

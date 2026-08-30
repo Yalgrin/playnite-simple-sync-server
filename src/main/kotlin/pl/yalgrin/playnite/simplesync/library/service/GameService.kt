@@ -110,6 +110,12 @@ class GameService(
             .concatMap { d ->
                 service.saveObject(d)
                     .switchIfEmpty(Mono.fromSupplier { LibrarySaveResult(d, emptyList()) })
+                    .doOnNext { result ->
+                        result.savedObject.createdAt = null
+                        result.savedObject.createdBy = null
+                        result.savedObject.modifiedAt = null
+                        result.savedObject.modifiedBy = null
+                    }
             }
             .collectList()
             .doOnNext { list -> dtoSetter(dto, list.map { it.savedObject }) }
@@ -128,6 +134,12 @@ class GameService(
             .flatMap { d ->
                 service.saveObject(d)
                     .switchIfEmpty(Mono.fromSupplier { LibrarySaveResult(d, emptyList()) })
+                    .doOnNext { result ->
+                        result.savedObject.createdAt = null
+                        result.savedObject.createdBy = null
+                        result.savedObject.modifiedAt = null
+                        result.savedObject.modifiedBy = null
+                    }
             }
             .doOnNext { result -> dtoSetter(dto, result.savedObject) }
             .map { it.generatedChanges }
@@ -295,6 +307,12 @@ class GameService(
                                 )
                             }
                         )
+                            .doOnNext { result ->
+                                result.savedObject.createdAt = null
+                                result.savedObject.createdBy = null
+                                result.savedObject.modifiedAt = null
+                                result.savedObject.modifiedBy = null
+                            }
                     }
                     .collectList()
                     .doOnNext { t ->
@@ -326,6 +344,12 @@ class GameService(
                                 )
                             }
                         )
+                            .doOnNext { result ->
+                                result.savedObject.createdAt = null
+                                result.savedObject.createdBy = null
+                                result.savedObject.modifiedAt = null
+                                result.savedObject.modifiedBy = null
+                            }
                     }
                     .doOnNext { t ->
                         dtoSetter(dto, t.savedObject)

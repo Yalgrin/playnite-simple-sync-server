@@ -20,6 +20,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
 import reactor.kotlin.core.publisher.toMono
+import java.time.Instant
 
 abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectEntity>(
     protected val repository: ObjectRepository<E>,
@@ -40,6 +41,7 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
     override fun saveObject(dto: D): Mono<LibrarySaveResult<D>> {
         return findOrCreateEntity(dto)
             .flatMap { entity -> mapper.fillEntity(dto, entity) }
+            .flatMap { entity -> updateAuditingFields(entity) }
             .doOnNext { entity ->
                 log.debug(
                     "saveObject > entity has{} been changed!",
@@ -140,6 +142,7 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
                     e.isRemoved = true
                     e
                 }
+                .flatMap { entity -> updateAuditingFields(entity) }
                 .flatMap { entity -> repository.save(entity) }
                 .mapNotNull { e -> createChange(clientId, e) }
                 .flatMap { changeDTO -> changeService.saveChange(changeDTO) }
@@ -148,6 +151,17 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
     }
 
     protected abstract fun getObjectType(): ObjectType
+
+    private fun updateAuditingFields(entity: E): Mono<E> = getSessionClientId()
+        .doOnNext { clientId ->
+            if (entity.id == null) {
+                entity.createdAt = Instant.now()
+                entity.createdBy = clientId
+            }
+            entity.modifiedAt = Instant.now()
+            entity.modifiedBy = clientId
+        }
+        .thenReturn(entity)
 
     override fun findById(id: Long): Mono<D> {
         return repository.findById(id)

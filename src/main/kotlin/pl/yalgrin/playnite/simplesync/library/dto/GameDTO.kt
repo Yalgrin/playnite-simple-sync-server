@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.library.dto
 import com.fasterxml.jackson.annotation.JsonProperty
 import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import java.io.Serial
+import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
@@ -64,7 +65,11 @@ data class GameDTO(
     @param:JsonProperty("hasBackgroundImage")
     @get:JsonProperty("hasBackgroundImage")
     @field:JsonProperty("hasBackgroundImage")
-    var hasBackgroundImage: Boolean = false
+    var hasBackgroundImage: Boolean = false,
+    override var createdAt: Instant? = null,
+    override var createdBy: String? = null,
+    override var modifiedAt: Instant? = null,
+    override var modifiedBy: String? = null
 ) : LibraryObjectDTO {
     fun withIdAndName(id: String?, name: String?) = copy(id = id, name = name)
 
@@ -74,9 +79,14 @@ data class GameDTO(
 
     override fun toString(): String {
         return ToStringUtil.createBuilder(this)
+            .append("serverId", serverId)
             .append("id", id)
             .append("name", name)
             .append("isRemoved", isRemoved)
+            .append("createdAt", createdAt)
+            .append("createdBy", createdBy)
+            .append("modifiedAt", modifiedAt)
+            .append("modifiedBy", modifiedBy)
             .toString()
     }
 

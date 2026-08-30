@@ -8,6 +8,7 @@ import org.springframework.data.relational.core.mapping.Table
 import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.dto.GameDatabaseModel
 import reactor.core.publisher.Mono
+import java.time.Instant
 
 object GameConstants {
     const val CURRENT_MODEL_VERSION = 2L
@@ -48,6 +49,18 @@ data class Game(
 
     @Column("removed")
     override var isRemoved: Boolean = false,
+
+    @Column("created_at")
+    override var createdAt: Instant = Instant.now(),
+
+    @Column("created_by")
+    override var createdBy: String? = null,
+
+    @Column("modified_at")
+    override var modifiedAt: Instant = Instant.now(),
+
+    @Column("modified_by")
+    override var modifiedBy: String? = null,
 
     @Transient
     override var isNotifyAll: Boolean = false,

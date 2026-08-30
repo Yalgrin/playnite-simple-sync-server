@@ -4,7 +4,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.CategoryDTO
 
 class CategoryFactoryUtil {
     static CategoryDTO createCategory(String id, String name, boolean removed = false) {
-        return new CategoryDTO(null, id, name, removed)
+        return new CategoryDTO(null, id, name, removed, null, null, null, null)
     }
 
     static CategoryDTO randomCategory() {

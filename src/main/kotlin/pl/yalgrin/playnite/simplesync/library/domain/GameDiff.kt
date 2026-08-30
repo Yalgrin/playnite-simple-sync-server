@@ -8,6 +8,7 @@ import org.springframework.data.relational.core.mapping.Table
 import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDatabaseModel
 import reactor.core.publisher.Mono
+import java.time.Instant
 
 object GameDiffConstants {
     const val CURRENT_MODEL_VERSION = 2L
@@ -39,6 +40,12 @@ data class GameDiff(
 
     @Column("removed")
     override var isRemoved: Boolean = false,
+
+    @Column("created_at")
+    override var createdAt: Instant = Instant.now(),
+
+    @Column("created_by")
+    override var createdBy: String? = null,
 
     @Transient
     var notifyAll: Boolean = false,

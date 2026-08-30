@@ -81,9 +81,10 @@ class PlatformMapper :
     override fun fillBasicDiffDtoFields(
         diffDto: PlatformDiffDTO,
         dbModel: PlatformDiffDatabaseModel,
-        entity: Platform
+        entity: Platform,
+        diffEntity: PlatformDiff
     ): Pair<PlatformDiffDTO, PlatformDiffDatabaseModel> {
-        val result = super.fillBasicDiffDtoFields(diffDto, dbModel, entity)
+        val result = super.fillBasicDiffDtoFields(diffDto, dbModel, entity, diffEntity)
         if (diffDto.changedFields.contains("SpecificationId")) {
             result.first.specificationId = entity.specificationId
         }

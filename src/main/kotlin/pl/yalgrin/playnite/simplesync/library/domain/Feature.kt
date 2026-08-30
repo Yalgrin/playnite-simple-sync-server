@@ -4,6 +4,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import java.time.Instant
 
 @Table("playnite_feature")
 data class Feature(
@@ -19,6 +20,18 @@ data class Feature(
 
     @Column("removed")
     override var isRemoved: Boolean = false,
+
+    @Column("created_at")
+    override var createdAt: Instant = Instant.now(),
+
+    @Column("created_by")
+    override var createdBy: String? = null,
+
+    @Column("modified_at")
+    override var modifiedAt: Instant = Instant.now(),
+
+    @Column("modified_by")
+    override var modifiedBy: String? = null,
 
     @Transient
     override var isNotifyAll: Boolean = false,

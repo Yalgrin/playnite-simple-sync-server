@@ -137,4 +137,396 @@
             <column name="diff_parent_object_id" type="bigint"/>
         </addColumn>
     </changeSet>
+
+    <changeSet id="000004-12" author="yalgrin">
+        <addColumn tableName="playnite_game">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-13" author="yalgrin">
+        <addColumn tableName="playnite_game">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-14" author="yalgrin">
+        <addColumn tableName="playnite_game">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-15" author="yalgrin">
+        <addColumn tableName="playnite_game">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-16" author="yalgrin">
+        <addColumn tableName="playnite_age_rating">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-17" author="yalgrin">
+        <addColumn tableName="playnite_age_rating">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-18" author="yalgrin">
+        <addColumn tableName="playnite_age_rating">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-19" author="yalgrin">
+        <addColumn tableName="playnite_age_rating">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-20" author="yalgrin">
+        <addColumn tableName="playnite_category">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-21" author="yalgrin">
+        <addColumn tableName="playnite_category">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-22" author="yalgrin">
+        <addColumn tableName="playnite_category">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-23" author="yalgrin">
+        <addColumn tableName="playnite_category">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-24" author="yalgrin">
+        <addColumn tableName="playnite_company">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-25" author="yalgrin">
+        <addColumn tableName="playnite_company">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-26" author="yalgrin">
+        <addColumn tableName="playnite_company">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-27" author="yalgrin">
+        <addColumn tableName="playnite_company">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-28" author="yalgrin">
+        <addColumn tableName="playnite_comp_status">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-29" author="yalgrin">
+        <addColumn tableName="playnite_comp_status">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-30" author="yalgrin">
+        <addColumn tableName="playnite_comp_status">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-31" author="yalgrin">
+        <addColumn tableName="playnite_comp_status">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-32" author="yalgrin">
+        <addColumn tableName="playnite_feature">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-33" author="yalgrin">
+        <addColumn tableName="playnite_feature">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-34" author="yalgrin">
+        <addColumn tableName="playnite_feature">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-35" author="yalgrin">
+        <addColumn tableName="playnite_feature">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-36" author="yalgrin">
+        <addColumn tableName="playnite_filter_preset">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-37" author="yalgrin">
+        <addColumn tableName="playnite_filter_preset">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-38" author="yalgrin">
+        <addColumn tableName="playnite_filter_preset">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-39" author="yalgrin">
+        <addColumn tableName="playnite_filter_preset">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-40" author="yalgrin">
+        <addColumn tableName="playnite_genre">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-41" author="yalgrin">
+        <addColumn tableName="playnite_genre">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-42" author="yalgrin">
+        <addColumn tableName="playnite_genre">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-43" author="yalgrin">
+        <addColumn tableName="playnite_genre">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-44" author="yalgrin">
+        <addColumn tableName="playnite_platform">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-45" author="yalgrin">
+        <addColumn tableName="playnite_platform">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-46" author="yalgrin">
+        <addColumn tableName="playnite_platform">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-47" author="yalgrin">
+        <addColumn tableName="playnite_platform">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-48" author="yalgrin">
+        <addColumn tableName="playnite_region">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-49" author="yalgrin">
+        <addColumn tableName="playnite_region">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-50" author="yalgrin">
+        <addColumn tableName="playnite_region">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-51" author="yalgrin">
+        <addColumn tableName="playnite_region">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-52" author="yalgrin">
+        <addColumn tableName="playnite_series">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-53" author="yalgrin">
+        <addColumn tableName="playnite_series">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-54" author="yalgrin">
+        <addColumn tableName="playnite_series">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-55" author="yalgrin">
+        <addColumn tableName="playnite_series">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-56" author="yalgrin">
+        <addColumn tableName="playnite_source">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-57" author="yalgrin">
+        <addColumn tableName="playnite_source">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-58" author="yalgrin">
+        <addColumn tableName="playnite_source">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-59" author="yalgrin">
+        <addColumn tableName="playnite_source">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-60" author="yalgrin">
+        <addColumn tableName="playnite_tag">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-61" author="yalgrin">
+        <addColumn tableName="playnite_tag">
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-62" author="yalgrin">
+        <addColumn tableName="playnite_tag">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-63" author="yalgrin">
+        <addColumn tableName="playnite_tag">
+            <column name="modified_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-64" author="yalgrin">
+        <addColumn tableName="playnite_game_diff">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-65" author="yalgrin">
+        <addColumn tableName="playnite_game_diff">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-66" author="yalgrin">
+        <addColumn tableName="playnite_platform_diff">
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+    </changeSet>
+
+    <changeSet id="000004-67" author="yalgrin">
+        <addColumn tableName="playnite_platform_diff">
+            <column name="created_by" type="varchar(100)"/>
+        </addColumn>
+    </changeSet>
 </databaseChangeLog>

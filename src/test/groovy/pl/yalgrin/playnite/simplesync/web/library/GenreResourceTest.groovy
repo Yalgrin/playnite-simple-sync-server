@@ -41,6 +41,10 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, GenreDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -77,6 +81,10 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
             StepVerifier.create(IntegrationTestUtil.getReturnMono(tuple.getV1(), GenreDTO.class))
                     .expectNextMatches {
                         assert it.serverId != null
+                        assert it.createdAt != null
+                        assert it.createdBy != null
+                        assert it.modifiedAt != null
+                        assert it.modifiedBy != null
                         createdIds.add(it.serverId)
                         objectMatches(it, list.get(tuple.getV2()))
                     }
@@ -101,6 +109,10 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, GenreDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -134,6 +146,10 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
         StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, GenreDTO.class))
                 .expectNextMatches {
                     assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
                     newObjectId.set(it.serverId)
                     objectMatches(it, dto)
                 }
@@ -188,6 +204,10 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
                             .responseBody
                     GenreAssertionUtil.assertGenre(toSave, result)
                     assert result.serverId != null
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                     collectedIds.add(result.serverId)
                     if (collectedIds.size() > 1) {
                         assert collectedIds.stream().distinct().size() == 1
@@ -215,7 +235,14 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GenreDTO.class))
-                            .expectNextMatches { objectMatches(it, toSave) }
+                            .expectNextMatches {
+                                assert it.serverId == collectedIds.first
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, toSave)
+                            }
                             .verifyComplete()
                 }
                 .then {
@@ -225,6 +252,10 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
                             .responseBody
                     GenreAssertionUtil.assertGenre(modified, result)
                     assert result.serverId == collectedIds.first
+                    assert result.createdAt != null
+                    assert result.createdBy != null
+                    assert result.modifiedAt != null
+                    assert result.modifiedBy != null
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -244,9 +275,12 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GenreDTO.class))
                             .expectNextMatches {
-                                objectMatches(it, modified)
                                 assert it.serverId == collectedIds.first
-                                true
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, modified)
                             }
                             .verifyComplete()
                 }
@@ -270,7 +304,14 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GenreDTO.class))
-                            .expectNextMatches { objectMatches(it, removed) }
+                            .expectNextMatches {
+                                assert it.serverId == collectedIds.first
+                                assert it.createdAt != null
+                                assert it.createdBy != null
+                                assert it.modifiedAt != null
+                                assert it.modifiedBy != null
+                                objectMatches(it, removed)
+                            }
                             .verifyComplete()
                 }
                 .thenCancel()
