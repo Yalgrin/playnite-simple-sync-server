@@ -295,7 +295,8 @@ class GameService(
                                 )
                             }
                         )
-                    }.collectList()
+                    }
+                    .collectList()
                     .doOnNext { t ->
                         dtoSetter(dto, t.map { it.savedObject })
                     }

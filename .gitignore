@@ -41,4 +41,7 @@ out/
 ### Custom app folders and files
 logs
 metadata
+dev-logs
+dev-metadata
 *.bak
+*.hprof

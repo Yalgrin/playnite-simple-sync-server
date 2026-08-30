@@ -17,8 +17,7 @@ import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.helper.MetadataTestHelper
 import pl.yalgrin.playnite.simplesync.library.domain.Game
-import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
-import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
+import pl.yalgrin.playnite.simplesync.library.dto.*
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
@@ -195,16 +194,34 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         def files = GameFactoryUtil.randomFiles(100, 100, 100)
         GameDTO modified = toSave.withName("some other name")
         modified.setDescription("Description")
+        def newGenre = new GenreDTO()
+        newGenre.id = UUID.randomUUID().toString()
+        newGenre.name = "New genre"
+        modified.genres = List.of(newGenre)
+        def newSource = new SourceDTO()
+        newSource.id = UUID.randomUUID().toString()
+        newSource.name = "New source"
+        modified.source = newSource
         GameDiffDTO modifiedViaDiffDTO = new GameDiffDTO()
         modifiedViaDiffDTO.id = modified.id
         modifiedViaDiffDTO.gameId = modified.gameId
         modifiedViaDiffDTO.pluginId = modified.pluginId
         modifiedViaDiffDTO.name = "even different name"
         modifiedViaDiffDTO.version = "3.0"
-        modifiedViaDiffDTO.changedFields = List.of("Name", "Version")
+        def newCategory = new CategoryDTO()
+        newCategory.id = UUID.randomUUID().toString()
+        newCategory.name = "New category"
+        modifiedViaDiffDTO.categories = List.of(newCategory)
+        def newSecondSource = new SourceDTO()
+        newSecondSource.id = UUID.randomUUID().toString()
+        newSecondSource.name = "New source 2"
+        modifiedViaDiffDTO.source = newSecondSource
+        modifiedViaDiffDTO.changedFields = List.of("Name", "Version", "Categories", "Source")
         GameDTO removed = modified.withRemoved(true)
         removed.name = modifiedViaDiffDTO.name
         removed.version = modifiedViaDiffDTO.version
+        removed.categories = modifiedViaDiffDTO.categories
+        removed.source = modifiedViaDiffDTO.source
 
         when:
         def changeRequest = makeConnectRequest(otherClientInfo)
@@ -278,6 +295,12 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     GameAssertionUtil.assertGame(modified, result)
                     assert result.serverId == collectedIds.first
                 }
+                .thenConsumeWhile { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
+                    change.getType() != ObjectType.GAME_DIFF
+                }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
                     assert change.messageType == MessageType.CHANGE
@@ -313,12 +336,21 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
                             .expectNextMatches {
                                 assert it.changedFields != null
-                                assert it.changedFields.size() == 2
+                                assert it.changedFields.size() == 4
                                 assert it.changedFields.contains("Name")
                                 assert it.changedFields.contains("Description")
+                                assert it.changedFields.contains("Genres")
+                                assert it.changedFields.contains("Source")
                                 assert it.name == modified.name
                                 assert it.description == modified.description
                                 assert it.version == null
+                                def genres = it.genres
+                                assert genres != null
+                                assert genres.size() == 1
+                                assert genres.get(0).id == newGenre.id
+                                assert genres.get(0).name == newGenre.name
+                                assert it.source?.id == newSource.id
+                                assert it.source?.name == newSource.name
                                 true
                             }
                             .verifyComplete()
@@ -331,6 +363,12 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     assert result.name == modifiedViaDiffDTO.name
                     assert result.description == modified.description
                     assert result.version == modifiedViaDiffDTO.version
+                }
+                .thenConsumeWhile { str ->
+                    def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
+                    assert change.messageType == MessageType.CHANGE
+                    assert change instanceof ChangeMessage
+                    change.getType() != ObjectType.GAME && change.getType() != ObjectType.GAME_DIFF
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -354,12 +392,21 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
                             .expectNextMatches {
                                 assert it.changedFields != null
-                                assert it.changedFields.size() == 2
+                                assert it.changedFields.size() == 4
                                 assert it.changedFields.contains("Name")
                                 assert it.changedFields.contains("Version")
+                                assert it.changedFields.contains("Categories")
+                                assert it.changedFields.contains("Source")
                                 assert it.name == modifiedViaDiffDTO.name
                                 assert it.description == null
                                 assert it.version == modifiedViaDiffDTO.version
+                                def categories = it.categories
+                                assert categories != null
+                                assert categories.size() == 1
+                                assert categories.get(0).id == newCategory.id
+                                assert categories.get(0).name == newCategory.name
+                                assert it.source?.id == newSecondSource.id
+                                assert it.source?.name == newSecondSource.name
                                 true
                             }
                             .verifyComplete()
