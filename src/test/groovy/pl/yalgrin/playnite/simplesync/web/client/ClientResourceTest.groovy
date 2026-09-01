@@ -3,10 +3,12 @@ package pl.yalgrin.playnite.simplesync.web.client
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.test.web.reactive.server.WebTestClient
 import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
-import pl.yalgrin.playnite.simplesync.client.dto.RegisteredClientDTO
-import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
+import pl.yalgrin.playnite.simplesync.client.dto.*
+import pl.yalgrin.playnite.simplesync.client.enums.CheckResult
 import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
+import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
 import pl.yalgrin.playnite.simplesync.dto.ErrorDTO
+import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
 
@@ -18,13 +20,16 @@ class ClientResourceTest extends SpockIntegrationTest {
     @Autowired
     private RegisteredClientRepository repository
 
+    @Autowired
+    private SessionManager sessionManager
+
     def "register a client"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", ConstantsKt.CURRENT_API_VERSION)
         AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
 
         when:
-        def response = makeSaveRequest(infoDTO)
+        def response = makeRegisterRequest(infoDTO)
 
         then:
         response.expectStatus().is2xxSuccessful()
@@ -46,10 +51,10 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client with older client version"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION - 1)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", ConstantsKt.CURRENT_API_VERSION - 1)
 
         when:
-        def response = makeSaveRequest(infoDTO)
+        def response = makeRegisterRequest(infoDTO)
 
         then:
         response.expectStatus().is4xxClientError()
@@ -65,10 +70,10 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client with newer client version"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION + 1)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", ConstantsKt.CURRENT_API_VERSION + 1)
 
         when:
-        def response = makeSaveRequest(infoDTO)
+        def response = makeRegisterRequest(infoDTO)
 
         then:
         response.expectStatus().is4xxClientError()
@@ -84,10 +89,10 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client with no name"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("", ConstantsKt.CURRENT_API_VERSION)
 
         when:
-        def response = makeSaveRequest(infoDTO)
+        def response = makeRegisterRequest(infoDTO)
 
         then:
         response.expectStatus().is4xxClientError()
@@ -106,10 +111,10 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client with too long name"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|a", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|1234567890123456789012345678901234567890123456789|a", ConstantsKt.CURRENT_API_VERSION)
 
         when:
-        def response = makeSaveRequest(infoDTO)
+        def response = makeRegisterRequest(infoDTO)
 
         then:
         response.expectStatus().is4xxClientError()
@@ -128,11 +133,11 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client and then change the name"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", ConstantsKt.CURRENT_API_VERSION)
         AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
 
         when:
-        def response = makeSaveRequest(infoDTO)
+        def response = makeRegisterRequest(infoDTO)
 
         then:
         response.expectStatus().is2xxSuccessful()
@@ -163,11 +168,11 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client and then change the name to an empty one"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", ConstantsKt.CURRENT_API_VERSION)
         AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
 
         when:
-        def response = makeSaveRequest(infoDTO)
+        def response = makeRegisterRequest(infoDTO)
 
         then:
         response.expectStatus().is2xxSuccessful()
@@ -206,11 +211,11 @@ class ClientResourceTest extends SpockIntegrationTest {
 
     def "register a client and then change the name to a one that is too long"() {
         given:
-        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", pl.yalgrin.playnite.simplesync.common.config.ConstantsKt.CURRENT_API_VERSION)
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", ConstantsKt.CURRENT_API_VERSION)
         AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
 
         when:
-        def response = makeSaveRequest(infoDTO)
+        def response = makeRegisterRequest(infoDTO)
 
         then:
         response.expectStatus().is2xxSuccessful()
@@ -247,7 +252,145 @@ class ClientResourceTest extends SpockIntegrationTest {
                 .verifyComplete()
     }
 
-    protected WebTestClient.ResponseSpec makeSaveRequest(RegistrationRequestDTO dto) {
+    def "register a client then test the connection - result ok, no session"() {
+        given:
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", ConstantsKt.CURRENT_API_VERSION)
+        AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
+
+        when:
+        def response = makeRegisterRequest(infoDTO)
+
+        then:
+        response.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, RegisteredClientDTO.class))
+                .expectNextMatches { clientInfo ->
+                    assert clientInfo.clientId != null
+                    assert clientInfo.displayName == infoDTO.displayName
+                    assert clientInfo.clientToken != null
+                    receivedInfo.set(clientInfo)
+                    true
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(receivedInfo.get().clientId, receivedInfo.get().clientToken, infoDTO.displayName)
+
+        when:
+        def checkResponse = makeCheckRequest(ConstantsKt.CURRENT_API_VERSION, receivedInfo.get())
+
+        then:
+        checkResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(checkResponse, CheckResultDTO.class))
+                .expectNextMatches { res ->
+                    assert res != null
+                    assert res.result == CheckResult.OK
+                    assert res.registrationSpecified
+                    assert res.registrationValid
+                    assert res.displayClientName == infoDTO.displayName
+                    assert !res.sessionActive
+                    true
+                }
+                .verifyComplete()
+    }
+
+    def "register a client then test the connection - result ok, session exists"() {
+        given:
+        RegistrationRequestDTO infoDTO = new RegistrationRequestDTO("client name", ConstantsKt.CURRENT_API_VERSION)
+        AtomicReference<RegisteredClientDTO> receivedInfo = new AtomicReference<>()
+
+        when:
+        def response = makeRegisterRequest(infoDTO)
+
+        then:
+        response.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(response, RegisteredClientDTO.class))
+                .expectNextMatches { clientInfo ->
+                    assert clientInfo.clientId != null
+                    assert clientInfo.displayName == infoDTO.displayName
+                    assert clientInfo.clientToken != null
+                    receivedInfo.set(clientInfo)
+                    true
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(receivedInfo.get().clientId, receivedInfo.get().clientToken, infoDTO.displayName)
+
+
+        when:
+        def sessionInfo = new SessionInfoDTO(receivedInfo.get().clientId, receivedInfo.get().displayName, UUID.randomUUID().toString())
+        sessionManager.saveSessionInfo(sessionInfo)
+        def checkResponse = makeCheckRequest(ConstantsKt.CURRENT_API_VERSION, receivedInfo.get(), sessionInfo.sessionId)
+
+        then:
+        checkResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(checkResponse, CheckResultDTO.class))
+                .expectNextMatches { res ->
+                    assert res != null
+                    assert res.result == CheckResult.OK
+                    assert res.registrationSpecified
+                    assert res.registrationValid
+                    assert res.displayClientName == infoDTO.displayName
+                    assert res.sessionActive
+                    true
+                }
+                .verifyComplete()
+
+        cleanup:
+        sessionManager.removeSessionInfo(sessionInfo)
+    }
+
+    def "test the connection with no credentials"() {
+        when:
+        def checkResponse = makeCheckRequest(ConstantsKt.CURRENT_API_VERSION, null)
+
+        then:
+        checkResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(checkResponse, CheckResultDTO.class))
+                .expectNextMatches { res ->
+                    assert res != null
+                    assert res.result == CheckResult.OK
+                    assert !res.registrationSpecified
+                    assert !res.registrationValid
+                    assert res.displayClientName.isBlank()
+                    assert !res.sessionActive
+                    true
+                }
+                .verifyComplete()
+    }
+
+    def "test the connection on totally invalid client"() {
+        when:
+        def checkResponse = makeCheckRequest(ConstantsKt.CURRENT_API_VERSION, new RegisteredClientDTO("i", "don't", "exist"))
+
+        then:
+        checkResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(checkResponse, CheckResultDTO.class))
+                .expectNextMatches { res ->
+                    assert res != null
+                    assert res.result == CheckResult.OK
+                    assert res.registrationSpecified
+                    assert !res.registrationValid
+                    assert res.displayClientName.isBlank()
+                    assert !res.sessionActive
+                    true
+                }
+                .verifyComplete()
+    }
+
+    protected WebTestClient.ResponseSpec makeRegisterRequest(RegistrationRequestDTO dto) {
         webTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("/api/client/register")
@@ -264,6 +407,18 @@ class ClientResourceTest extends SpockIntegrationTest {
                         .build())
                 .header("X-Client-Id", dto.clientId)
                 .header("X-Client-Token", dto.clientToken)
+                .exchange()
+    }
+
+    protected WebTestClient.ResponseSpec makeCheckRequest(Integer apiVersion, RegisteredClientDTO dto, String sessionId = "") {
+        webTestClient.post()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/api/client/check")
+                        .build())
+                .bodyValue(new CheckRequestDTO(apiVersion))
+                .header("X-Client-Id", dto?.clientId ?: "")
+                .header("X-Client-Token", dto?.clientToken ?: "")
+                .header("X-Session-Id", sessionId)
                 .exchange()
     }
 

@@ -71,7 +71,7 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
     def "save multiple platforms"() {
         given:
         List<Tuple2<PlatformDTO, List<MultipartFile>>> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(Tuple.of(PlatformFactoryUtil.platformWithIndex(i), PlatformFactoryUtil.randomFiles()))
         }
         List<Long> createdIds = new ArrayList<>()

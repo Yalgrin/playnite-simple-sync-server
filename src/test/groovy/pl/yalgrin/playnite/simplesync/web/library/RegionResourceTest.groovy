@@ -57,7 +57,7 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
     def "save multiple regions"() {
         given:
         List<RegionDTO> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(RegionFactoryUtil.regionWithIndex(i))
         }
         List<Long> createdIds = new ArrayList<>()

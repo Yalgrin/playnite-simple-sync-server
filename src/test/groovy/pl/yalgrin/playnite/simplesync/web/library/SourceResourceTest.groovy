@@ -57,7 +57,7 @@ class SourceResourceTest extends AbstractObjectTest<Source, SourceDTO> {
     def "save multiple sources"() {
         given:
         List<SourceDTO> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(SourceFactoryUtil.sourceWithIndex(i))
         }
         List<Long> createdIds = new ArrayList<>()

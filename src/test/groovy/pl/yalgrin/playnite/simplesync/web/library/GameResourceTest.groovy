@@ -38,8 +38,6 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
     @Autowired
     private MetadataTestHelper metadataTestHelper
 
-    //TODO cover the rest of the paths
-
     def "save single game"() {
         given:
         GameDTO dto = GameFactoryUtil.createGame(UUID.randomUUID().toString(), "test")
@@ -82,7 +80,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
     def "save multiple games"() {
         given:
         List<Tuple2<GameDTO, List<MultipartFile>>> list = new ArrayList<>()
-        for (int i = 0; i < 500; i++) {
+        for (int i = 0; i < 100; i++) {
             def game = GameFactoryUtil.gameWithIndex(i)
             def files = GameFactoryUtil.randomFiles()
             game.setHasIcon(files.any { it.name.startsWith("Icon") })

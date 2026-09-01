@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.client
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.server.ServerWebExchange
 import pl.yalgrin.playnite.simplesync.client.dto.CheckRequestDTO
 import pl.yalgrin.playnite.simplesync.client.dto.CheckResultDTO
 import pl.yalgrin.playnite.simplesync.client.dto.RegisteredClientDTO
@@ -26,8 +27,8 @@ class ClientResource(
     }
 
     @PostMapping("/check")
-    fun check(@RequestBody checkRequest: CheckRequestDTO): Mono<CheckResultDTO> {
-        return registeredClientService.check(checkRequest)
+    fun check(@RequestBody checkRequest: CheckRequestDTO, exchange: ServerWebExchange): Mono<CheckResultDTO> {
+        return registeredClientService.check(checkRequest, exchange)
     }
 
     @PostMapping("/change-name")

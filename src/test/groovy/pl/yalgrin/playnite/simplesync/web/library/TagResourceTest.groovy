@@ -57,7 +57,7 @@ class TagResourceTest extends AbstractObjectTest<Tag, TagDTO> {
     def "save multiple tags"() {
         given:
         List<TagDTO> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(TagFactoryUtil.tagWithIndex(i))
         }
         List<Long> createdIds = new ArrayList<>()

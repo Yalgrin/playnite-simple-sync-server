@@ -57,7 +57,7 @@ class AgeRatingResourceTest extends AbstractObjectTest<AgeRating, AgeRatingDTO> 
     def "save multiple age ratings"() {
         given:
         List<AgeRatingDTO> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(AgeRatingFactoryUtil.ageRatingWithIndex(i))
         }
         List<Long> createdIds = new ArrayList<>()

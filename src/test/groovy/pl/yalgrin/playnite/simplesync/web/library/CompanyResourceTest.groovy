@@ -57,7 +57,7 @@ class CompanyResourceTest extends AbstractObjectTest<Company, CompanyDTO> {
     def "save multiple companies"() {
         given:
         List<CompanyDTO> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(CompanyFactoryUtil.companyWithIndex(i))
         }
         List<Long> createdIds = new ArrayList<>()

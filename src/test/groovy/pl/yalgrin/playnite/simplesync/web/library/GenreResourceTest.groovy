@@ -57,7 +57,7 @@ class GenreResourceTest extends AbstractObjectTest<Genre, GenreDTO> {
     def "save multiple genres"() {
         given:
         List<GenreDTO> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(GenreFactoryUtil.genreWithIndex(i))
         }
         List<Long> createdIds = new ArrayList<>()

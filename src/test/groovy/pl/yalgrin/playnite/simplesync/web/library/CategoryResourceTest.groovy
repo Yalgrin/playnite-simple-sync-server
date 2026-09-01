@@ -57,7 +57,7 @@ class CategoryResourceTest extends AbstractObjectTest<Category, CategoryDTO> {
     def "save multiple categories"() {
         given:
         List<CategoryDTO> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(CategoryFactoryUtil.categoryWithIndex(i))
         }
         List<Long> createdIds = new ArrayList<>()

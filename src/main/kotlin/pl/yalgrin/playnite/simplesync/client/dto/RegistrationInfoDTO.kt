@@ -1,9 +1,6 @@
 package pl.yalgrin.playnite.simplesync.client.dto
 
-import pl.yalgrin.playnite.simplesync.client.enums.CheckResult
-
-data class CheckResultDTO(
-    val result: CheckResult,
+data class RegistrationInfoDTO(
     val registrationSpecified: Boolean,
     val registrationValid: Boolean,
     val displayClientName: String,

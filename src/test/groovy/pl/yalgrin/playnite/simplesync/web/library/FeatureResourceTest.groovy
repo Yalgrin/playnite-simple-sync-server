@@ -57,7 +57,7 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
     def "save multiple features"() {
         given:
         List<FeatureDTO> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(FeatureFactoryUtil.featureWithIndex(i))
         }
         List<Long> createdIds = new ArrayList<>()

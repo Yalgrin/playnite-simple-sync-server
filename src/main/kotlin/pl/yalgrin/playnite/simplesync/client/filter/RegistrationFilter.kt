@@ -1,24 +1,17 @@
 package pl.yalgrin.playnite.simplesync.client.filter
 
-import org.springframework.http.HttpHeaders
 import org.springframework.stereotype.Component
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebFilter
 import org.springframework.web.server.WebFilterChain
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
-import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
-import pl.yalgrin.playnite.simplesync.common.util.toSha1
-import pl.yalgrin.playnite.simplesync.exception.AuthException
-import pl.yalgrin.playnite.simplesync.exception.AuthExceptionType
-import pl.yalgrin.playnite.simplesync.security.SessionManager
+import pl.yalgrin.playnite.simplesync.client.helper.RegistrationHandler
 import pl.yalgrin.playnite.simplesync.security.withSessionInfo
 import reactor.core.publisher.Mono
-import java.util.*
 
 @Component
 class RegistrationFilter(
-    val registeredClientRepository: RegisteredClientRepository,
-    val sessionManager: SessionManager
+    val registrationHandler: RegistrationHandler
 ) : WebFilter {
     override fun filter(
         exchange: ServerWebExchange,
@@ -27,12 +20,12 @@ class RegistrationFilter(
         return if (shouldNotRequireSessionOnUrl(exchange.request.uri.path)) {
             chain.filter(exchange)
         } else if (shouldAllowSessionWithoutSessionId(exchange.request.uri.path)) {
-            getSessionInfoWithoutSessionId(exchange.request.headers)
+            registrationHandler.getSessionInfoWithoutSessionId(exchange.request.headers)
                 .flatMap { sessionInfo ->
                     processWithSession(chain, exchange, sessionInfo)
                 }
         } else {
-            getSessionInfo(exchange.request.headers)
+            registrationHandler.getSessionInfo(exchange.request.headers)
                 .flatMap { sessionInfo ->
                     processWithSession(chain, exchange, sessionInfo)
                 }
@@ -40,52 +33,12 @@ class RegistrationFilter(
     }
 
     private fun shouldNotRequireSessionOnUrl(url: String): Boolean {
-        return url == "/api/client/register" || url == "/api/health"
+        return url == "/api/client/register" || url == "/api/health" || url == "/api/client/check"
     }
 
     private fun shouldAllowSessionWithoutSessionId(url: String): Boolean {
-        return url == "/api/client/connect" || url == "/api/client/check" || url == "/api/change" || url == "/api/client/change-name"
+        return url == "/api/client/connect" || url == "/api/change" || url == "/api/client/change-name"
     }
-
-    private fun getSessionInfoWithoutSessionId(headers: HttpHeaders): Mono<SessionInfoDTO> {
-        return doGetSessionInfo(headers)
-            .filter { it.clientId.isNotBlank() && it.displayName.isNotBlank() }
-            .switchIfEmpty(Mono.error(AuthException(AuthExceptionType.NO_VALID_CLIENT_SESSION)))
-    }
-
-    private fun getSessionInfo(headers: HttpHeaders): Mono<SessionInfoDTO> {
-        return doGetSessionInfo(headers)
-            .filter { it.clientId.isNotBlank() && it.displayName.isNotBlank() && it.sessionId.isNotBlank() }
-            .switchIfEmpty(Mono.error(AuthException(AuthExceptionType.NO_VALID_CLIENT_SESSION)))
-    }
-
-    private fun doGetSessionInfo(headers: HttpHeaders): Mono<SessionInfoDTO> = fetchHeaders(headers)
-        .filter { it.first.isNotBlank() && it.second.isNotBlank() }
-        .flatMap { (clientId, clientToken, sessionId) ->
-            Mono.zip(
-                registeredClientRepository.findByClientId(clientId)
-                    .filter { it.clientToken == clientToken.toSha1() },
-                sessionManager.getSessionInfoMono(sessionId)
-                    .filter { it.clientId == clientId }
-                    .map { Optional.of(it) }
-                    .defaultIfEmpty(Optional.empty())
-            )
-                .map { Pair(it.t1, it.t2) }
-                .map { (client, sessionInfo) ->
-                    SessionInfoDTO(
-                        clientId = clientId,
-                        displayName = client.displayName,
-                        sessionId = sessionInfo.map { it.sessionId }.orElse(null) ?: ""
-                    )
-                }
-        }
-
-    private fun fetchHeaders(headers: HttpHeaders): Mono<Triple<String, String, String>> = Mono.zip(
-        Mono.fromSupplier { headers.getFirst("X-Client-Id") ?: "" },
-        Mono.fromSupplier { headers.getFirst("X-Client-Token") ?: "" },
-        Mono.fromSupplier { headers.getFirst("X-Session-Id") ?: "" }
-    )
-        .map { Triple(it.t1, it.t2, it.t3) }
 
     private fun processWithSession(
         chain: WebFilterChain,

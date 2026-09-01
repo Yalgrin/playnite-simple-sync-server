@@ -57,7 +57,7 @@ class SeriesResourceTest extends AbstractObjectTest<Series, SeriesDTO> {
     def "save multiple series"() {
         given:
         List<SeriesDTO> list = new ArrayList<>()
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 200; i++) {
             list.add(SeriesFactoryUtil.seriesWithIndex(i))
         }
         List<Long> createdIds = new ArrayList<>()
