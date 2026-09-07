@@ -10,6 +10,7 @@ import pl.yalgrin.playnite.simplesync.common.util.pairWith
 import pl.yalgrin.playnite.simplesync.common.util.toSha1
 import pl.yalgrin.playnite.simplesync.exception.AuthException
 import pl.yalgrin.playnite.simplesync.exception.AuthExceptionType
+import pl.yalgrin.playnite.simplesync.security.ClientAuthenticationToken
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toMono
@@ -20,15 +21,9 @@ class RegistrationHandler(
     val registeredClientRepository: RegisteredClientRepository,
     val sessionManager: SessionManager,
 ) {
-    fun getSessionInfoWithoutSessionId(headers: HttpHeaders): Mono<SessionInfoDTO> {
-        return doGetSessionInfo(headers)
-            .filter { it.clientId.isNotBlank() && it.displayName.isNotBlank() }
-            .switchIfEmpty(Mono.error(AuthException(AuthExceptionType.NO_VALID_CLIENT_SESSION)))
-    }
-
-    fun getSessionInfo(headers: HttpHeaders): Mono<SessionInfoDTO> {
-        return doGetSessionInfo(headers)
-            .filter { it.clientId.isNotBlank() && it.displayName.isNotBlank() && it.sessionId.isNotBlank() }
+    fun getSessionInfo(token: ClientAuthenticationToken): Mono<SessionInfoDTO> {
+        return doGetSessionInfo(token)
+            .filter { it.clientId.isNotBlank() && it.displayName.isNotBlank() && (token.allowBlankSessionId || it.sessionId.isNotBlank()) }
             .switchIfEmpty(Mono.error(AuthException(AuthExceptionType.NO_VALID_CLIENT_SESSION)))
     }
 
@@ -62,7 +57,7 @@ class RegistrationHandler(
             }
     }
 
-    private fun doGetSessionInfo(headers: HttpHeaders): Mono<SessionInfoDTO> = fetchHeaders(headers)
+    private fun doGetSessionInfo(token: ClientAuthenticationToken): Mono<SessionInfoDTO> = fetchHeaders(token)
         .flatMap { (clientId, clientToken, sessionId) ->
             if (clientId.isBlank() || clientToken.isBlank()) {
                 Mono.error(AuthException(AuthExceptionType.MISSING_REGISTRATION))
@@ -95,4 +90,9 @@ class RegistrationHandler(
         Mono.fromSupplier { headers.getFirst("X-Session-Id") ?: "" }
     )
         .map { Triple(it.t1, it.t2, it.t3) }
+
+    private fun fetchHeaders(token: ClientAuthenticationToken): Mono<Triple<String, String, String>> =
+        Mono.fromSupplier {
+            Triple(token.clientId ?: "", token.clientToken ?: "", token.sessionId ?: "")
+        }
 }
