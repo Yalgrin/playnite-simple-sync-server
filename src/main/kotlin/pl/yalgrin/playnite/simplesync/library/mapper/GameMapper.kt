@@ -94,6 +94,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                 if (MapperUtil.hasChanged(databaseModel.releaseDate, dto.releaseDate)) {
                     generatedDiffDTO.releaseDate = dto.releaseDate
                     databaseModel.releaseDate = dto.releaseDate
+                    databaseModel.releaseYear = dto.releaseDate?.year
                     changedFields.add(GameFields.RELEASE_DATE)
                 }
                 if (MapperUtil.hasChanged(databaseModel.categories, dto.categories)) {
@@ -333,6 +334,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                         )
                     ) {
                         databaseModel.releaseDate = referenceDTO.releaseDate
+                        databaseModel.releaseYear = referenceDTO.releaseDate?.year
                         diffDTO.releaseDate = referenceDTO.releaseDate
                         changedFields.add(GameFields.RELEASE_DATE)
                     }
