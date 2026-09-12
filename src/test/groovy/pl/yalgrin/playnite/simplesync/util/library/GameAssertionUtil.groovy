@@ -105,6 +105,7 @@ class GameAssertionUtil {
             CompanyAssertionUtil.assertCompany(expected, result)
         })
         assert resultDTO.getReleaseDate() == expectedDTO.getReleaseDate()
+        assert resultDTO.getReleaseYear() == expectedDTO.getReleaseDate()?.year
         assert assertListMatches(expectedDTO.getCategories(), resultDTO.getCategories(), { expected, result ->
             CategoryAssertionUtil.assertCategory(expected, result)
         })

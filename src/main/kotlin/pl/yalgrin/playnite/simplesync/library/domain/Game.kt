@@ -11,7 +11,7 @@ import reactor.core.publisher.Mono
 import java.time.Instant
 
 object GameConstants {
-    const val CURRENT_MODEL_VERSION = 2L
+    const val CURRENT_MODEL_VERSION = 3L
 }
 
 @Table("playnite_game")

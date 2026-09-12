@@ -24,6 +24,7 @@ data class GameDatabaseModel(
     var publishers: List<CompanyDTO> = emptyList(),
     var developers: List<CompanyDTO> = emptyList(),
     var releaseDate: LocalDateTime? = null,
+    var releaseYear: Int? = null,
     var categories: List<CategoryDTO> = emptyList(),
     var tags: List<TagDTO> = emptyList(),
     var features: List<FeatureDTO> = emptyList(),
