@@ -30,6 +30,7 @@ class GameFactoryUtil {
                 "sorting-name",
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
+                UUID.randomUUID().toString(),
                 List.of(
                         PlatformFactoryUtil.createPlatform(UUID.randomUUID().toString(), "platform-1"),
                         PlatformFactoryUtil.createPlatform(UUID.randomUUID().toString(), "platform-2")
@@ -106,6 +107,7 @@ class GameFactoryUtil {
                 random.nextBoolean(),
                 ZonedDateTime.now().plusSeconds(random.nextInt()),
                 null,
+                UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),
                 List.of(),

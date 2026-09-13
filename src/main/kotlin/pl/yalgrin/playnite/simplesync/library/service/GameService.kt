@@ -13,15 +13,13 @@ import pl.yalgrin.playnite.simplesync.common.config.GAME
 import pl.yalgrin.playnite.simplesync.common.config.ICON
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.common.util.first
+import pl.yalgrin.playnite.simplesync.common.util.isNotNullAndNotBlank
 import pl.yalgrin.playnite.simplesync.common.util.transactional
 import pl.yalgrin.playnite.simplesync.exception.ForceFetchRequiredException
 import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.domain.GameDiff
-import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
-import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
-import pl.yalgrin.playnite.simplesync.library.dto.GameDiffFields
-import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
+import pl.yalgrin.playnite.simplesync.library.dto.*
 import pl.yalgrin.playnite.simplesync.library.mapper.GameMapper
 import pl.yalgrin.playnite.simplesync.library.repository.GameDiffRepository
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
@@ -38,6 +36,7 @@ class GameService(
     changeListenerService: ChangeListenerService,
     metadataService: MetadataService,
     transactionManager: ReactiveTransactionManager,
+    protected val libraryPluginService: LibraryPluginService,
     protected val genreService: GenreService,
     protected val platformService: PlatformService,
     protected val companyService: CompanyService,
@@ -75,6 +74,16 @@ class GameService(
         saveFiles: Boolean
     ): Mono<LibrarySaveResult<GameDTO>> {
         return Flux.concat(
+            saveRelatedObject(dto, libraryPluginService, {
+                if (it.pluginId != null && it.pluginName.isNotNullAndNotBlank()) {
+                    LibraryPluginDTO(
+                        id = it.pluginId,
+                        name = it.pluginName
+                    )
+                } else {
+                    null
+                }
+            }, { dto, r -> dto.pluginName = r.name }),
             saveRelatedObjects(dto, genreService, { it.genres }, { dto, list -> dto.genres = list }),
             saveRelatedObjects(dto, platformService, { it.platforms }, { dto, list -> dto.platforms = list }),
             saveRelatedObjects(dto, companyService, { it.publishers }, { dto, list -> dto.publishers = list }),
@@ -146,6 +155,7 @@ class GameService(
     }
 
     override fun findOrCreateEntity(dto: GameDTO): Mono<Game> {
+        //TODO handle cases where plugin id changes (for example GOG OSS migration)
         return Mono.justOrEmpty(dto)
             .filter { d -> d.gameId != null && d.pluginId != null }
             .flatMap { d ->
@@ -211,6 +221,20 @@ class GameService(
         diffDto: GameDiffDTO,
         fileParts: Flux<FilePart>
     ): Mono<LibrarySaveResult<GameDTO>> = Flux.concat(
+        saveRelatedDiffObject(
+            diffDto,
+            libraryPluginService,
+            null,
+            {
+                if (it.pluginId != null && !it.pluginName.isNullOrBlank()) {
+                    LibraryPluginDTO(
+                        id = it.pluginId,
+                        name = it.pluginName
+                    )
+                }
+                null
+            },
+            { dto, r -> dto.pluginName = r.name }),
         saveRelatedDiffObjects(
             diffDto,
             genreService,
@@ -326,12 +350,12 @@ class GameService(
     private fun <T : LibraryObjectDTO> saveRelatedDiffObject(
         dto: GameDiffDTO,
         service: LibraryObjectSaveService<T>,
-        fieldName: String,
+        fieldName: String?,
         dtoGetter: (GameDiffDTO) -> T?,
         dtoSetter: (GameDiffDTO, T) -> Unit
     ): Mono<List<ChangeDTO>> {
         return Mono.defer {
-            if (!dto.changedFields.contains(fieldName)) {
+            if (fieldName != null && !dto.changedFields.contains(fieldName)) {
                 Mono.empty()
             } else {
                 Mono.fromSupplier { dtoGetter(dto) }

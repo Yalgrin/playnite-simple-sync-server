@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="000005-1" author="yalgrin">
+        <createTable tableName="playnite_plugin">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(1000)"/>
+            <column name="icon_md5" type="varchar(255)"/>
+            <column name="background_image_md5" type="varchar(255)"/>
+            <column name="created_by" type="varchar(100)"/>
+            <column name="modified_by" type="varchar(100)"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="modified_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000005-2" author="yalgrin">
+        <addUniqueConstraint tableName="playnite_plugin" columnNames="playnite_id"
+                             constraintName="p_plugin_playnite_id_unique"/>
+    </changeSet>
+
+    <changeSet id="000005-3" author="yalgrin">
+        <createIndex tableName="playnite_plugin" indexName="p_plugin_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000005-4" author="yalgrin">
+        <createTable tableName="playnite_plugin_diff">
+            <column name="id" type="bigint" autoIncrement="true">
+                <constraints primaryKey="true"/>
+            </column>
+            <column name="playnite_id" type="varchar(100)"/>
+            <column name="name" type="varchar(255)"/>
+            <column name="contents" type="json"/>
+            <column name="model_version" type="bigint" defaultValueNumeric="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_by" type="varchar(100)"/>
+            <column name="created_at" type="timestamp with time zone" defaultValueComputed="now()">
+                <constraints nullable="false"/>
+            </column>
+            <column name="removed" type="boolean" defaultValueBoolean="false">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000005-5" author="yalgrin">
+        <createIndex tableName="playnite_plugin_diff" indexName="p_plugin_diff_playnite_id_idx">
+            <column name="playnite_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="000005-6" author="yalgrin">
+        <createIndex tableName="playnite_plugin_diff" indexName="p_plugin_diff_name_idx">
+            <column name="name"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

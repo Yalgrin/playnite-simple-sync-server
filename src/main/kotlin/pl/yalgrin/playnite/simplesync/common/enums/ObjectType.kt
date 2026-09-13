@@ -15,5 +15,7 @@ enum class ObjectType {
     COMPLETION_STATUS,
     FILTER_PRESET,
     GAME,
-    GAME_DIFF
+    GAME_DIFF,
+    LIBRARY_PLUGIN,
+    LIBRARY_PLUGIN_DIFF
 }
