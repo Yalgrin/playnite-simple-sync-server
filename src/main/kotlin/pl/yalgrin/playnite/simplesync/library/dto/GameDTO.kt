@@ -30,6 +30,7 @@ data class GameDTO(
     var sortingName: String? = null,
     var gameId: String? = null,
     var pluginId: String? = null,
+    var pluginName: String? = null,
     var platforms: List<PlatformDTO> = emptyList(),
     var publishers: List<CompanyDTO> = emptyList(),
     var developers: List<CompanyDTO> = emptyList(),

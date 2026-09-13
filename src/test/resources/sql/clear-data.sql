@@ -1,4 +1,6 @@
 TRUNCATE playnite_change,
+    playnite_plugin,
+    playnite_plugin_diff,
     playnite_category,
     playnite_genre,
     playnite_platform,
