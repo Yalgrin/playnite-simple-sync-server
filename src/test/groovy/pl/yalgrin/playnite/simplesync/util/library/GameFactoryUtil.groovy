@@ -105,7 +105,7 @@ class GameFactoryUtil {
                 RandomUtil.generateRandomList { GenreFactoryUtil.randomGenre() },
                 random.nextBoolean(),
                 random.nextBoolean(),
-                ZonedDateTime.now().plusSeconds(random.nextInt()),
+                null,
                 null,
                 UUID.randomUUID().toString(),
                 UUID.randomUUID().toString(),

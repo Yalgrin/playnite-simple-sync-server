@@ -1,12 +1,17 @@
 package pl.yalgrin.playnite.simplesync.library.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import pl.yalgrin.playnite.simplesync.library.enums.InstallSizeGroup
+import pl.yalgrin.playnite.simplesync.library.enums.PlaytimeCategory
+import pl.yalgrin.playnite.simplesync.library.enums.ScoreGroup
 import java.io.Serial
 import java.io.Serializable
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
 
 data class GameDatabaseModel(
+    var pluginId: String? = null,
+    var pluginName: String? = null,
     var description: String? = null,
     var notes: String? = null,
     var genres: List<GenreDTO> = emptyList(),
@@ -19,6 +24,9 @@ data class GameDatabaseModel(
     @field:JsonProperty("isFavorite")
     var isFavorite: Boolean = false,
     var lastActivity: ZonedDateTime? = null,
+    var lastActivityInMs: Long? = null,
+    var recentActivity: ZonedDateTime? = null,
+    var recentActivityInMs: Long? = null,
     var sortingName: String? = null,
     var platforms: List<PlatformDTO> = emptyList(),
     var publishers: List<CompanyDTO> = emptyList(),
@@ -30,11 +38,16 @@ data class GameDatabaseModel(
     var features: List<FeatureDTO> = emptyList(),
     var links: List<LinkDTO> = emptyList(),
     var playtime: Long = 0,
+    var playtimeCategory: PlaytimeCategory = PlaytimeCategory.NOT_PLAYED,
     var added: ZonedDateTime? = null,
+    var addedInMs: Long? = null,
     var modified: ZonedDateTime? = null,
+    var modifiedInMs: Long? = null,
     var playCount: Long = 0,
     var installSize: Long? = null,
+    var installSizeGroup: InstallSizeGroup = InstallSizeGroup.NONE,
     var lastSizeScanDate: ZonedDateTime? = null,
+    var lastSizeScanDateInMs: Long? = null,
     var series: List<SeriesDTO> = emptyList(),
     var version: String? = null,
     var ageRatings: List<AgeRatingDTO> = emptyList(),
@@ -42,8 +55,11 @@ data class GameDatabaseModel(
     var source: SourceDTO? = null,
     var completionStatus: CompletionStatusDTO? = null,
     var userScore: Int? = null,
+    var userScoreGroup: ScoreGroup = ScoreGroup.NONE,
     var criticScore: Int? = null,
+    var criticScoreGroup: ScoreGroup = ScoreGroup.NONE,
     var communityScore: Int? = null,
+    var communityScoreGroup: ScoreGroup = ScoreGroup.NONE,
     var manual: String? = null
 ) : Serializable {
     companion object {

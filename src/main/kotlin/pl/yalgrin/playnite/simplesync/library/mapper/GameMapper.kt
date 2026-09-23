@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.library.mapper
 import org.springframework.stereotype.Component
 import pl.yalgrin.playnite.simplesync.common.util.MapperUtil
 import pl.yalgrin.playnite.simplesync.common.util.asJson
+import pl.yalgrin.playnite.simplesync.common.util.max
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.domain.GameDiff
 import pl.yalgrin.playnite.simplesync.library.domain.extractDbModelOrEmpty
@@ -10,6 +11,9 @@ import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
 import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDatabaseModel
 import pl.yalgrin.playnite.simplesync.library.dto.GameFields
+import pl.yalgrin.playnite.simplesync.library.enums.toInstallSizeGroup
+import pl.yalgrin.playnite.simplesync.library.enums.toPlaytimeCategory
+import pl.yalgrin.playnite.simplesync.library.enums.toScoreGroup
 import reactor.core.publisher.Mono
 
 @Component
@@ -45,6 +49,18 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
     ): Mono<Triple<Game, GameDiffDTO, MutableList<String>>> {
         return entity.extractDbModelOrEmpty()
             .map { databaseModel ->
+                if (MapperUtil.hasChanged(databaseModel.pluginId, dto.pluginId)) {
+                    changedFields.add(GameFields.PLUGIN_ID)
+                }
+                generatedDiffDTO.pluginId = dto.pluginId
+                databaseModel.pluginId = dto.pluginId
+
+                if (MapperUtil.hasChanged(databaseModel.pluginName, dto.pluginName)) {
+                    changedFields.add(GameFields.PLUGIN_NAME)
+                }
+                generatedDiffDTO.pluginName = dto.pluginName
+                databaseModel.pluginName = dto.pluginName
+
                 if (MapperUtil.hasChanged(databaseModel.description, dto.description)) {
                     generatedDiffDTO.description = dto.description
                     databaseModel.description = dto.description
@@ -73,6 +89,9 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                 if (MapperUtil.hasChanged(databaseModel.lastActivity, dto.lastActivity)) {
                     generatedDiffDTO.lastActivity = dto.lastActivity
                     databaseModel.lastActivity = dto.lastActivity
+                    databaseModel.lastActivityInMs = databaseModel.lastActivity?.toInstant()?.toEpochMilli()
+                    databaseModel.recentActivity = dto.lastActivity?.max(databaseModel.added)
+                    databaseModel.recentActivityInMs = databaseModel.recentActivity?.toInstant()?.toEpochMilli()
                     changedFields.add(GameFields.LAST_ACTIVITY)
                 }
                 if (MapperUtil.hasChanged(databaseModel.sortingName, dto.sortingName)) {
@@ -124,16 +143,21 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                 if (MapperUtil.hasChanged(databaseModel.playtime, dto.playtime)) {
                     generatedDiffDTO.playtime = dto.playtime
                     databaseModel.playtime = dto.playtime
+                    databaseModel.playtimeCategory = dto.playtime.toPlaytimeCategory()
                     changedFields.add(GameFields.PLAYTIME)
                 }
                 if (MapperUtil.hasChanged(databaseModel.added, dto.added)) {
                     generatedDiffDTO.added = dto.added
                     databaseModel.added = dto.added
+                    databaseModel.addedInMs = databaseModel.added?.toInstant()?.toEpochMilli()
+                    databaseModel.recentActivity = dto.lastActivity?.max(databaseModel.added)
+                    databaseModel.recentActivityInMs = databaseModel.recentActivity?.toInstant()?.toEpochMilli()
                     changedFields.add(GameFields.ADDED)
                 }
                 if (MapperUtil.hasChanged(databaseModel.modified, dto.modified)) {
                     generatedDiffDTO.modified = dto.modified
                     databaseModel.modified = dto.modified
+                    databaseModel.modifiedInMs = databaseModel.modified?.toInstant()?.toEpochMilli()
                     changedFields.add(GameFields.MODIFIED)
                 }
                 if (MapperUtil.hasChanged(databaseModel.playCount, dto.playCount)) {
@@ -144,11 +168,13 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                 if (MapperUtil.hasChanged(databaseModel.installSize, dto.installSize)) {
                     generatedDiffDTO.installSize = dto.installSize
                     databaseModel.installSize = dto.installSize
+                    databaseModel.installSizeGroup = dto.installSize.toInstallSizeGroup()
                     changedFields.add(GameFields.INSTALL_SIZE)
                 }
                 if (MapperUtil.hasChanged(databaseModel.lastSizeScanDate, dto.lastSizeScanDate)) {
                     generatedDiffDTO.lastSizeScanDate = dto.lastSizeScanDate
                     databaseModel.lastSizeScanDate = dto.lastSizeScanDate
+                    databaseModel.lastSizeScanDateInMs = databaseModel.lastSizeScanDate?.toInstant()?.toEpochMilli()
                     changedFields.add(GameFields.LAST_SIZE_SCAN_DATE)
                 }
                 if (MapperUtil.hasChanged(databaseModel.series, dto.series)) {
@@ -188,16 +214,19 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                 if (MapperUtil.hasChanged(databaseModel.userScore, dto.userScore)) {
                     generatedDiffDTO.userScore = dto.userScore
                     databaseModel.userScore = dto.userScore
+                    databaseModel.userScoreGroup = dto.userScore.toScoreGroup()
                     changedFields.add(GameFields.USER_SCORE)
                 }
                 if (MapperUtil.hasChanged(databaseModel.criticScore, dto.criticScore)) {
                     generatedDiffDTO.criticScore = dto.criticScore
                     databaseModel.criticScore = dto.criticScore
+                    databaseModel.criticScoreGroup = dto.criticScore.toScoreGroup()
                     changedFields.add(GameFields.CRITIC_SCORE)
                 }
                 if (MapperUtil.hasChanged(databaseModel.communityScore, dto.communityScore)) {
                     generatedDiffDTO.communityScore = dto.communityScore
                     databaseModel.communityScore = dto.communityScore
+                    databaseModel.communityScoreGroup = dto.communityScore.toScoreGroup()
                     changedFields.add(GameFields.COMMUNITY_SCORE)
                 }
                 if (MapperUtil.hasChanged(databaseModel.manual, dto.manual)) {
@@ -245,6 +274,26 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
             }
             entity.extractDbModelOrEmpty()
                 .map { databaseModel ->
+                    if (MapperUtil.hasChanged(
+                            databaseModel.pluginId,
+                            referenceDTO.pluginId
+                        )
+                    ) {
+                        changedFields.add(GameFields.PLUGIN_ID)
+                    }
+                    diffDTO.pluginId = referenceDTO.pluginId
+                    databaseModel.pluginId = referenceDTO.pluginId
+
+                    if (MapperUtil.hasChanged(
+                            databaseModel.pluginName,
+                            referenceDTO.pluginName
+                        )
+                    ) {
+                        changedFields.add(GameFields.PLUGIN_NAME)
+                    }
+                    diffDTO.pluginName = referenceDTO.pluginName
+                    databaseModel.pluginName = referenceDTO.pluginName
+
                     if (referenceDTO.changedFields.contains(GameFields.DESCRIPTION) && MapperUtil.hasChanged(
                             databaseModel.description,
                             referenceDTO.description
@@ -296,6 +345,9 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                         )
                     ) {
                         databaseModel.lastActivity = referenceDTO.lastActivity
+                        databaseModel.lastActivityInMs = databaseModel.lastActivity?.toInstant()?.toEpochMilli()
+                        databaseModel.recentActivity = referenceDTO.lastActivity?.max(referenceDTO.added)
+                        databaseModel.recentActivityInMs = databaseModel.recentActivity?.toInstant()?.toEpochMilli()
                         diffDTO.lastActivity = referenceDTO.lastActivity
                         changedFields.add(GameFields.LAST_ACTIVITY)
                     }
@@ -395,6 +447,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                             databaseModel.playtime = referenceDTO.playtime
                             diffDTO.playtime = referenceDTO.playtime
                         }
+                        databaseModel.playtimeCategory = databaseModel.playtime.toPlaytimeCategory()
                         changedFields.add(GameFields.PLAYTIME)
                     }
                     if (referenceDTO.changedFields.contains(GameFields.ADDED) && referenceDTO.added != null && MapperUtil.hasChanged(
@@ -403,6 +456,9 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                         )
                     ) {
                         databaseModel.added = referenceDTO.added
+                        databaseModel.addedInMs = databaseModel.added?.toInstant()?.toEpochMilli()
+                        databaseModel.recentActivity = referenceDTO.lastActivity?.max(referenceDTO.added)
+                        databaseModel.recentActivityInMs = databaseModel.recentActivity?.toInstant()?.toEpochMilli()
                         diffDTO.added = referenceDTO.added
                         changedFields.add(GameFields.ADDED)
                     }
@@ -411,6 +467,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                         )
                     ) {
                         databaseModel.modified = referenceDTO.modified
+                        databaseModel.modifiedInMs = databaseModel.modified?.toInstant()?.toEpochMilli()
                         diffDTO.modified = referenceDTO.modified
                         changedFields.add(GameFields.MODIFIED)
                     }
@@ -436,6 +493,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                         )
                     ) {
                         databaseModel.installSize = referenceDTO.installSize
+                        databaseModel.installSizeGroup = referenceDTO.installSize.toInstallSizeGroup()
                         diffDTO.installSize = referenceDTO.installSize
                         changedFields.add(GameFields.INSTALL_SIZE)
                     }
@@ -445,6 +503,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                         )
                     ) {
                         databaseModel.lastSizeScanDate = referenceDTO.lastSizeScanDate
+                        databaseModel.lastSizeScanDateInMs = databaseModel.lastSizeScanDate?.toInstant()?.toEpochMilli()
                         diffDTO.lastSizeScanDate = referenceDTO.lastSizeScanDate
                         changedFields.add(GameFields.LAST_SIZE_SCAN_DATE)
                     }
@@ -508,6 +567,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                         )
                     ) {
                         databaseModel.userScore = referenceDTO.userScore
+                        databaseModel.userScoreGroup = referenceDTO.userScore.toScoreGroup()
                         diffDTO.userScore = referenceDTO.userScore
                         changedFields.add(GameFields.USER_SCORE)
                     }
@@ -517,6 +577,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                         )
                     ) {
                         databaseModel.criticScore = referenceDTO.criticScore
+                        databaseModel.criticScoreGroup = referenceDTO.criticScore.toScoreGroup()
                         diffDTO.criticScore = referenceDTO.criticScore
                         changedFields.add(GameFields.CRITIC_SCORE)
                     }
@@ -526,6 +587,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                         )
                     ) {
                         databaseModel.communityScore = referenceDTO.communityScore
+                        databaseModel.communityScoreGroup = referenceDTO.communityScore.toScoreGroup()
                         diffDTO.communityScore = referenceDTO.communityScore
                         changedFields.add(GameFields.COMMUNITY_SCORE)
                     }
@@ -559,6 +621,8 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
     override fun fillOtherDtoFields(entity: Game, dto: GameDTO): Mono<GameDTO> {
         return entity.extractDbModelOrEmpty()
             .doOnNext { databaseModel ->
+                dto.pluginId = databaseModel.pluginId
+                dto.pluginName = databaseModel.pluginName
                 dto.description = databaseModel.description
                 dto.notes = databaseModel.notes
                 dto.genres = databaseModel.genres
@@ -606,27 +670,36 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
             .map { databaseModel ->
                 databaseModel.baseObjectId = dto.baseObjectId
                 databaseModel.changedFields = dto.changedFields
+                databaseModel.pluginId = dto.pluginId
+                databaseModel.pluginName = dto.pluginName
                 databaseModel.description = dto.description
                 databaseModel.notes = dto.notes
                 databaseModel.genres = dto.genres
                 databaseModel.isHidden = dto.isHidden
                 databaseModel.isFavorite = dto.isFavorite
                 databaseModel.lastActivity = dto.lastActivity
+                databaseModel.lastActivityInMs = dto.lastActivity?.toInstant()?.toEpochMilli()
                 databaseModel.sortingName = dto.sortingName
                 databaseModel.platforms = dto.platforms
                 databaseModel.publishers = dto.publishers
                 databaseModel.developers = dto.developers
                 databaseModel.releaseDate = dto.releaseDate
+                databaseModel.releaseYear = dto.releaseDate?.year
                 databaseModel.categories = dto.categories
                 databaseModel.tags = dto.tags
                 databaseModel.features = dto.features
                 databaseModel.links = dto.links
                 databaseModel.playtime = dto.playtime
+                databaseModel.playtimeCategory = dto.playtime.toPlaytimeCategory()
                 databaseModel.added = dto.added
+                databaseModel.addedInMs = dto.added?.toInstant()?.toEpochMilli()
                 databaseModel.modified = dto.modified
+                databaseModel.modifiedInMs = dto.modified?.toInstant()?.toEpochMilli()
                 databaseModel.playCount = dto.playCount
                 databaseModel.installSize = dto.installSize
+                databaseModel.installSizeGroup = dto.installSize.toInstallSizeGroup()
                 databaseModel.lastSizeScanDate = dto.lastSizeScanDate
+                databaseModel.lastSizeScanDateInMs = dto.lastSizeScanDate?.toInstant()?.toEpochMilli()
                 databaseModel.series = dto.series
                 databaseModel.version = dto.version
                 databaseModel.ageRatings = dto.ageRatings
@@ -634,8 +707,11 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
                 databaseModel.source = dto.source
                 databaseModel.completionStatus = dto.completionStatus
                 databaseModel.userScore = dto.userScore
+                databaseModel.userScoreGroup = dto.userScore.toScoreGroup()
                 databaseModel.criticScore = dto.criticScore
+                databaseModel.criticScoreGroup = dto.criticScore.toScoreGroup()
                 databaseModel.communityScore = dto.communityScore
+                databaseModel.communityScoreGroup = dto.communityScore.toScoreGroup()
                 databaseModel.manual = dto.manual
                 databaseModel
             }
@@ -665,6 +741,9 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
         return super.fillOtherFieldsFromDiffEntity(diffDTO, dbModel, entity, diffEntity)
             .then(entity.extractDbModelOrEmpty())
             .doOnNext { targetDto ->
+                diffDTO.pluginId = targetDto.pluginId
+                diffDTO.pluginName = targetDto.pluginName
+
                 val changedFields = dbModel.changedFields
                 if (changedFields.contains(GameFields.DESCRIPTION)) {
                     diffDTO.description = targetDto.description

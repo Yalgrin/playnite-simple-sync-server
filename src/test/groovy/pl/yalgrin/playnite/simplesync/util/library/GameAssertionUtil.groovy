@@ -4,6 +4,9 @@ import pl.yalgrin.playnite.simplesync.common.config.JsonMapperProviderKt
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
 import pl.yalgrin.playnite.simplesync.library.dto.GameDatabaseModel
+import pl.yalgrin.playnite.simplesync.library.enums.InstallSizeGroup
+import pl.yalgrin.playnite.simplesync.library.enums.PlaytimeCategory
+import pl.yalgrin.playnite.simplesync.library.enums.ScoreGroupKt
 import tools.jackson.databind.json.JsonMapper
 
 import java.util.function.BiPredicate
@@ -30,6 +33,7 @@ class GameAssertionUtil {
         assert resultDTO.getSortingName() == expectedDTO.getSortingName()
         assert resultDTO.getGameId() == expectedDTO.getGameId()
         assert resultDTO.getPluginId() == expectedDTO.getPluginId()
+        assert resultDTO.getPluginName() == expectedDTO.getPluginName()
         assert assertListMatches(expectedDTO.getPlatforms(), resultDTO.getPlatforms(), { expected, result ->
             PlatformAssertionUtil.assertPlatform(expected, result)
         })
@@ -86,6 +90,8 @@ class GameAssertionUtil {
             return true
         }
         assert resultDTO != null
+        assert resultDTO.getPluginId() == expectedDTO.getPluginId()
+        assert resultDTO.getPluginName() == expectedDTO.getPluginName()
         assert resultDTO.getDescription() == expectedDTO.getDescription()
         assert resultDTO.getNotes() == expectedDTO.getNotes()
         assert assertListMatches(expectedDTO.getGenres(), resultDTO.getGenres(), { expected, result ->
@@ -93,7 +99,24 @@ class GameAssertionUtil {
         })
         assert resultDTO.isHidden() == expectedDTO.isHidden()
         assert resultDTO.isFavorite() == expectedDTO.isFavorite()
-        assert resultDTO.getLastActivity()?.toEpochSecond() == expectedDTO.getLastActivity()?.toEpochSecond()
+
+        def expectedLastActivitySeconds = expectedDTO.getLastActivity()?.toEpochSecond()
+        def expectedAddedSeconds = expectedDTO.getAdded()?.toEpochSecond()
+
+        assert resultDTO.getLastActivity()?.toEpochSecond() == expectedLastActivitySeconds
+        if (expectedAddedSeconds != null) {
+            if (expectedLastActivitySeconds != null) {
+                assert resultDTO.getRecentActivity()?.toEpochSecond() == Math.max(expectedAddedSeconds, expectedLastActivitySeconds)
+            } else {
+                assert resultDTO.getRecentActivity()?.toEpochSecond() == expectedAddedSeconds
+            }
+        } else {
+            if (expectedLastActivitySeconds != null) {
+                assert resultDTO.getRecentActivity()?.toEpochSecond() == expectedLastActivitySeconds
+            } else {
+                assert resultDTO.getRecentActivity()?.toEpochSecond() == null
+            }
+        }
         assert resultDTO.getSortingName() == expectedDTO.getSortingName()
         assert assertListMatches(expectedDTO.getPlatforms(), resultDTO.getPlatforms(), { expected, result ->
             PlatformAssertionUtil.assertPlatform(expected, result)
@@ -120,11 +143,51 @@ class GameAssertionUtil {
             assert expected.getUrl() == result.getUrl()
             true
         })
-        assert resultDTO.getPlaytime() == expectedDTO.getPlaytime()
-        assert resultDTO.getAdded()?.toEpochSecond() == expectedDTO.getAdded()?.toEpochSecond()
+
+        def expectedPlaytime = expectedDTO.getPlaytime()
+        assert resultDTO.getPlaytime() == expectedPlaytime
+        if (expectedPlaytime == null || expectedPlaytime == 0) {
+            assert resultDTO.getPlaytimeCategory() == PlaytimeCategory.NOT_PLAYED
+        } else if (expectedPlaytime < 3600) {
+            assert resultDTO.getPlaytimeCategory() == PlaytimeCategory.LESS_THAN_HOUR
+        } else if (expectedPlaytime < (3600 * 10)) {
+            assert resultDTO.getPlaytimeCategory() == PlaytimeCategory.O1_10
+        } else if (expectedPlaytime < (3600 * 100)) {
+            assert resultDTO.getPlaytimeCategory() == PlaytimeCategory.O10_100
+        } else if (expectedPlaytime < (3600 * 500)) {
+            assert resultDTO.getPlaytimeCategory() == PlaytimeCategory.O100_500
+        } else if (expectedPlaytime < (3600 * 1000)) {
+            assert resultDTO.getPlaytimeCategory() == PlaytimeCategory.O500_1000
+        } else {
+            assert resultDTO.getPlaytimeCategory() == PlaytimeCategory.O1000_PLUS
+        }
+
+        assert resultDTO.getAdded()?.toEpochSecond() == expectedAddedSeconds
         assert resultDTO.getModified()?.toEpochSecond() == expectedDTO.getModified()?.toEpochSecond()
         assert resultDTO.getPlayCount() == expectedDTO.getPlayCount()
-        assert resultDTO.getInstallSize() == expectedDTO.getInstallSize()
+
+        def installSize = expectedDTO.getInstallSize()
+        assert resultDTO.getInstallSize() == installSize
+        if (installSize == null || installSize == 0L) {
+            assert resultDTO.getInstallSizeGroup() == InstallSizeGroup.NONE
+        } else if (installSize <= (100L * 1024 * 1024)) {
+            assert resultDTO.getInstallSizeGroup() == InstallSizeGroup.S0_0MB_100MB
+        } else if (installSize <= (1024L * 1024 * 1024)) {
+            assert resultDTO.getInstallSizeGroup() == InstallSizeGroup.S1_100MB_1GB
+        } else if (installSize <= (5L * 1024 * 1024 * 1024)) {
+            assert resultDTO.getInstallSizeGroup() == InstallSizeGroup.S2_1GB_5GB
+        } else if (installSize <= (10L * 1024 * 1024 * 1024)) {
+            assert resultDTO.getInstallSizeGroup() == InstallSizeGroup.S3_5GB_10GB
+        } else if (installSize <= (20L * 1024 * 1024 * 1024)) {
+            assert resultDTO.getInstallSizeGroup() == InstallSizeGroup.S4_10GB_20GB
+        } else if (installSize <= (40L * 1024 * 1024 * 1024)) {
+            assert resultDTO.getInstallSizeGroup() == InstallSizeGroup.S5_20GB_40GB
+        } else if (installSize <= (100L * 1024 * 1024 * 1024)) {
+            assert resultDTO.getInstallSizeGroup() == InstallSizeGroup.S6_40GB_100GB
+        } else {
+            assert resultDTO.getInstallSizeGroup() == InstallSizeGroup.S7_100GB_PLUS
+        }
+
         assert resultDTO.getLastSizeScanDate()?.toEpochSecond() == expectedDTO.getLastSizeScanDate()?.toEpochSecond()
         assert assertListMatches(expectedDTO.getSeries(), resultDTO.getSeries(), { expected, result ->
             SeriesAssertionUtil.assertSeries(expected, result)
@@ -139,8 +202,11 @@ class GameAssertionUtil {
         assert SourceAssertionUtil.assertSource(expectedDTO.getSource(), resultDTO.getSource())
         assert CompletionStatusAssertionUtil.assertCompletionStatus(expectedDTO.getCompletionStatus(), resultDTO.getCompletionStatus())
         assert resultDTO.getUserScore() == expectedDTO.getUserScore()
+        assert resultDTO.getUserScoreGroup() == ScoreGroupKt.toScoreGroup(expectedDTO.getUserScore())
         assert resultDTO.getCriticScore() == expectedDTO.getCriticScore()
+        assert resultDTO.getCriticScoreGroup() == ScoreGroupKt.toScoreGroup(expectedDTO.getCriticScore())
         assert resultDTO.getCommunityScore() == expectedDTO.getCommunityScore()
+        assert resultDTO.getCommunityScoreGroup() == ScoreGroupKt.toScoreGroup(expectedDTO.getCommunityScore())
         assert resultDTO.getManual() == expectedDTO.getManual()
         true
     }

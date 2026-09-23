@@ -18,10 +18,12 @@ import pl.yalgrin.playnite.simplesync.security.ClientReactiveAuthenticationManag
 import reactor.core.publisher.Mono
 import tools.jackson.databind.json.JsonMapper
 
+//TODO separate security config for panel
 private val PUBLIC_PATHS = listOf(
     "/api/health",
     "/api/client/register",
-    "/api/client/check"
+    "/api/client/check",
+    "/api/panel/**"
 )
 
 private val LENIENT_PATHS = listOf(

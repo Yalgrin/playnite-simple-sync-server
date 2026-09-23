@@ -220,6 +220,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         modifiedViaDiffDTO.id = modified.id
         modifiedViaDiffDTO.gameId = modified.gameId
         modifiedViaDiffDTO.pluginId = modified.pluginId
+        modifiedViaDiffDTO.pluginName = modified.pluginName
         modifiedViaDiffDTO.name = "even different name"
         modifiedViaDiffDTO.version = "3.0"
         def newCategory = new CategoryDTO()

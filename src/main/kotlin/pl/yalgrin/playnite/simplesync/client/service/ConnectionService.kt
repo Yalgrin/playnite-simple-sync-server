@@ -22,7 +22,8 @@ class ConnectionService(
     private val changeListenerService: ChangeListenerService,
     private val changeMessageMapper: ChangeMessageMapper
 ) {
-    fun connect(): Flux<ServerSentEvent<ConnectionMessage>> {
+    //TODO remove the forceOpen flag
+    fun connect(forceOpen: Boolean = false): Flux<ServerSentEvent<ConnectionMessage>> {
         return createSession()
             .flatMap { sessionInfo ->
                 registeredClientService.updateConnectedTime(sessionInfo.clientId)
@@ -35,10 +36,14 @@ class ConnectionService(
                     Flux.merge(
                         Flux.interval(Duration.ofSeconds(30)).map { createHeartbeat() },
                         changeListenerService.modificationFlux()
-                            .filter { it.isForceFetch || it.clientId != sessionInfo.clientId }.filterWhen {
-                            sessionManager.getSessionSettingsMono(sessionInfo.sessionId).map { it.enabledChangeStream }
-                                .defaultIfEmpty(false)
-                        }.map {
+                            .filter { forceOpen || it.isForceFetch || it.clientId != sessionInfo.clientId }.filterWhen {
+                                if (forceOpen)
+                                    Mono.just(true)
+                                else
+                                    sessionManager.getSessionSettingsMono(sessionInfo.sessionId)
+                                        .map { it.enabledChangeStream }
+                                        .defaultIfEmpty(false)
+                            }.map {
                             ServerSentEvent.builder<ConnectionMessage>().data(
                                 changeMessageMapper.toMessage(it)
                             ).build()
@@ -52,10 +57,12 @@ class ConnectionService(
     }
 
     private fun createSession(): Mono<SessionInfoDTO> {
+        //TODO
         return getSessionInfo()
             .map { sessionInfo ->
                 sessionInfo.copy(sessionId = UUID.randomUUID().toString())
             }
+            .switchIfEmpty(Mono.fromSupplier { SessionInfoDTO("PANEL", "PANEL", "PANEL") })
     }
 
     private fun <T : Any> createHeartbeat(): ServerSentEvent<T> {
