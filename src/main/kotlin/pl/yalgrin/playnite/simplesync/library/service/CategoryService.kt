@@ -1,7 +1,9 @@
 package pl.yalgrin.playnite.simplesync.library.service
 
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.ReactiveTransactionManager
+import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService
 import pl.yalgrin.playnite.simplesync.change.service.ChangeService
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
@@ -9,6 +11,7 @@ import pl.yalgrin.playnite.simplesync.library.domain.Category
 import pl.yalgrin.playnite.simplesync.library.dto.CategoryDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.CategoryMapper
 import pl.yalgrin.playnite.simplesync.library.repository.CategoryRepository
+import reactor.core.publisher.Mono
 
 @Service
 class CategoryService(
@@ -16,7 +19,9 @@ class CategoryService(
     mapper: CategoryMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
-    transactionManager: ReactiveTransactionManager
+    transactionManager: ReactiveTransactionManager,
+    @param:Lazy
+    private val gameService: GameService
 ) : BaseLibraryObjectService<CategoryDTO, Category>(
     repository,
     mapper,
@@ -32,5 +37,13 @@ class CategoryService(
 
     override fun getObjectType(): ObjectType {
         return ObjectType.CATEGORY
+    }
+
+    override fun doActionsAfterSave(result: LibrarySaveResult<CategoryDTO>): Mono<LibrarySaveResult<CategoryDTO>> {
+        return gameService.updateCategories(result)
+    }
+
+    override fun doActionsAfterDelete(results: List<LibrarySaveResult<Category>>): Mono<List<ChangeDTO>> {
+        return gameService.updateCategoriesAfterDelete(results)
     }
 }

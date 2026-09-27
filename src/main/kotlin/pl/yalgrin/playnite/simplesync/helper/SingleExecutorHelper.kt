@@ -2,45 +2,57 @@ package pl.yalgrin.playnite.simplesync.helper
 
 import jakarta.annotation.PostConstruct
 import jakarta.annotation.PreDestroy
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+import org.springframework.aop.support.AopUtils
 import org.springframework.stereotype.Component
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.publisher.SignalType
 import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
 import reactor.util.context.ContextView
 import reactor.util.retry.Retry
 import java.time.Duration
+import java.util.concurrent.CancellationException
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 @Component
 class SingleExecutorHelper {
-    private val sink: Sinks.Many<RequestTask> = Sinks.many().unicast().onBackpressureBuffer<RequestTask>()
+    private val sink: Sinks.Many<RequestTask> = Sinks.many().unicast().onBackpressureBuffer()
     private val sinkScheduler = Schedulers.newSingle("sink-scheduler")
+
+    protected val log: Logger by lazy { LoggerFactory.getLogger(AopUtils.getTargetClass(this)) }
 
     private var subscription: Disposable? = null
 
     @PostConstruct
     fun init() {
-        subscription = sink.asFlux()
-            .concatMap { task ->
+        subscription = sink.asFlux().concatMap { task ->
                 Mono.defer {
-                    task.request
-                        .contextWrite { ctx ->
+                    task.request.contextWrite { ctx ->
                             ctx.putAll(task.contextView)
-                        }
-                }
-                    .doOnSuccess {
-                        task.resultSink.emitValue(it, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(500)))
+                    }.takeUntilOther(task.cancelSignal.asMono())
+                }.doOnSuccess { value ->
+                    if (!task.cancelled.get()) {
+                        task.resultSink.emitValue(
+                            value, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(500))
+                        )
                     }
-                    .doOnError {
-                        task.resultSink.emitError(it, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(500)))
+                }.doOnError { error ->
+                    if (!task.cancelled.get()) {
+                        task.resultSink.emitError(
+                            error, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(500))
+                        )
                     }
-                    .onErrorResume { Mono.empty() }
-                    .then(Mono.empty())
-            }
-            .subscribeOn(Schedulers.boundedElastic())
-            .subscribe()
+                }.doFinally { signalType ->
+                    if (signalType == SignalType.CANCEL || task.cancelled.get()) {
+                        task.resultSink.tryEmitError(CancellationException("Task cancelled"))
+                    }
+                }.onErrorResume { Mono.empty() }.then(Mono.empty())
+        }.subscribeOn(Schedulers.boundedElastic()).subscribe()
     }
 
     @PreDestroy
@@ -54,15 +66,22 @@ class SingleExecutorHelper {
     fun <T : Any> runOnExecutor(mono: Mono<T>): Mono<T> {
         return Mono.deferContextual { contextView ->
             val resultSink = Sinks.one<Any>()
-            val task = RequestTask(mono, contextView, resultSink)
+            val cancelSignal = Sinks.one<Unit>()
+            val cancelled = AtomicBoolean(false)
+            val task = RequestTask(mono, contextView, resultSink, cancelSignal, cancelled)
 
-            val taskSubscription = emitToSink(task)
-                .doOnError { resultSink.emitError(it, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(500))) }
-                .subscribe()
+            val taskSubscription = emitToSink(task).doOnError {
+                resultSink.emitError(it, Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(500)))
+            }.subscribe()
+
             resultSink.asMono()
                 .map { it as T }
                 .doOnTerminate { taskSubscription.dispose() }
-                .doOnCancel { taskSubscription.dispose() }
+                .doOnCancel {
+                    cancelled.set(true)
+                    cancelSignal.tryEmitValue(Unit)
+                    taskSubscription.dispose()
+                }
         }
     }
 
@@ -81,5 +100,11 @@ class SingleExecutorHelper {
     }
 
 
-    private data class RequestTask(val request: Mono<*>, val contextView: ContextView, val resultSink: Sinks.One<Any>)
+    private data class RequestTask(
+        val request: Mono<*>,
+        val contextView: ContextView,
+        val resultSink: Sinks.One<Any>,
+        val cancelSignal: Sinks.One<Unit>,
+        val cancelled: AtomicBoolean
+    )
 }

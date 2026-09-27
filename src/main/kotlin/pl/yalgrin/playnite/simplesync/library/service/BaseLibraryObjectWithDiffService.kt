@@ -29,6 +29,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.switchIfEmpty
+import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
 import java.time.Instant
 
@@ -65,6 +66,24 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         return dto.toMono()
             .flatMap { findOrCreateEntity(it) }
             .flatMap { entity -> mapper.fillEntityAndGenerateDiff(dto, entity) }
+            .flatMap { pair -> saveEntityWithDiff(pair, fileParts, saveFiles) }
+            .switchIfEmpty {
+                findOrCreateEntity(dto)
+                    .flatMap { entity -> mapper.toDTO(entity) }
+                    .map { LibrarySaveResult(it, emptyList()) }
+            }
+            .flatMap { doActionsAfterSave(it) }
+    }
+
+    protected open fun doActionsAfterSave(result: LibrarySaveResult<DTO>): Mono<LibrarySaveResult<DTO>> =
+        result.toMono()
+
+    protected open fun saveEntityWithDiff(
+        pair: Pair<E, DIFF_DTO>,
+        fileParts: Flux<FilePart>,
+        saveFiles: Boolean
+    ): Mono<LibrarySaveResult<DTO>> {
+        return Mono.fromSupplier { pair }
             .flatMap { pair -> updateAuditingFields(pair) }
             .flatMap { pair -> saveEntityAndFiles(pair, fileParts, saveFiles) }
             .flatMap { pair -> saveDiffIfNeeded(pair) }
@@ -72,11 +91,6 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             .flatMap { triple ->
                 mapper.toDTO(triple.first)
                     .map { LibrarySaveResult(it, listOf(triple.third)) }
-            }
-            .switchIfEmpty {
-                findOrCreateEntity(dto)
-                    .flatMap { entity -> mapper.toDTO(entity) }
-                    .map { LibrarySaveResult(it, emptyList()) }
             }
     }
 
@@ -136,6 +150,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             .filter(LibraryObjectEntity::isChanged)
             .flatMap { e -> repository.save(e) }
             .defaultIfEmpty(entity)
+            .doOnSuccess { log.debug("Saved entity: {}", entity) }
     }
 
     private fun saveOrDeleteMetadataFiles(
@@ -332,6 +347,12 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                         )
                     }
             }
+            .switchIfEmpty {
+                findOrCreateEntity(diffDto)
+                    .flatMap { entity -> mapper.toDTO(entity) }
+                    .map { LibrarySaveResult(it, emptyList()) }
+            }
+            .flatMap { doActionsAfterSave(it) }
     }
 
     protected open fun findOrCreateEntity(dto: DIFF_DTO): Mono<E> {
@@ -419,9 +440,23 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             }
             .flatMap { pair -> updateAuditingFields(pair) }
             .flatMap { entity -> repository.save(entity) }
-            .flatMap { e -> changeService.saveChange(createDeleteChange(clientId, e)) }
+            .mapNotNull { e ->
+                val change = createDeleteChange(clientId, e)
+                e to change
+            }
+            .flatMap { (entity, changeDTO) ->
+                changeService.saveChange(changeDTO).map { LibrarySaveResult(entity, listOf(it)) }
+            }
             .collectList()
             .doOnSuccess { log.debug("deleteObject > END") }
+            .flatMap { doActionsAfterDelete(it) }
+    }
+
+    protected open fun doActionsAfterDelete(results: List<LibrarySaveResult<E>>): Mono<List<ChangeDTO>> {
+        return Flux.fromIterable(results)
+            .map { it.generatedChanges }
+            .flatMap { it.toFlux() }
+            .collectList()
     }
 
     protected open fun findObjectToDelete(dto: DTO): Flux<E> {

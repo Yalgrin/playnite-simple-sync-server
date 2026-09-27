@@ -1,7 +1,9 @@
 package pl.yalgrin.playnite.simplesync.library.service
 
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.ReactiveTransactionManager
+import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService
 import pl.yalgrin.playnite.simplesync.change.service.ChangeService
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
@@ -9,6 +11,7 @@ import pl.yalgrin.playnite.simplesync.library.domain.Tag
 import pl.yalgrin.playnite.simplesync.library.dto.TagDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.TagMapper
 import pl.yalgrin.playnite.simplesync.library.repository.TagRepository
+import reactor.core.publisher.Mono
 
 @Service
 class TagService(
@@ -16,7 +19,9 @@ class TagService(
     mapper: TagMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
-    transactionManager: ReactiveTransactionManager
+    transactionManager: ReactiveTransactionManager,
+    @param:Lazy
+    private val gameService: GameService
 ) : BaseLibraryObjectService<TagDTO, Tag>(
     repository,
     mapper,
@@ -32,5 +37,13 @@ class TagService(
 
     override fun getObjectType(): ObjectType {
         return ObjectType.TAG
+    }
+
+    override fun doActionsAfterSave(result: LibrarySaveResult<TagDTO>): Mono<LibrarySaveResult<TagDTO>> {
+        return gameService.updateTags(result)
+    }
+
+    override fun doActionsAfterDelete(results: List<LibrarySaveResult<Tag>>): Mono<List<ChangeDTO>> {
+        return gameService.updateTagsAfterDelete(results)
     }
 }

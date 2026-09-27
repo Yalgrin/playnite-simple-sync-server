@@ -19,6 +19,7 @@ import pl.yalgrin.playnite.simplesync.security.getSessionClientId
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
+import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
 import java.time.Instant
 
@@ -60,6 +61,7 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
                     .flatMap { entity -> mapper.toDTO(entity) }
                     .map { LibrarySaveResult(it, emptyList()) }
             }
+            .flatMap { doActionsAfterSave(it) }
     }
 
     private fun findOrCreateEntity(dto: D): Mono<E> {
@@ -114,6 +116,8 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
         )
     }
 
+    protected open fun doActionsAfterSave(result: LibrarySaveResult<D>): Mono<LibrarySaveResult<D>> = result.toMono()
+
     override fun deleteObjectAndPublishChanges(dto: D): Mono<Unit> {
         return deleteObject(dto)
             .transactional(transactionManager)
@@ -144,10 +148,27 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
                 }
                 .flatMap { entity -> updateAuditingFields(entity) }
                 .flatMap { entity -> repository.save(entity) }
-                .mapNotNull { e -> createChange(clientId, e) }
-                .flatMap { changeDTO -> changeService.saveChange(changeDTO) }
+                .mapNotNull { e ->
+                    val change = createChange(clientId, e)
+                    if (change != null) {
+                        e to change
+                    } else {
+                        null
+                    }
+                }
+                .flatMap { (entity, changeDTO) ->
+                    changeService.saveChange(changeDTO).map { LibrarySaveResult(entity, listOf(it)) }
+                }
                 .collectList()
+                .flatMap { doActionsAfterDelete(it) }
         }
+    }
+
+    protected open fun doActionsAfterDelete(results: List<LibrarySaveResult<E>>): Mono<List<ChangeDTO>> {
+        return Flux.fromIterable(results)
+            .map { it.generatedChanges }
+            .flatMap { it.toFlux() }
+            .collectList()
     }
 
     protected abstract fun getObjectType(): ObjectType

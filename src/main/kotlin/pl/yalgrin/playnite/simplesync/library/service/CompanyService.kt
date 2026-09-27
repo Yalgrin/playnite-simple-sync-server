@@ -1,7 +1,9 @@
 package pl.yalgrin.playnite.simplesync.library.service
 
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.ReactiveTransactionManager
+import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService
 import pl.yalgrin.playnite.simplesync.change.service.ChangeService
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
@@ -9,6 +11,7 @@ import pl.yalgrin.playnite.simplesync.library.domain.Company
 import pl.yalgrin.playnite.simplesync.library.dto.CompanyDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.CompanyMapper
 import pl.yalgrin.playnite.simplesync.library.repository.CompanyRepository
+import reactor.core.publisher.Mono
 
 @Service
 class CompanyService(
@@ -16,7 +19,9 @@ class CompanyService(
     mapper: CompanyMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
-    transactionManager: ReactiveTransactionManager
+    transactionManager: ReactiveTransactionManager,
+    @param:Lazy
+    private val gameService: GameService
 ) : BaseLibraryObjectService<CompanyDTO, Company>(
     repository,
     mapper,
@@ -32,5 +37,13 @@ class CompanyService(
 
     override fun getObjectType(): ObjectType {
         return ObjectType.COMPANY
+    }
+
+    override fun doActionsAfterSave(result: LibrarySaveResult<CompanyDTO>): Mono<LibrarySaveResult<CompanyDTO>> {
+        return gameService.updateCompanies(result)
+    }
+
+    override fun doActionsAfterDelete(results: List<LibrarySaveResult<Company>>): Mono<List<ChangeDTO>> {
+        return gameService.updateCompaniesAfterDelete(results)
     }
 }

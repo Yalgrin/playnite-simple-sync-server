@@ -17,6 +17,9 @@ class GameDiffV3Migrator(
     repository: GameDiffRepository,
     transactionManager: ReactiveTransactionManager
 ) : GameDiffMigrator(repository, transactionManager) {
+
+    //TODO test
+
     override fun getSourceVersion(): Long = 2
 
     override fun getTargetVersion(): Long = 3

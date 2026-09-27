@@ -1,6 +1,7 @@
 package pl.yalgrin.playnite.simplesync.library.service
 
 import org.apache.commons.lang3.Strings
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.ReactiveTransactionManager
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService
@@ -26,7 +27,9 @@ class LibraryPluginService(
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     metadataService: MetadataService,
-    transactionManager: ReactiveTransactionManager
+    transactionManager: ReactiveTransactionManager,
+    @param:Lazy
+    private val gameService: GameService
 ) : BaseLibraryObjectWithDiffService<LibraryPluginDTO, LibraryPluginDiffDTO, LibraryPlugin, LibraryPluginDiff>(
     gameRepository,
     diffRepository,
@@ -100,4 +103,8 @@ class LibraryPluginService(
     override fun getObjectType(): ObjectType = ObjectType.LIBRARY_PLUGIN
 
     override fun getDiffType(): ObjectType = ObjectType.LIBRARY_PLUGIN_DIFF
+
+    override fun doActionsAfterSave(result: LibrarySaveResult<LibraryPluginDTO>): Mono<LibrarySaveResult<LibraryPluginDTO>> {
+        return gameService.updateLibraryPlugins(result)
+    }
 }

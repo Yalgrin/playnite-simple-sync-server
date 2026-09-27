@@ -1,8 +1,10 @@
 package pl.yalgrin.playnite.simplesync.library.service
 
 import org.apache.commons.lang3.Strings
+import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
 import org.springframework.transaction.ReactiveTransactionManager
+import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService
 import pl.yalgrin.playnite.simplesync.change.service.ChangeService
 import pl.yalgrin.playnite.simplesync.common.config.BACKGROUND_IMAGE
@@ -27,7 +29,9 @@ class PlatformService(
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     metadataService: MetadataService,
-    transactionManager: ReactiveTransactionManager
+    transactionManager: ReactiveTransactionManager,
+    @param:Lazy
+    private val gameService: GameService
 ) : BaseLibraryObjectWithDiffService<PlatformDTO, PlatformDiffDTO, Platform, PlatformDiff>(
     gameRepository,
     diffRepository,
@@ -110,4 +114,12 @@ class PlatformService(
     override fun getObjectType(): ObjectType = ObjectType.PLATFORM
 
     override fun getDiffType(): ObjectType = ObjectType.PLATFORM_DIFF
+
+    override fun doActionsAfterSave(result: LibrarySaveResult<PlatformDTO>): Mono<LibrarySaveResult<PlatformDTO>> {
+        return gameService.updatePlatforms(result)
+    }
+
+    override fun doActionsAfterDelete(results: List<LibrarySaveResult<Platform>>): Mono<List<ChangeDTO>> {
+        return gameService.updatePlatformsAfterDelete(results)
+    }
 }

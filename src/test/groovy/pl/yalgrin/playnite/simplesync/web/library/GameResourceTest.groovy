@@ -208,6 +208,7 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
         def files = GameFactoryUtil.randomFiles(100, 100, 100)
         GameDTO modified = toSave.withName("some other name")
         modified.setDescription("Description")
+        modified.setPluginName("Other plugin name")
         def newGenre = new GenreDTO()
         newGenre.id = UUID.randomUUID().toString()
         newGenre.name = "New genre"
@@ -374,13 +375,15 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                                 assert it.gameId == toSave.gameId
                                 assert it.pluginId == toSave.pluginId
                                 assert it.changedFields != null
-                                assert it.changedFields.size() == 4
+                                assert it.changedFields.size() == 5
                                 assert it.changedFields.contains("Name")
                                 assert it.changedFields.contains("Description")
                                 assert it.changedFields.contains("Genres")
                                 assert it.changedFields.contains("Source")
+                                assert it.changedFields.contains("PluginName")
                                 assert it.name == modified.name
                                 assert it.description == modified.description
+                                assert it.pluginName == modified.pluginName
                                 assert it.version == null
                                 def genres = it.genres
                                 assert genres != null

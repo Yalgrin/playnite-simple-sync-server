@@ -5,6 +5,7 @@ import org.springframework.transaction.interceptor.DefaultTransactionAttribute
 import org.springframework.transaction.reactive.TransactionalOperator
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.switchIfEmpty
 
 fun <T : Any> Flux<T>.first(): Mono<T> = this.take(1).next()
 
@@ -27,3 +28,5 @@ fun <T : Any> Mono<T>.transactionalReadOnly(transactionManager: ReactiveTransact
     return operator.transactional(this)
 }
 
+fun <T : Any> Mono<T>.defaultIfEmpty(supplier: () -> T): Mono<T> =
+    this.switchIfEmpty { Mono.fromSupplier { supplier() } }

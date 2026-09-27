@@ -18,6 +18,8 @@ class GameV3Migrator(
     transactionManager: ReactiveTransactionManager
 ) : GameMigrator(repository, transactionManager) {
 
+    //TODO test
+
     override fun getSourceVersion(): Long = 2
 
     override fun getTargetVersion(): Long = 3
