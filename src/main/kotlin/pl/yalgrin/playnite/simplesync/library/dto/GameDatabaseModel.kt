@@ -15,13 +15,9 @@ data class GameDatabaseModel(
     var description: String? = null,
     var notes: String? = null,
     var genres: List<GenreDTO> = emptyList(),
-    @param:JsonProperty("isHidden")
-    @get:JsonProperty("isHidden")
-    @field:JsonProperty("isHidden")
+    @all:JsonProperty("isHidden")
     var isHidden: Boolean = false,
-    @param:JsonProperty("isFavorite")
-    @get:JsonProperty("isFavorite")
-    @field:JsonProperty("isFavorite")
+    @all:JsonProperty("isFavorite")
     var isFavorite: Boolean = false,
     var lastActivity: ZonedDateTime? = null,
     var lastActivityInMs: Long? = null,

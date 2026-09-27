@@ -11,9 +11,7 @@ data class PlatformDiffDTO(
     override var name: String? = null,
     override var baseObjectId: Long? = null,
     override var changedFields: List<String> = emptyList(),
-    @param:JsonProperty("isRemoved")
-    @get:JsonProperty("isRemoved")
-    @field:JsonProperty("isRemoved")
+    @all:JsonProperty("isRemoved")
     override var isRemoved: Boolean = false,
     var specificationId: String? = null,
     override var createdAt: Instant? = null,

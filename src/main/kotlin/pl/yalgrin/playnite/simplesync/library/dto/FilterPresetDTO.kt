@@ -10,17 +10,13 @@ data class FilterPresetDTO(
     override var serverId: Long? = null,
     override var id: String? = null,
     override var name: String? = null,
-    @param:JsonProperty("isRemoved")
-    @get:JsonProperty("isRemoved")
-    @field:JsonProperty("isRemoved")
+    @all:JsonProperty("isRemoved")
     override var isRemoved: Boolean = false,
     var settings: FilterPresetSettingsDTO? = null,
     var sortingOrder: String? = null,
     var sortingOrderDirection: String? = null,
     var groupingOrder: String? = null,
-    @param:JsonProperty("showInFullscreenQuickSelection")
-    @get:JsonProperty("showInFullscreenQuickSelection")
-    @field:JsonProperty("showInFullscreenQuickSelection")
+    @all:JsonProperty("showInFullscreenQuickSelection")
     var showInFullscreenQuickSelection: Boolean = false,
     override var createdAt: Instant? = null,
     override var createdBy: String? = null,

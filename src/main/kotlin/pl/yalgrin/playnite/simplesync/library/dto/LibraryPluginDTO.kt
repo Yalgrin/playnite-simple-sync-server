@@ -9,17 +9,11 @@ data class LibraryPluginDTO(
     override var serverId: Long? = null,
     override var id: String? = null,
     override var name: String? = null,
-    @param:JsonProperty("isRemoved")
-    @get:JsonProperty("isRemoved")
-    @field:JsonProperty("isRemoved")
+    @all:JsonProperty("isRemoved")
     override var isRemoved: Boolean = false,
-    @param:JsonProperty("hasIcon")
-    @get:JsonProperty("hasIcon")
-    @field:JsonProperty("hasIcon")
+    @all:JsonProperty("hasIcon")
     var hasIcon: Boolean = false,
-    @param:JsonProperty("hasBackgroundImage")
-    @get:JsonProperty("hasBackgroundImage")
-    @field:JsonProperty("hasBackgroundImage")
+    @all:JsonProperty("hasBackgroundImage")
     var hasBackgroundImage: Boolean = false,
     override var createdAt: Instant? = null,
     override var createdBy: String? = null,

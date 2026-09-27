@@ -13,20 +13,14 @@ data class GameDiffDTO(
     override var name: String? = null,
     override var baseObjectId: Long? = null,
     override var changedFields: List<String> = emptyList(),
-    @param:JsonProperty("isRemoved")
-    @get:JsonProperty("isRemoved")
-    @field:JsonProperty("isRemoved")
+    @all:JsonProperty("isRemoved")
     override var isRemoved: Boolean = false,
     var description: String? = null,
     var notes: String? = null,
     var genres: List<GenreDTO> = emptyList(),
-    @param:JsonProperty("isHidden")
-    @get:JsonProperty("isHidden")
-    @field:JsonProperty("isHidden")
+    @all:JsonProperty("isHidden")
     var isHidden: Boolean = false,
-    @param:JsonProperty("isFavorite")
-    @get:JsonProperty("isFavorite")
-    @field:JsonProperty("isFavorite")
+    @all:JsonProperty("isFavorite")
     var isFavorite: Boolean = false,
     var lastActivity: ZonedDateTime? = null,
     var sortingName: String? = null,

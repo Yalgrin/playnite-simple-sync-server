@@ -12,9 +12,7 @@ data class ChangeDTO(
     var clientId: String? = null,
     var objectId: Long,
     var diffParentObjectId: Long? = null,
-    @param:JsonProperty("isForceFetch")
-    @get:JsonProperty("isForceFetch")
-    @field:JsonProperty("isForceFetch")
+    @all:JsonProperty("isForceFetch")
     var isForceFetch: Boolean = false
 ) : AbstractDTO() {
 

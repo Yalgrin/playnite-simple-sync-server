@@ -11,20 +11,14 @@ data class GameDTO(
     override var serverId: Long? = null,
     override var id: String? = null,
     override var name: String? = null,
-    @param:JsonProperty("isRemoved")
-    @get:JsonProperty("isRemoved")
-    @field:JsonProperty("isRemoved")
+    @all:JsonProperty("isRemoved")
     override var isRemoved: Boolean = false,
     var description: String? = null,
     var notes: String? = null,
     var genres: List<GenreDTO> = emptyList(),
-    @param:JsonProperty("isHidden")
-    @get:JsonProperty("isHidden")
-    @field:JsonProperty("isHidden")
+    @all:JsonProperty("isHidden")
     var isHidden: Boolean = false,
-    @param:JsonProperty("isFavorite")
-    @get:JsonProperty("isFavorite")
-    @field:JsonProperty("isFavorite")
+    @all:JsonProperty("isFavorite")
     var isFavorite: Boolean = false,
     var lastActivity: ZonedDateTime? = null,
     var sortingName: String? = null,
@@ -55,17 +49,11 @@ data class GameDTO(
     var criticScore: Int? = null,
     var communityScore: Int? = null,
     var manual: String? = null,
-    @param:JsonProperty("hasIcon")
-    @get:JsonProperty("hasIcon")
-    @field:JsonProperty("hasIcon")
+    @all:JsonProperty("hasIcon")
     var hasIcon: Boolean = false,
-    @param:JsonProperty("hasCoverImage")
-    @get:JsonProperty("hasCoverImage")
-    @field:JsonProperty("hasCoverImage")
+    @all:JsonProperty("hasCoverImage")
     var hasCoverImage: Boolean = false,
-    @param:JsonProperty("hasBackgroundImage")
-    @get:JsonProperty("hasBackgroundImage")
-    @field:JsonProperty("hasBackgroundImage")
+    @all:JsonProperty("hasBackgroundImage")
     var hasBackgroundImage: Boolean = false,
     override var createdAt: Instant? = null,
     override var createdBy: String? = null,

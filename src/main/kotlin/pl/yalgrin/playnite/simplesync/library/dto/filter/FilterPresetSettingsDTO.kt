@@ -5,25 +5,15 @@ import java.io.Serial
 import java.io.Serializable
 
 data class FilterPresetSettingsDTO(
-    @param:JsonProperty("useAndFilteringStyle")
-    @get:JsonProperty("useAndFilteringStyle")
-    @field:JsonProperty("useAndFilteringStyle")
+    @all:JsonProperty("useAndFilteringStyle")
     var useAndFilteringStyle: Boolean = false,
-    @param:JsonProperty("isInstalled")
-    @get:JsonProperty("isInstalled")
-    @field:JsonProperty("isInstalled")
+    @all:JsonProperty("isInstalled")
     var isInstalled: Boolean = false,
-    @param:JsonProperty("isUninstalled")
-    @get:JsonProperty("isUninstalled")
-    @field:JsonProperty("isUninstalled")
+    @all:JsonProperty("isUninstalled")
     var isUninstalled: Boolean = false,
-    @param:JsonProperty("isHidden")
-    @get:JsonProperty("isHidden")
-    @field:JsonProperty("isHidden")
+    @all:JsonProperty("isHidden")
     var isHidden: Boolean = false,
-    @param:JsonProperty("isFavorite")
-    @get:JsonProperty("isFavorite")
-    @field:JsonProperty("isFavorite")
+    @all:JsonProperty("isFavorite")
     var isFavorite: Boolean = false,
     var name: String? = null,
     var version: String? = null,

@@ -6,25 +6,15 @@ import pl.yalgrin.playnite.simplesync.library.dto.filter.IntItemPropertiesDTO
 import pl.yalgrin.playnite.simplesync.library.dto.filter.StringItemPropertiesDTO
 
 data class GameListFilterDTO(
-    @param:JsonProperty("useAndFilteringStyle")
-    @get:JsonProperty("useAndFilteringStyle")
-    @field:JsonProperty("useAndFilteringStyle")
+    @all:JsonProperty("useAndFilteringStyle")
     var useAndFilteringStyle: Boolean? = null,
-    @param:JsonProperty("isInstalled")
-    @get:JsonProperty("isInstalled")
-    @field:JsonProperty("isInstalled")
+    @all:JsonProperty("isInstalled")
     var isInstalled: Boolean? = null,
-    @param:JsonProperty("isUninstalled")
-    @get:JsonProperty("isUninstalled")
-    @field:JsonProperty("isUninstalled")
+    @all:JsonProperty("isUninstalled")
     var isUninstalled: Boolean? = null,
-    @param:JsonProperty("isHidden")
-    @get:JsonProperty("isHidden")
-    @field:JsonProperty("isHidden")
+    @all:JsonProperty("isHidden")
     var isHidden: Boolean? = null,
-    @param:JsonProperty("isFavorite")
-    @get:JsonProperty("isFavorite")
-    @field:JsonProperty("isFavorite")
+    @all:JsonProperty("isFavorite")
     var isFavorite: Boolean? = null,
     var name: String? = null,
     var version: String? = null,

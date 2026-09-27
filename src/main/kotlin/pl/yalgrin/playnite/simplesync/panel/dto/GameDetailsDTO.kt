@@ -26,9 +26,7 @@ data class GameDetailsDTO(
 data class GameListDTO(
     val id: Long,
     val name: String?,
-    @param:JsonProperty("isFavorite")
-    @get:JsonProperty("isFavorite")
-    @field:JsonProperty("isFavorite")
+    @all:JsonProperty("isFavorite")
     val isFavorite: Boolean
 ) : Serializable {
     companion object {

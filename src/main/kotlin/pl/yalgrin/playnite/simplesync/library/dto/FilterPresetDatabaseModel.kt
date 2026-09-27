@@ -10,9 +10,7 @@ data class FilterPresetDatabaseModel(
     var sortingOrder: String? = null,
     var sortingOrderDirection: String? = null,
     var groupingOrder: String? = null,
-    @param:JsonProperty("showInFullscreenQuickSelection")
-    @get:JsonProperty("showInFullscreenQuickSelection")
-    @field:JsonProperty("showInFullscreenQuickSelection")
+    @all:JsonProperty("showInFullscreenQuickSelection")
     var showInFullscreenQuickSelection: Boolean = false
 ) : Serializable {
     companion object {

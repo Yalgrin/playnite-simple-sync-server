@@ -9,9 +9,7 @@ data class TagDTO(
     override var serverId: Long? = null,
     override var id: String? = null,
     override var name: String? = null,
-    @param:JsonProperty("isRemoved")
-    @get:JsonProperty("isRemoved")
-    @field:JsonProperty("isRemoved")
+    @all:JsonProperty("isRemoved")
     override var isRemoved: Boolean = false,
     override var createdAt: Instant? = null,
     override var createdBy: String? = null,
