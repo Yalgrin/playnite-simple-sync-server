@@ -101,15 +101,16 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             .doOnNext { e ->
                 log.debug("findOrCreateEntity > found entity with id = {} by playnite id: {}", e.id, dto.id)
             }
-            .switchIfEmpty(
+            .switchIfEmpty {
                 dto.name.toMono()
-                    .flatMapMany { name: String? -> repository.findByName(name!!) }
-                    .first()
+                    .flatMapMany { name -> repository.findByName(name) }.collectList().mapNotNull { objList ->
+                        objList.sortedWith(compareBy({ it.isRemoved }, { it.id })).firstOrNull()
+                    }
                     .doOnNext { e ->
                         log.debug("findOrCreateEntity > found entity with id = {} by name: {}", e.id, dto.name)
                         e.isNotifyAll = true
                     }
-            )
+            }
             .switchIfEmpty(
                 Mono.fromSupplier { createEntityFromDTO(dto) }
                     .doOnNext { _ -> log.debug("findOrCreateEntity > creating new entity...") }

@@ -172,6 +172,149 @@ class RegionResourceTest extends AbstractObjectTest<Region, RegionDTO> {
         assertDeleted(dto)
     }
 
+    def "save, remove, then save a new one with the same name"() {
+        given:
+        RegionDTO dto = RegionFactoryUtil.randomRegion()
+        AtomicLong newObjectId = new AtomicLong(-1)
+
+        when:
+        def saveResponse = makeSaveRequest(dto)
+
+        then:
+        saveResponse.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, RegionDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    newObjectId.set(it.serverId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
+
+        when:
+        def deleteResponse = makeDeleteRequest(dto)
+
+        then:
+        deleteResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, RegionDTO.class))
+                .verifyComplete()
+        assertDeleted(dto)
+
+        when:
+        RegionDTO newDto = RegionFactoryUtil.randomRegion()
+        newDto.name = dto.name
+        newDto.specificationId = dto.specificationId
+        AtomicLong newObjectId2 = new AtomicLong(-1)
+
+        def newSaveResponse = makeSaveRequest(newDto)
+
+        then:
+        newSaveResponse.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(newSaveResponse, RegionDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    newObjectId2.set(it.serverId)
+                    assert newObjectId.get() == newObjectId2.get()
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId2.get())
+    }
+
+
+    def "save 2, remove one, then rename the other to the same name"() {
+        given:
+        RegionDTO dto1 = RegionFactoryUtil.randomRegion()
+        RegionDTO dto2 = RegionFactoryUtil.randomRegion()
+        AtomicLong newObjectId = new AtomicLong(-1)
+        AtomicLong newObjectId2 = new AtomicLong(-1)
+
+        when:
+        def saveResponse = makeSaveRequest(dto1)
+        def saveResponse2 = makeSaveRequest(dto2)
+
+        then:
+        saveResponse.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, RegionDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    newObjectId.set(it.serverId)
+                    objectMatches(it, dto1)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto1, newObjectId.get())
+
+        and:
+        saveResponse2.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse2, RegionDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    newObjectId2.set(it.serverId)
+                    objectMatches(it, dto2)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto2, newObjectId2.get())
+
+        when:
+        def deleteResponse = makeDeleteRequest(dto1)
+
+        then:
+        deleteResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, RegionDTO.class))
+                .verifyComplete()
+        assertDeleted(dto1)
+
+        when:
+        dto2.name = dto1.name
+
+        def newSaveResponse = makeSaveRequest(dto2)
+
+        then:
+        newSaveResponse.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(newSaveResponse, RegionDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    assert it.serverId == newObjectId2.get()
+                    objectMatches(it, dto2)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto2, newObjectId2.get())
+    }
+
     def "save, modify and delete and await the change stream"() {
         given:
         RegionDTO toSave = RegionFactoryUtil.randomRegion()

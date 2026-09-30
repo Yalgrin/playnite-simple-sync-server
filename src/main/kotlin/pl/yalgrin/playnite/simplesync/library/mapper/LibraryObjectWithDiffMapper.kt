@@ -43,7 +43,7 @@ abstract class LibraryObjectWithDiffMapperImpl<
         generatedDiffDTO: DIFF_DTO
     ): Triple<E, DIFF_DTO, MutableList<String>> {
         val changedFields = mutableListOf<String>()
-        generatedDiffDTO.id = dto.id
+        generatedDiffDTO.id = entity.playniteId
         generatedDiffDTO.name = dto.name
         if (entity.id == null) {
             changedFields.add(LibraryObjectFields.ID)
@@ -54,8 +54,7 @@ abstract class LibraryObjectWithDiffMapperImpl<
         }
         if (entity.isRemoved) {
             entity.isRemoved = false
-            entity.playniteId = dto.id
-            generatedDiffDTO.isRemoved = dto.isRemoved
+            generatedDiffDTO.isRemoved = false
             changedFields.add(LibraryObjectFields.REMOVED)
         }
         return Triple(entity, generatedDiffDTO, changedFields)
@@ -181,7 +180,7 @@ abstract class LibraryObjectWithDiffMapperImpl<
         newDTO.name = referenceDTO.name
         if (entity.isRemoved) {
             entity.isRemoved = false
-            newDTO.isRemoved = referenceDTO.isRemoved
+            newDTO.isRemoved = false
             changedFields.add(LibraryObjectFields.REMOVED)
         }
         newDTO.name = entity.name

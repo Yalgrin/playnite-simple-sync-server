@@ -172,6 +172,148 @@ class FeatureResourceTest extends AbstractObjectTest<Feature, FeatureDTO> {
         assertDeleted(dto)
     }
 
+    def "save, remove, then save a new one with the same name"() {
+        given:
+        FeatureDTO dto = FeatureFactoryUtil.randomFeature()
+        AtomicLong newObjectId = new AtomicLong(-1)
+
+        when:
+        def saveResponse = makeSaveRequest(dto)
+
+        then:
+        saveResponse.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, FeatureDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    newObjectId.set(it.serverId)
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId.get())
+
+        when:
+        def deleteResponse = makeDeleteRequest(dto)
+
+        then:
+        deleteResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, FeatureDTO.class))
+                .verifyComplete()
+        assertDeleted(dto)
+
+        when:
+        FeatureDTO newDto = FeatureFactoryUtil.randomFeature()
+        newDto.name = dto.name
+        AtomicLong newObjectId2 = new AtomicLong(-1)
+
+        def newSaveResponse = makeSaveRequest(newDto)
+
+        then:
+        newSaveResponse.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(newSaveResponse, FeatureDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    newObjectId2.set(it.serverId)
+                    assert newObjectId.get() == newObjectId2.get()
+                    objectMatches(it, dto)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto, newObjectId2.get())
+    }
+
+
+    def "save 2, remove one, then rename the other to the same name"() {
+        given:
+        FeatureDTO dto1 = FeatureFactoryUtil.randomFeature()
+        FeatureDTO dto2 = FeatureFactoryUtil.randomFeature()
+        AtomicLong newObjectId = new AtomicLong(-1)
+        AtomicLong newObjectId2 = new AtomicLong(-1)
+
+        when:
+        def saveResponse = makeSaveRequest(dto1)
+        def saveResponse2 = makeSaveRequest(dto2)
+
+        then:
+        saveResponse.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse, FeatureDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    newObjectId.set(it.serverId)
+                    objectMatches(it, dto1)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto1, newObjectId.get())
+
+        and:
+        saveResponse2.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(saveResponse2, FeatureDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    newObjectId2.set(it.serverId)
+                    objectMatches(it, dto2)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto2, newObjectId2.get())
+
+        when:
+        def deleteResponse = makeDeleteRequest(dto1)
+
+        then:
+        deleteResponse.expectStatus().is2xxSuccessful()
+
+        and:
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(deleteResponse, FeatureDTO.class))
+                .verifyComplete()
+        assertDeleted(dto1)
+
+        when:
+        dto2.name = dto1.name
+
+        def newSaveResponse = makeSaveRequest(dto2)
+
+        then:
+        newSaveResponse.expectStatus().is2xxSuccessful()
+        StepVerifier.create(IntegrationTestUtil.getReturnMono(newSaveResponse, FeatureDTO.class))
+                .expectNextMatches {
+                    assert it.serverId != null
+                    assert it.createdAt != null
+                    assert it.createdBy != null
+                    assert it.modifiedAt != null
+                    assert it.modifiedBy != null
+                    assert it.serverId == newObjectId2.get()
+                    objectMatches(it, dto2)
+                }
+                .verifyComplete()
+
+        and:
+        assertEntityAndGetResponse(dto2, newObjectId2.get())
+    }
+
     def "save, modify and delete and await the change stream"() {
         given:
         FeatureDTO toSave = FeatureFactoryUtil.randomFeature()

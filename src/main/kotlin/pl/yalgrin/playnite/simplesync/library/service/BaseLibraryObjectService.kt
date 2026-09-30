@@ -78,7 +78,9 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
     }
 
     private fun findBasedOnName(dto: D): Mono<E> {
-        return dto.name.toMono().flatMapMany { repository.findByName(it) }.first()
+        return dto.name.toMono().flatMapMany { repository.findByName(it) }.collectList().mapNotNull { objList ->
+            objList.sortedWith(compareBy({ it.isRemoved }, { it.id })).firstOrNull()
+        }
             .doOnNext { e ->
                 log.debug("findOrCreateEntity > found entity with id = {} by name: {}", e.id, dto.name)
                 e.isNotifyAll = true
