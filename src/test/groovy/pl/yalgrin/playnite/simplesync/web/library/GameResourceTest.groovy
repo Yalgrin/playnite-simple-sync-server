@@ -368,6 +368,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
                             .expectNextMatches {
                                 assert it.serverId != null
+                                assert it.id == toSave.id
+                                assert it.baseObjectId == collectedIds.first
+                                assert it.gameId == toSave.gameId
+                                assert it.pluginId == toSave.pluginId
                                 assert it.changedFields != null
                                 assert it.changedFields.size() == 4
                                 assert it.changedFields.contains("Name")
@@ -439,6 +443,10 @@ class GameResourceTest extends AbstractObjectWithDiffTest<Game, GameDTO> {
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
                             .expectNextMatches {
                                 assert it.serverId != null
+                                assert it.id == toSave.id
+                                assert it.baseObjectId == collectedIds.first
+                                assert it.gameId == toSave.gameId
+                                assert it.pluginId == toSave.pluginId
                                 assert it.changedFields != null
                                 assert it.changedFields.size() == 4
                                 assert it.changedFields.contains("Name")

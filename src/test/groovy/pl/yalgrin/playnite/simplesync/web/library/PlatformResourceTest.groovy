@@ -321,6 +321,8 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PlatformDiffDTO.class))
                             .expectNextMatches {
                                 assert it.serverId != null
+                                assert it.id == toSave.id
+                                assert it.baseObjectId == collectedIds.first
                                 assert it.changedFields != null
                                 assert it.changedFields.size() == 1
                                 assert it.changedFields.contains("Name")
@@ -365,6 +367,8 @@ class PlatformResourceTest extends AbstractObjectWithDiffTest<Platform, Platform
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PlatformDiffDTO.class))
                             .expectNextMatches {
                                 assert it.serverId != null
+                                assert it.id == toSave.id
+                                assert it.baseObjectId == collectedIds.first
                                 assert it.changedFields != null
                                 assert it.changedFields.size() == 2
                                 assert it.changedFields.contains("Name")

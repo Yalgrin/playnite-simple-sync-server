@@ -21,7 +21,9 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
     ): Triple<Game, GameDiffDTO, MutableList<String>> {
         val result = super.fillBasicFields(dto, entity, generatedDiffDTO)
         val changedEntity = result.first
+        val changedDiff = result.second
         val changedFields = result.third
+
         if (MapperUtil.hasChanged(changedEntity.gameId, dto.gameId)) {
             changedEntity.gameId = dto.gameId
             changedFields.add(GameFields.GAME_ID)
@@ -30,6 +32,8 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
             changedEntity.pluginId = dto.pluginId
             changedFields.add(GameFields.PLUGIN_ID)
         }
+        changedDiff.gameId = changedEntity.gameId
+        changedDiff.pluginId = changedEntity.pluginId
         return result
     }
 
@@ -213,6 +217,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
     ): Triple<Game, GameDiffDTO, MutableList<String>> {
         val result = super.fillBasicFields(referenceDTO, entity, newDTO)
         val changedEntity = result.first
+        val changedDiff = result.second
         val changedFields = result.third
         if (MapperUtil.hasChanged(changedEntity.gameId, referenceDTO.gameId)) {
             changedEntity.gameId = referenceDTO.gameId
@@ -222,6 +227,8 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
             changedEntity.pluginId = referenceDTO.pluginId
             changedFields.add(GameFields.PLUGIN_ID)
         }
+        changedDiff.gameId = changedEntity.gameId
+        changedDiff.pluginId = changedEntity.pluginId
         return result
     }
 
@@ -587,8 +594,8 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
 
     override fun fillBasicDiffEntityFields(diffEntity: GameDiff, entity: Game, dto: GameDiffDTO): GameDiff {
         val result = super.fillBasicDiffEntityFields(diffEntity, entity, dto)
-        result.gameId = entity.gameId
-        result.pluginId = entity.pluginId
+        result.gameId = dto.gameId ?: entity.gameId
+        result.pluginId = dto.pluginId ?: entity.pluginId
         return result
     }
 
@@ -642,13 +649,8 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
         diffEntity: GameDiff
     ): Pair<GameDiffDTO, GameDiffDatabaseModel> {
         val result = super.fillBasicDiffDtoFields(diffDto, dbModel, entity, diffEntity)
-        val changedFields = result.second.changedFields
-        if (changedFields.contains(GameFields.GAME_ID)) {
-            result.first.gameId = entity.gameId
-        }
-        if (changedFields.contains(GameFields.PLUGIN_ID)) {
-            result.first.pluginId = entity.pluginId
-        }
+        result.first.gameId = entity.gameId
+        result.first.pluginId = entity.pluginId
         return result
     }
 
@@ -658,7 +660,8 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
         entity: Game,
         diffEntity: GameDiff
     ): Mono<GameDiffDTO> {
-        return entity.extractDbModelOrEmpty()
+        return super.fillOtherFieldsFromDiffEntity(diffDTO, dbModel, entity, diffEntity)
+            .then(entity.extractDbModelOrEmpty())
             .doOnNext { targetDto ->
                 val changedFields = dbModel.changedFields
                 if (changedFields.contains(GameFields.DESCRIPTION)) {

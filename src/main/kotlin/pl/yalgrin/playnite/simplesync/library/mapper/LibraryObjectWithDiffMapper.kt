@@ -129,14 +129,11 @@ abstract class LibraryObjectWithDiffMapperImpl<
     ): Pair<DIFF_DTO, DB_MODEL> {
         val changedFields: List<String> = dbModel.changedFields
         diffDto.serverId = diffEntity.id
+        diffDto.id = diffEntity.playniteId
+        diffDto.baseObjectId = dbModel.baseObjectId
+        diffDto.name = diffEntity.name
         diffDto.createdAt = diffEntity.createdAt
         diffDto.createdBy = diffEntity.createdBy
-        if (changedFields.contains(LibraryObjectFields.ID)) {
-            diffDto.id = entity.playniteId
-        }
-        if (changedFields.contains(LibraryObjectFields.NAME)) {
-            diffDto.name = entity.name
-        }
         if (changedFields.contains(LibraryObjectFields.REMOVED)) {
             diffDto.isRemoved = entity.isRemoved
         }
@@ -171,6 +168,7 @@ abstract class LibraryObjectWithDiffMapperImpl<
     ): Triple<E, DIFF_DTO, MutableList<String>> {
         val changedFields = mutableListOf<String>()
         newDTO.id = referenceDTO.id
+        newDTO.baseObjectId = entity.id
         if (referenceDTO.changedFields.contains(LibraryObjectFields.NAME) && !Strings.CS.equals(
                 entity.name,
                 referenceDTO.name
@@ -186,6 +184,8 @@ abstract class LibraryObjectWithDiffMapperImpl<
             newDTO.isRemoved = referenceDTO.isRemoved
             changedFields.add(LibraryObjectFields.REMOVED)
         }
+        newDTO.name = entity.name
+        newDTO.isRemoved = entity.isRemoved
         return Triple(entity, newDTO, changedFields)
     }
 

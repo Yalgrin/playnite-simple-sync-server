@@ -97,13 +97,14 @@ class PlatformMapper :
         entity: Platform,
         diffEntity: PlatformDiff
     ): Mono<PlatformDiffDTO> {
-        return Mono.fromSupplier { dbModel.changedFields }
-            .doOnNext { changedFields ->
-                if (changedFields.contains("SpecificationId")) {
-                    diffDTO.specificationId = entity.specificationId
+        return super.fillOtherFieldsFromDiffEntity(diffDTO, dbModel, entity, diffEntity)
+            .then(Mono.fromSupplier { dbModel.changedFields }
+                .doOnNext { changedFields ->
+                    if (changedFields.contains("SpecificationId")) {
+                        diffDTO.specificationId = entity.specificationId
+                    }
                 }
-            }
-            .thenReturn(diffDTO)
+                .thenReturn(diffDTO))
     }
 
     override fun createDTO(): PlatformDTO = PlatformDTO()
