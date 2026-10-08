@@ -13,10 +13,9 @@ import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService
 import pl.yalgrin.playnite.simplesync.change.service.ChangeService
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.helper.ITransactional
 import pl.yalgrin.playnite.simplesync.common.util.first
 import pl.yalgrin.playnite.simplesync.common.util.thenAny
-import pl.yalgrin.playnite.simplesync.common.util.transactional
-import pl.yalgrin.playnite.simplesync.common.util.transactionalReadOnly
 import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectDiffEntity
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity
@@ -47,8 +46,8 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
     protected val changeService: ChangeService,
     protected val changeListenerService: ChangeListenerService,
     protected val metadataService: MetadataService,
-    protected val transactionManager: ReactiveTransactionManager
-) : LibraryObjectWithDiffSaveService<DTO, DIFF_DTO, PANEL_DTO> {
+    override val reactiveTransactionManager: ReactiveTransactionManager
+) : LibraryObjectWithDiffSaveService<DTO, DIFF_DTO, PANEL_DTO>, ITransactional {
 
     protected val log: Logger by lazy { LoggerFactory.getLogger(AopUtils.getTargetClass(this)) }
 
@@ -58,7 +57,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         saveFiles: Boolean
     ): Mono<DTO> {
         return saveObject(dto, fileParts, saveFiles)
-            .transactional(transactionManager)
+            .transactional()
             .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
     }
 
@@ -315,7 +314,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
 
     override fun saveObjectDiffAndPublishChanges(diffDto: DIFF_DTO, fileParts: Flux<FilePart>): Mono<DTO> {
         return saveObjectDiff(diffDto, fileParts)
-            .transactional(transactionManager)
+            .transactional()
             .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
     }
 
@@ -424,7 +423,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         return getSessionClientId()
             .flatMap { clientId ->
                 doDeleteObject(dto, clientId)
-                    .transactional(transactionManager)
+                    .transactional()
                     .flatMap { dtoList -> changeListenerService.publishChanges(dtoList) }
             }
     }
@@ -513,7 +512,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
 
     override fun findById(id: Long): Mono<DTO> {
         return repository.findById(id).flatMap { entity -> mapper.toDTO(entity) }
-            .transactionalReadOnly(transactionManager)
+            .transactionalReadOnly()
     }
 
     override fun findDiffById(id: Long): Mono<DIFF_DTO> {
@@ -521,7 +520,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             diff.playniteId.toMono()
                 .flatMap { repository.findByPlayniteId(it).first() }
                 .flatMap { e -> mapper.toDiffDTO(e, diff) }
-        }.transactionalReadOnly(transactionManager)
+        }.transactionalReadOnly()
     }
 
     override fun saveObjectAndPublishChanges(
@@ -530,7 +529,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         saveFiles: Boolean
     ): Mono<PANEL_DTO> {
         return saveObject(dto, fileParts, saveFiles)
-            .transactional(transactionManager)
+            .transactional()
             .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
     }
 
@@ -571,7 +570,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         return getSessionClientId()
             .flatMap { clientId ->
                 doDeleteObject(dto, clientId)
-                    .transactional(transactionManager)
+                    .transactional()
                     .flatMap { dtoList -> changeListenerService.publishChanges(dtoList) }
             }
     }
@@ -619,7 +618,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
     override fun findByIdForPanel(id: Long): Mono<PANEL_DTO> {
         return repository.findById(id)
             .flatMap { entity -> panelMapper.toDTO(entity) }
-            .transactionalReadOnly(transactionManager)
+            .transactionalReadOnly()
     }
 
     override fun findAllForPanel(): Mono<List<PANEL_DTO>> {
@@ -628,7 +627,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             .flatMap { entity -> panelMapper.toDTO(entity) }
             .sort(compareBy { (it.name ?: "").lowercase() })
             .collectList()
-            .transactionalReadOnly(transactionManager)
+            .transactionalReadOnly()
     }
 
     protected abstract fun applyFileChange(entity: E, baseName: String, md5: String?): Mono<Boolean>

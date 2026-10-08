@@ -8,9 +8,8 @@ import pl.yalgrin.playnite.simplesync.change.dto.ChangeDTO
 import pl.yalgrin.playnite.simplesync.change.service.ChangeListenerService
 import pl.yalgrin.playnite.simplesync.change.service.ChangeService
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
+import pl.yalgrin.playnite.simplesync.common.helper.ITransactional
 import pl.yalgrin.playnite.simplesync.common.util.first
-import pl.yalgrin.playnite.simplesync.common.util.transactional
-import pl.yalgrin.playnite.simplesync.common.util.transactionalReadOnly
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity
 import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
 import pl.yalgrin.playnite.simplesync.library.dto.PanelObjectDTO
@@ -31,14 +30,14 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
     protected val panelMapper: PanelObjectMapperImpl<E, P>,
     protected val changeService: ChangeService,
     protected val changeListenerService: ChangeListenerService,
-    protected val transactionManager: ReactiveTransactionManager
-) : LibraryObjectSaveService<D, P> {
+    override val reactiveTransactionManager: ReactiveTransactionManager
+) : LibraryObjectSaveService<D, P>, ITransactional {
 
     protected val log: Logger by lazy { LoggerFactory.getLogger(AopUtils.getTargetClass(this)) }
 
     override fun saveObjectAndPublishChanges(dto: D): Mono<D> {
         return saveObject(dto)
-            .transactional(transactionManager)
+            .transactional()
             .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
     }
 
@@ -125,7 +124,7 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
 
     override fun deleteObjectAndPublishChanges(dto: D): Mono<Unit> {
         return deleteObject(dto)
-            .transactional(transactionManager)
+            .transactional()
             .flatMap { dtoList ->
                 changeListenerService.publishChanges(dtoList)
             }
@@ -177,7 +176,7 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
     }
     override fun saveObjectAndPublishChanges(dto: P): Mono<P> {
         return saveObject(dto)
-            .transactional(transactionManager)
+            .transactional()
             .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
     }
 
@@ -227,7 +226,7 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
 
     override fun deleteObjectAndPublishChanges(dto: P): Mono<Unit> {
         return deleteObject(dto)
-            .transactional(transactionManager)
+            .transactional()
             .flatMap { dtoList ->
                 changeListenerService.publishChanges(dtoList)
             }
@@ -287,13 +286,13 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
     override fun findById(id: Long): Mono<D> {
         return repository.findById(id)
             .flatMap { entity -> mapper.toDTO(entity) }
-            .transactionalReadOnly(transactionManager)
+            .transactionalReadOnly()
     }
 
     override fun findByIdForPanel(id: Long): Mono<P> {
         return repository.findById(id)
             .flatMap { entity -> panelMapper.toDTO(entity) }
-            .transactionalReadOnly(transactionManager)
+            .transactionalReadOnly()
     }
 
     override fun findAllForPanel(): Mono<List<P>> {
@@ -302,6 +301,6 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
             .flatMap { entity -> panelMapper.toDTO(entity) }
             .sort(compareBy { (it.name ?: "").lowercase() })
             .collectList()
-            .transactionalReadOnly(transactionManager)
+            .transactionalReadOnly()
     }
 }

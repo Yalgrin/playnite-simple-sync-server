@@ -12,7 +12,10 @@ import pl.yalgrin.playnite.simplesync.common.config.COVER_IMAGE
 import pl.yalgrin.playnite.simplesync.common.config.GAME
 import pl.yalgrin.playnite.simplesync.common.config.ICON
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
-import pl.yalgrin.playnite.simplesync.common.util.*
+import pl.yalgrin.playnite.simplesync.common.util.asJson
+import pl.yalgrin.playnite.simplesync.common.util.defaultIfEmpty
+import pl.yalgrin.playnite.simplesync.common.util.first
+import pl.yalgrin.playnite.simplesync.common.util.isNotNullAndNotBlank
 import pl.yalgrin.playnite.simplesync.exception.ForceFetchRequiredException
 import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException
 import pl.yalgrin.playnite.simplesync.library.domain.*
@@ -70,7 +73,7 @@ class GameService(
     ): Mono<GameDTO> {
         return saveGameWithDependencies(dto, fileParts, saveFiles)
             .contextWrite { ctx -> ctx.put(CTX_CURRENT_GAME_ID, dto.gameId to dto.pluginId) }
-            .transactional(transactionManager)
+            .transactional()
             .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
     }
 
@@ -219,7 +222,7 @@ class GameService(
         fileParts: Flux<FilePart>
     ): Mono<GameDTO> {
         return saveGameDiffWithDependencies(diffDto, fileParts)
-            .transactional(transactionManager)
+            .transactional()
             .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
     }
 

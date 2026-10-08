@@ -2,7 +2,7 @@ package pl.yalgrin.playnite.simplesync.panel.service
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.ReactiveTransactionManager
-import pl.yalgrin.playnite.simplesync.common.util.transactionalReadOnly
+import pl.yalgrin.playnite.simplesync.common.helper.ITransactional
 import pl.yalgrin.playnite.simplesync.library.domain.Game
 import pl.yalgrin.playnite.simplesync.library.domain.extractDbModelOrEmpty
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
@@ -18,8 +18,8 @@ import reactor.kotlin.core.publisher.toFlux
 class GameListService(
     private val gameListCustomRepository: GameListCustomRepository,
     private val gameRepository: GameRepository,
-    private val reactiveTransactionManager: ReactiveTransactionManager
-) {
+    override val reactiveTransactionManager: ReactiveTransactionManager
+) : ITransactional {
     fun findByFilter(filter: GameListFilterDTO): Mono<GameListResultDTO> {
         return gameListCustomRepository.findIdsByFilter(filter)
             .collectList()
@@ -45,7 +45,7 @@ class GameListService(
                     groupedResults = emptyMap()
                 )
             }
-            .transactionalReadOnly(reactiveTransactionManager)
+            .transactionalReadOnly()
     }
 
     private fun toGameList(game: Game): Mono<GameListDTO> {
