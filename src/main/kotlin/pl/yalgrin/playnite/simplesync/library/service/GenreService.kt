@@ -11,20 +11,25 @@ import pl.yalgrin.playnite.simplesync.library.domain.Genre
 import pl.yalgrin.playnite.simplesync.library.dto.GenreDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.GenreMapper
 import pl.yalgrin.playnite.simplesync.library.repository.GenreRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelGenreDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelGenreMapper
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class GenreService(
     repository: GenreRepository,
     mapper: GenreMapper,
+    panelMapper: PanelGenreMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     transactionManager: ReactiveTransactionManager,
     @param:Lazy
     private val gameService: GameService
-) : BaseLibraryObjectService<GenreDTO, Genre>(
+) : BaseLibraryObjectService<GenreDTO, Genre, PanelGenreDTO>(
     repository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     transactionManager
@@ -35,11 +40,17 @@ class GenreService(
         )
     }
 
+    override fun createEntityFromPanelDTO(dto: PanelGenreDTO): Genre {
+        return Genre(
+            playniteId = UUID.randomUUID().toString()
+        )
+    }
+
     override fun getObjectType(): ObjectType {
         return ObjectType.GENRE
     }
 
-    override fun doActionsAfterSave(result: LibrarySaveResult<GenreDTO>): Mono<LibrarySaveResult<GenreDTO>> {
+    override fun doActionsAfterSave(result: LibrarySaveResult<Genre>): Mono<LibrarySaveResult<Genre>> {
         return gameService.updateGenres(result)
     }
 

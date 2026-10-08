@@ -13,8 +13,10 @@ import pl.yalgrin.playnite.simplesync.common.util.transactional
 import pl.yalgrin.playnite.simplesync.common.util.transactionalReadOnly
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity
 import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
+import pl.yalgrin.playnite.simplesync.library.dto.PanelObjectDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.LibraryObjectMapperImpl
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelObjectMapperImpl
 import pl.yalgrin.playnite.simplesync.security.getSessionClientId
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -23,13 +25,14 @@ import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
 import java.time.Instant
 
-abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectEntity>(
+abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectEntity, P : PanelObjectDTO>(
     protected val repository: ObjectRepository<E>,
     protected val mapper: LibraryObjectMapperImpl<E, D>,
+    protected val panelMapper: PanelObjectMapperImpl<E, P>,
     protected val changeService: ChangeService,
     protected val changeListenerService: ChangeListenerService,
     protected val transactionManager: ReactiveTransactionManager
-) : LibraryObjectSaveService<D> {
+) : LibraryObjectSaveService<D, P> {
 
     protected val log: Logger by lazy { LoggerFactory.getLogger(AopUtils.getTargetClass(this)) }
 
@@ -52,6 +55,7 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
             .filter { it.isChanged }
             .flatMap { entity -> repository.save(entity) }
             .flatMap { entity -> saveChange(entity) }
+            .flatMap { doActionsAfterSave(it) }
             .flatMap { result ->
                 mapper.toDTO(result.savedObject)
                     .map { LibrarySaveResult(it, result.generatedChanges) }
@@ -61,7 +65,6 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
                     .flatMap { entity -> mapper.toDTO(entity) }
                     .map { LibrarySaveResult(it, emptyList()) }
             }
-            .flatMap { doActionsAfterSave(it) }
     }
 
     private fun findOrCreateEntity(dto: D): Mono<E> {
@@ -118,7 +121,7 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
         )
     }
 
-    protected open fun doActionsAfterSave(result: LibrarySaveResult<D>): Mono<LibrarySaveResult<D>> = result.toMono()
+    protected open fun doActionsAfterSave(result: LibrarySaveResult<E>): Mono<LibrarySaveResult<E>> = result.toMono()
 
     override fun deleteObjectAndPublishChanges(dto: D): Mono<Unit> {
         return deleteObject(dto)
@@ -172,6 +175,101 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
             .flatMap { it.toFlux() }
             .collectList()
     }
+    override fun saveObjectAndPublishChanges(dto: P): Mono<P> {
+        return saveObject(dto)
+            .transactional(transactionManager)
+            .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
+    }
+
+    override fun saveObject(dto: P): Mono<LibrarySaveResult<P>> {
+        return findOrCreateEntity(dto)
+            .flatMap { entity -> panelMapper.fillEntity(dto, entity) }
+            .flatMap { entity -> updateAuditingFields(entity) }
+            .doOnNext { entity ->
+                log.debug(
+                    "saveObject > entity has{} been changed!",
+                    if (entity.isChanged) "" else " not"
+                )
+            }
+            .filter { it.isChanged }
+            .flatMap { entity -> repository.save(entity) }
+            .flatMap { entity -> saveChange(entity) }
+            .flatMap { doActionsAfterSave(it) }
+            .flatMap { result ->
+                panelMapper.toDTO(result.savedObject)
+                    .map { LibrarySaveResult(it, result.generatedChanges) }
+            }
+            .switchIfEmpty {
+                findOrCreateEntity(dto)
+                    .flatMap { entity -> panelMapper.toDTO(entity) }
+                    .map { LibrarySaveResult(it, emptyList()) }
+            }
+    }
+
+    private fun findOrCreateEntity(dto: P): Mono<E> {
+        return findBasedOnId(dto)
+            .switchIfEmpty(createNewEntity(dto))
+    }
+
+    private fun findBasedOnId(dto: P): Mono<E> {
+        return dto.id.toMono().flatMapMany { repository.findById(it) }.first()
+            .doOnNext { e ->
+                log.debug("findOrCreateEntity > found entity with id = {}", e.id)
+            }
+    }
+
+    private fun createNewEntity(dto: P): Mono<E> {
+        return Mono.fromSupplier { createEntityFromPanelDTO(dto) }
+            .doOnSubscribe { _ -> log.debug("findOrCreateEntity > creating new entity...") }
+    }
+
+    protected abstract fun createEntityFromPanelDTO(dto: P): E
+
+    override fun deleteObjectAndPublishChanges(dto: P): Mono<Unit> {
+        return deleteObject(dto)
+            .transactional(transactionManager)
+            .flatMap { dtoList ->
+                changeListenerService.publishChanges(dtoList)
+            }
+    }
+
+    private fun deleteObject(dto: P): Mono<List<ChangeDTO>> {
+        return getSessionClientId().flatMap { clientId ->
+            dto.toMono()
+                .flatMapMany { d ->
+                    val id = d.id
+                    val name = d.name
+                    if (id == null || name == null) {
+                        Flux.empty()
+                    } else {
+                        repository.findByIdAndNameAndRemovedIsFalse(
+                            id,
+                            name
+                        )
+                    }
+                }
+                .map { e ->
+                    log.debug("deleteObject > marking entity with id = {} as removed", e.id)
+                    e.isRemoved = true
+                    e
+                }
+                .flatMap { entity -> updateAuditingFields(entity) }
+                .flatMap { entity -> repository.save(entity) }
+                .mapNotNull { e ->
+                    val change = createChange(clientId, e)
+                    if (change != null) {
+                        e to change
+                    } else {
+                        null
+                    }
+                }
+                .flatMap { (entity, changeDTO) ->
+                    changeService.saveChange(changeDTO).map { LibrarySaveResult(entity, listOf(it)) }
+                }
+                .collectList()
+                .flatMap { doActionsAfterDelete(it) }
+        }
+    }
 
     protected abstract fun getObjectType(): ObjectType
 
@@ -189,6 +287,21 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
     override fun findById(id: Long): Mono<D> {
         return repository.findById(id)
             .flatMap { entity -> mapper.toDTO(entity) }
+            .transactionalReadOnly(transactionManager)
+    }
+
+    override fun findByIdForPanel(id: Long): Mono<P> {
+        return repository.findById(id)
+            .flatMap { entity -> panelMapper.toDTO(entity) }
+            .transactionalReadOnly(transactionManager)
+    }
+
+    override fun findAllForPanel(): Mono<List<P>> {
+        return repository.findAll()
+            .filter { !it.isRemoved }
+            .flatMap { entity -> panelMapper.toDTO(entity) }
+            .sort(compareBy { (it.name ?: "").lowercase() })
+            .collectList()
             .transactionalReadOnly(transactionManager)
     }
 }

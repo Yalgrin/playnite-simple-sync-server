@@ -11,20 +11,25 @@ import pl.yalgrin.playnite.simplesync.library.domain.Series
 import pl.yalgrin.playnite.simplesync.library.dto.SeriesDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.SeriesMapper
 import pl.yalgrin.playnite.simplesync.library.repository.SeriesRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelSeriesDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelSeriesMapper
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class SeriesService(
     repository: SeriesRepository,
     mapper: SeriesMapper,
+    panelMapper: PanelSeriesMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     transactionManager: ReactiveTransactionManager,
     @param:Lazy
     private val gameService: GameService
-) : BaseLibraryObjectService<SeriesDTO, Series>(
+) : BaseLibraryObjectService<SeriesDTO, Series, PanelSeriesDTO>(
     repository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     transactionManager
@@ -35,11 +40,17 @@ class SeriesService(
         )
     }
 
+    override fun createEntityFromPanelDTO(dto: PanelSeriesDTO): Series {
+        return Series(
+            playniteId = UUID.randomUUID().toString()
+        )
+    }
+
     override fun getObjectType(): ObjectType {
         return ObjectType.SERIES
     }
 
-    override fun doActionsAfterSave(result: LibrarySaveResult<SeriesDTO>): Mono<LibrarySaveResult<SeriesDTO>> {
+    override fun doActionsAfterSave(result: LibrarySaveResult<Series>): Mono<LibrarySaveResult<Series>> {
         return gameService.updateSeries(result)
     }
 

@@ -11,20 +11,25 @@ import pl.yalgrin.playnite.simplesync.library.domain.Tag
 import pl.yalgrin.playnite.simplesync.library.dto.TagDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.TagMapper
 import pl.yalgrin.playnite.simplesync.library.repository.TagRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelTagDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelTagMapper
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class TagService(
     repository: TagRepository,
     mapper: TagMapper,
+    panelMapper: PanelTagMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     transactionManager: ReactiveTransactionManager,
     @param:Lazy
     private val gameService: GameService
-) : BaseLibraryObjectService<TagDTO, Tag>(
+) : BaseLibraryObjectService<TagDTO, Tag, PanelTagDTO>(
     repository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     transactionManager
@@ -35,11 +40,17 @@ class TagService(
         )
     }
 
+    override fun createEntityFromPanelDTO(dto: PanelTagDTO): Tag {
+        return Tag(
+            playniteId = UUID.randomUUID().toString()
+        )
+    }
+
     override fun getObjectType(): ObjectType {
         return ObjectType.TAG
     }
 
-    override fun doActionsAfterSave(result: LibrarySaveResult<TagDTO>): Mono<LibrarySaveResult<TagDTO>> {
+    override fun doActionsAfterSave(result: LibrarySaveResult<Tag>): Mono<LibrarySaveResult<Tag>> {
         return gameService.updateTags(result)
     }
 

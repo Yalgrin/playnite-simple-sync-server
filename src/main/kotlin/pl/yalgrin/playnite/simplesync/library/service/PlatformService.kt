@@ -19,23 +19,28 @@ import pl.yalgrin.playnite.simplesync.library.dto.PlatformDiffDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.PlatformMapper
 import pl.yalgrin.playnite.simplesync.library.repository.PlatformDiffRepository
 import pl.yalgrin.playnite.simplesync.library.repository.PlatformRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelPlatformDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelPlatformMapper
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class PlatformService(
     gameRepository: PlatformRepository,
     diffRepository: PlatformDiffRepository,
     mapper: PlatformMapper,
+    panelMapper: PanelPlatformMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     metadataService: MetadataService,
     transactionManager: ReactiveTransactionManager,
     @param:Lazy
     private val gameService: GameService
-) : BaseLibraryObjectWithDiffService<PlatformDTO, PlatformDiffDTO, Platform, PlatformDiff>(
+) : BaseLibraryObjectWithDiffService<PlatformDTO, PlatformDiffDTO, PanelPlatformDTO, Platform, PlatformDiff>(
     gameRepository,
     diffRepository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     metadataService,
@@ -115,11 +120,17 @@ class PlatformService(
 
     override fun getDiffType(): ObjectType = ObjectType.PLATFORM_DIFF
 
-    override fun doActionsAfterSave(result: LibrarySaveResult<PlatformDTO>): Mono<LibrarySaveResult<PlatformDTO>> {
+    override fun doActionsAfterSave(result: LibrarySaveResult<Platform>): Mono<LibrarySaveResult<Platform>> {
         return gameService.updatePlatforms(result)
     }
 
     override fun doActionsAfterDelete(results: List<LibrarySaveResult<Platform>>): Mono<List<ChangeDTO>> {
         return gameService.updatePlatformsAfterDelete(results)
+    }
+
+    override fun createEntityFromPanelDTO(dto: PanelPlatformDTO): Platform {
+        return Platform(
+            playniteId = UUID.randomUUID().toString()
+        )
     }
 }

@@ -23,7 +23,7 @@ class ConnectionService(
     private val changeMessageMapper: ChangeMessageMapper
 ) {
     //TODO remove the forceOpen flag
-    fun connect(forceOpen: Boolean = false): Flux<ServerSentEvent<ConnectionMessage>> {
+    fun connect(forceOpen: Boolean = false): Flux<ServerSentEvent<List<ConnectionMessage>>> {
         return createSession()
             .flatMap { sessionInfo ->
                 registeredClientService.updateConnectedTime(sessionInfo.clientId)
@@ -32,7 +32,7 @@ class ConnectionService(
             .flatMapMany { sessionInfo ->
                 Flux.mergeSequential(
                     Mono.fromSupplier { InitializationMessage(sessionInfo.sessionId) }
-                        .map { ServerSentEvent.builder<ConnectionMessage>().data(it).build() },
+                        .map { ServerSentEvent.builder<List<ConnectionMessage>>().data(listOf(it)).build() },
                     Flux.merge(
                         Flux.interval(Duration.ofSeconds(30)).map { createHeartbeat() },
                         changeListenerService.modificationFlux()
@@ -44,10 +44,12 @@ class ConnectionService(
                                         .map { it.enabledChangeStream }
                                         .defaultIfEmpty(false)
                             }.map {
-                            ServerSentEvent.builder<ConnectionMessage>().data(
                                 changeMessageMapper.toMessage(it)
-                            ).build()
                         }
+                            .buffer(Duration.ofMillis(100))
+                            .map {
+                                ServerSentEvent.builder<List<ConnectionMessage>>().data(it).build()
+                            }
                     )
                 )
                     .doOnSubscribe { sessionManager.saveSessionInfo(sessionInfo) }

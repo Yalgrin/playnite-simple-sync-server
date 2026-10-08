@@ -11,20 +11,25 @@ import pl.yalgrin.playnite.simplesync.library.domain.Category
 import pl.yalgrin.playnite.simplesync.library.dto.CategoryDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.CategoryMapper
 import pl.yalgrin.playnite.simplesync.library.repository.CategoryRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelCategoryDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelCategoryMapper
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class CategoryService(
     repository: CategoryRepository,
     mapper: CategoryMapper,
+    panelMapper: PanelCategoryMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     transactionManager: ReactiveTransactionManager,
     @param:Lazy
     private val gameService: GameService
-) : BaseLibraryObjectService<CategoryDTO, Category>(
+) : BaseLibraryObjectService<CategoryDTO, Category, PanelCategoryDTO>(
     repository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     transactionManager
@@ -35,11 +40,17 @@ class CategoryService(
         )
     }
 
+    override fun createEntityFromPanelDTO(dto: PanelCategoryDTO): Category {
+        return Category(
+            playniteId = UUID.randomUUID().toString()
+        )
+    }
+
     override fun getObjectType(): ObjectType {
         return ObjectType.CATEGORY
     }
 
-    override fun doActionsAfterSave(result: LibrarySaveResult<CategoryDTO>): Mono<LibrarySaveResult<CategoryDTO>> {
+    override fun doActionsAfterSave(result: LibrarySaveResult<Category>): Mono<LibrarySaveResult<Category>> {
         return gameService.updateCategories(result)
     }
 

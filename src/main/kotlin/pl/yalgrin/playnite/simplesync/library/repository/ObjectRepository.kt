@@ -17,5 +17,7 @@ interface ObjectRepository<E : LibraryObjectEntity> : R2dbcRepository<E, Long> {
 
     fun findByName(name: String): Flux<E>
 
+    fun findByIdAndNameAndRemovedIsFalse(id: Long, name: String): Flux<E>
+
     fun findByPlayniteIdAndNameAndRemovedIsFalse(playniteId: String, name: String): Flux<E>
 }

@@ -11,20 +11,25 @@ import pl.yalgrin.playnite.simplesync.library.domain.AgeRating
 import pl.yalgrin.playnite.simplesync.library.dto.AgeRatingDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.AgeRatingMapper
 import pl.yalgrin.playnite.simplesync.library.repository.AgeRatingRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelAgeRatingDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelAgeRatingMapper
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class AgeRatingService(
     repository: AgeRatingRepository,
     mapper: AgeRatingMapper,
+    panelMapper: PanelAgeRatingMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     transactionManager: ReactiveTransactionManager,
     @param:Lazy
     private val gameService: GameService
-) : BaseLibraryObjectService<AgeRatingDTO, AgeRating>(
+) : BaseLibraryObjectService<AgeRatingDTO, AgeRating, PanelAgeRatingDTO>(
     repository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     transactionManager
@@ -35,11 +40,17 @@ class AgeRatingService(
         )
     }
 
+    override fun createEntityFromPanelDTO(dto: PanelAgeRatingDTO): AgeRating {
+        return AgeRating(
+            playniteId = UUID.randomUUID().toString()
+        )
+    }
+
     override fun getObjectType(): ObjectType {
         return ObjectType.AGE_RATING
     }
 
-    override fun doActionsAfterSave(result: LibrarySaveResult<AgeRatingDTO>): Mono<LibrarySaveResult<AgeRatingDTO>> {
+    override fun doActionsAfterSave(result: LibrarySaveResult<AgeRating>): Mono<LibrarySaveResult<AgeRating>> {
         return gameService.updateAgeRatings(result)
     }
 

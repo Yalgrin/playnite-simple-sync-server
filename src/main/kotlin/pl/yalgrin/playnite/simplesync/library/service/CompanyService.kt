@@ -11,20 +11,25 @@ import pl.yalgrin.playnite.simplesync.library.domain.Company
 import pl.yalgrin.playnite.simplesync.library.dto.CompanyDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.CompanyMapper
 import pl.yalgrin.playnite.simplesync.library.repository.CompanyRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelCompanyDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelCompanyMapper
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class CompanyService(
     repository: CompanyRepository,
     mapper: CompanyMapper,
+    panelMapper: PanelCompanyMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     transactionManager: ReactiveTransactionManager,
     @param:Lazy
     private val gameService: GameService
-) : BaseLibraryObjectService<CompanyDTO, Company>(
+) : BaseLibraryObjectService<CompanyDTO, Company, PanelCompanyDTO>(
     repository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     transactionManager
@@ -35,11 +40,17 @@ class CompanyService(
         )
     }
 
+    override fun createEntityFromPanelDTO(dto: PanelCompanyDTO): Company {
+        return Company(
+            playniteId = UUID.randomUUID().toString()
+        )
+    }
+
     override fun getObjectType(): ObjectType {
         return ObjectType.COMPANY
     }
 
-    override fun doActionsAfterSave(result: LibrarySaveResult<CompanyDTO>): Mono<LibrarySaveResult<CompanyDTO>> {
+    override fun doActionsAfterSave(result: LibrarySaveResult<Company>): Mono<LibrarySaveResult<Company>> {
         return gameService.updateCompanies(result)
     }
 

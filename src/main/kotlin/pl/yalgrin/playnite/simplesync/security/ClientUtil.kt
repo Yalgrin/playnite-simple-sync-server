@@ -2,6 +2,7 @@ package pl.yalgrin.playnite.simplesync.security
 
 import org.springframework.security.core.context.ReactiveSecurityContextHolder
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
+import pl.yalgrin.playnite.simplesync.common.util.defaultIfEmpty
 import reactor.core.publisher.Mono
 
 fun getSessionInfo(): Mono<SessionInfoDTO> {
@@ -17,6 +18,8 @@ fun getSessionInfo(): Mono<SessionInfoDTO> {
 }
 
 fun getSessionClientId(): Mono<String> {
+    //TODO
     return getSessionInfo()
         .map { it.clientId }
+        .defaultIfEmpty { "empty" }
 }

@@ -11,20 +11,25 @@ import pl.yalgrin.playnite.simplesync.library.domain.Region
 import pl.yalgrin.playnite.simplesync.library.dto.RegionDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.RegionMapper
 import pl.yalgrin.playnite.simplesync.library.repository.RegionRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelRegionDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelRegionMapper
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class RegionService(
     repository: RegionRepository,
     mapper: RegionMapper,
+    panelMapper: PanelRegionMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     transactionManager: ReactiveTransactionManager,
     @param:Lazy
     private val gameService: GameService
-) : BaseLibraryObjectService<RegionDTO, Region>(
+) : BaseLibraryObjectService<RegionDTO, Region, PanelRegionDTO>(
     repository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     transactionManager
@@ -35,11 +40,17 @@ class RegionService(
         )
     }
 
+    override fun createEntityFromPanelDTO(dto: PanelRegionDTO): Region {
+        return Region(
+            playniteId = UUID.randomUUID().toString()
+        )
+    }
+
     override fun getObjectType(): ObjectType {
         return ObjectType.REGION
     }
 
-    override fun doActionsAfterSave(result: LibrarySaveResult<RegionDTO>): Mono<LibrarySaveResult<RegionDTO>> {
+    override fun doActionsAfterSave(result: LibrarySaveResult<Region>): Mono<LibrarySaveResult<Region>> {
         return gameService.updateRegions(result)
     }
 

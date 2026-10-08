@@ -20,15 +20,19 @@ import pl.yalgrin.playnite.simplesync.library.dto.*
 import pl.yalgrin.playnite.simplesync.library.mapper.GameMapper
 import pl.yalgrin.playnite.simplesync.library.repository.GameDiffRepository
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelGameDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelGameMapper
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
+import java.util.*
 
 @Service
 class GameService(
     protected val gameRepository: GameRepository,
     diffRepository: GameDiffRepository,
     mapper: GameMapper,
+    panelMapper: PanelGameMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     metadataService: MetadataService,
@@ -45,10 +49,11 @@ class GameService(
     protected val regionService: RegionService,
     protected val sourceService: SourceService,
     protected val completionStatusService: CompletionStatusService
-) : BaseLibraryObjectWithDiffService<GameDTO, GameDiffDTO, Game, GameDiff>(
+) : BaseLibraryObjectWithDiffService<GameDTO, GameDiffDTO, PanelGameDTO, Game, GameDiff>(
     gameRepository,
     diffRepository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     metadataService,
@@ -111,7 +116,7 @@ class GameService(
 
     private fun <T : LibraryObjectDTO> saveRelatedObjects(
         dto: GameDTO,
-        service: LibraryObjectSaveService<T>,
+        service: LibraryObjectSaveService<T, *>,
         dtoGetter: (GameDTO) -> List<T>,
         dtoSetter: (GameDTO, List<T>) -> Unit,
     ): Mono<List<ChangeDTO>> {
@@ -136,7 +141,7 @@ class GameService(
 
     private fun <T : LibraryObjectDTO> saveRelatedObject(
         dto: GameDTO,
-        service: LibraryObjectSaveService<T>,
+        service: LibraryObjectSaveService<T, *>,
         dtoGetter: (GameDTO) -> T?,
         dtoSetter: (GameDTO, T) -> Unit,
     ): Mono<List<ChangeDTO>> {
@@ -312,7 +317,7 @@ class GameService(
 
     private fun <T : LibraryObjectDTO> saveRelatedDiffObjects(
         dto: GameDiffDTO,
-        service: LibraryObjectSaveService<T>,
+        service: LibraryObjectSaveService<T, *>,
         fieldName: String,
         dtoGetter: (GameDiffDTO) -> List<T>,
         dtoSetter: (GameDiffDTO, List<T>) -> Unit
@@ -350,7 +355,7 @@ class GameService(
 
     private fun <T : LibraryObjectDTO> saveRelatedDiffObject(
         dto: GameDiffDTO,
-        service: LibraryObjectSaveService<T>,
+        service: LibraryObjectSaveService<T, *>,
         fieldName: String?,
         dtoGetter: (GameDiffDTO) -> T?,
         dtoSetter: (GameDiffDTO, T) -> Unit
@@ -435,6 +440,12 @@ class GameService(
         )
     }
 
+    override fun createEntityFromPanelDTO(dto: PanelGameDTO): Game {
+        return Game(
+            playniteId = UUID.randomUUID().toString()
+        )
+    }
+
     override fun getMetadataFields(): Set<String> {
         return setOf(ICON, COVER_IMAGE, BACKGROUND_IMAGE)
     }
@@ -471,16 +482,16 @@ class GameService(
 
     override fun getDiffType(): ObjectType = ObjectType.GAME_DIFF
 
-    fun updateLibraryPlugins(saveResult: LibrarySaveResult<LibraryPluginDTO>): Mono<LibrarySaveResult<LibraryPluginDTO>> {
+    fun updateLibraryPlugins(saveResult: LibrarySaveResult<LibraryPlugin>): Mono<LibrarySaveResult<LibraryPlugin>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }
+                Mono.fromSupplier { result.savedObject.playniteId }
                     .flatMapMany { gameRepository.findByLibraryPluginIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
-                if (savedObject.id == dbModel.pluginId && savedObject.name != dbModel.pluginName) {
+                if (savedObject.playniteId == dbModel.pluginId && savedObject.name != dbModel.pluginName) {
                     dbModel.pluginName = savedObject.name
                     gameDiffDTO.pluginName = savedObject.name
                     gameDiffDTO.changedFields = mutableListOf(GameFields.PLUGIN_NAME)
@@ -492,23 +503,23 @@ class GameService(
             })
     }
 
-    fun updateGenres(saveResult: LibrarySaveResult<GenreDTO>): Mono<LibrarySaveResult<GenreDTO>> {
+    fun updateGenres(saveResult: LibrarySaveResult<Genre>): Mono<LibrarySaveResult<Genre>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }.flatMapMany { gameRepository.findByGenreIds(listOf(it)) }
+                Mono.fromSupplier { result.savedObject.playniteId }
+                    .flatMapMany { gameRepository.findByGenreIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObjects = dbModel.genres.map { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        GenreDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         subObject
@@ -553,23 +564,24 @@ class GameService(
             })
     }
 
-    fun updatePlatforms(saveResult: LibrarySaveResult<PlatformDTO>): Mono<LibrarySaveResult<PlatformDTO>> {
+    fun updatePlatforms(saveResult: LibrarySaveResult<Platform>): Mono<LibrarySaveResult<Platform>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }.flatMapMany { gameRepository.findByPlatformIds(listOf(it)) }
+                Mono.fromSupplier { result.savedObject.playniteId }
+                    .flatMapMany { gameRepository.findByPlatformIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObjects = dbModel.platforms.map { subObject ->
-                    if (subObject.id == savedObject.id && (subObject.name != savedObject.name || subObject.specificationId != savedObject.specificationId)) {
+                    if (subObject.id == savedObject.playniteId && (subObject.name != savedObject.name || subObject.specificationId != savedObject.specificationId)) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        PlatformDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name,
+                            specificationId = savedObject.specificationId
                         )
                     } else {
                         subObject
@@ -614,37 +626,36 @@ class GameService(
             })
     }
 
-    fun updateCompanies(saveResult: LibrarySaveResult<CompanyDTO>): Mono<LibrarySaveResult<CompanyDTO>> {
+    fun updateCompanies(saveResult: LibrarySaveResult<Company>): Mono<LibrarySaveResult<Company>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }.flatMapMany { gameRepository.findByCompanyIds(listOf(it)) }
+                Mono.fromSupplier { result.savedObject.playniteId }
+                    .flatMapMany { gameRepository.findByCompanyIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changedAnyPublishers = false
                 var changedAnyDevelopers = false
                 val changedPublishers = dbModel.publishers.map { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changedAnyPublishers = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        CompanyDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         subObject
                     }
                 }
                 val changedDevelopers = dbModel.developers.map { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changedAnyDevelopers = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        CompanyDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         subObject
@@ -716,23 +727,23 @@ class GameService(
             })
     }
 
-    fun updateCategories(saveResult: LibrarySaveResult<CategoryDTO>): Mono<LibrarySaveResult<CategoryDTO>> {
+    fun updateCategories(saveResult: LibrarySaveResult<Category>): Mono<LibrarySaveResult<Category>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }.flatMapMany { gameRepository.findByCategoryIds(listOf(it)) }
+                Mono.fromSupplier { result.savedObject.playniteId }
+                    .flatMapMany { gameRepository.findByCategoryIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObjects = dbModel.categories.map { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        CategoryDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         subObject
@@ -777,23 +788,23 @@ class GameService(
             })
     }
 
-    fun updateTags(saveResult: LibrarySaveResult<TagDTO>): Mono<LibrarySaveResult<TagDTO>> {
+    fun updateTags(saveResult: LibrarySaveResult<Tag>): Mono<LibrarySaveResult<Tag>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }.flatMapMany { gameRepository.findByTagIds(listOf(it)) }
+                Mono.fromSupplier { result.savedObject.playniteId }
+                    .flatMapMany { gameRepository.findByTagIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObjects = dbModel.tags.map { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        TagDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         subObject
@@ -838,23 +849,23 @@ class GameService(
             })
     }
 
-    fun updateFeatures(saveResult: LibrarySaveResult<FeatureDTO>): Mono<LibrarySaveResult<FeatureDTO>> {
+    fun updateFeatures(saveResult: LibrarySaveResult<Feature>): Mono<LibrarySaveResult<Feature>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }.flatMapMany { gameRepository.findByFeatureIds(listOf(it)) }
+                Mono.fromSupplier { result.savedObject.playniteId }
+                    .flatMapMany { gameRepository.findByFeatureIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObjects = dbModel.features.map { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        FeatureDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         subObject
@@ -899,23 +910,23 @@ class GameService(
             })
     }
 
-    fun updateSeries(saveResult: LibrarySaveResult<SeriesDTO>): Mono<LibrarySaveResult<SeriesDTO>> {
+    fun updateSeries(saveResult: LibrarySaveResult<Series>): Mono<LibrarySaveResult<Series>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }.flatMapMany { gameRepository.findBySeriesIds(listOf(it)) }
+                Mono.fromSupplier { result.savedObject.playniteId }
+                    .flatMapMany { gameRepository.findBySeriesIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObjects = dbModel.series.map { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        SeriesDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         subObject
@@ -960,24 +971,24 @@ class GameService(
             })
     }
 
-    fun updateAgeRatings(saveResult: LibrarySaveResult<AgeRatingDTO>): Mono<LibrarySaveResult<AgeRatingDTO>> {
+    fun updateAgeRatings(saveResult: LibrarySaveResult<AgeRating>): Mono<LibrarySaveResult<AgeRating>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }
+                Mono.fromSupplier { result.savedObject.playniteId }
                     .flatMapMany { gameRepository.findByAgeRatingIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObjects = dbModel.ageRatings.map { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        //TODO powydzielac to do oddzielnych mapperow
+                        AgeRatingDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         subObject
@@ -1022,23 +1033,24 @@ class GameService(
             })
     }
 
-    fun updateRegions(saveResult: LibrarySaveResult<RegionDTO>): Mono<LibrarySaveResult<RegionDTO>> {
+    fun updateRegions(saveResult: LibrarySaveResult<Region>): Mono<LibrarySaveResult<Region>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }.flatMapMany { gameRepository.findByRegionIds(listOf(it)) }
+                Mono.fromSupplier { result.savedObject.playniteId }
+                    .flatMapMany { gameRepository.findByRegionIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObjects = dbModel.regions.map { subObject ->
-                    if (subObject.id == savedObject.id && (subObject.name != savedObject.name || subObject.specificationId != savedObject.specificationId)) {
+                    if (subObject.id == savedObject.playniteId && (subObject.name != savedObject.name || subObject.specificationId != savedObject.specificationId)) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        RegionDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name,
+                            specificationId = savedObject.specificationId
                         )
                     } else {
                         subObject
@@ -1083,23 +1095,23 @@ class GameService(
             })
     }
 
-    fun updateSources(saveResult: LibrarySaveResult<SourceDTO>): Mono<LibrarySaveResult<SourceDTO>> {
+    fun updateSources(saveResult: LibrarySaveResult<Source>): Mono<LibrarySaveResult<Source>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }.flatMapMany { gameRepository.findBySourceIds(listOf(it)) }
+                Mono.fromSupplier { result.savedObject.playniteId }
+                    .flatMapMany { gameRepository.findBySourceIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObject = dbModel.source?.let { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        SourceDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         null
@@ -1141,24 +1153,23 @@ class GameService(
             })
     }
 
-    fun updateCompletionStatus(saveResult: LibrarySaveResult<CompletionStatusDTO>): Mono<LibrarySaveResult<CompletionStatusDTO>> {
+    fun updateCompletionStatus(saveResult: LibrarySaveResult<CompletionStatus>): Mono<LibrarySaveResult<CompletionStatus>> {
         return propagateReferenceUpdate(
             saveResult,
             { result ->
-                Mono.fromSupplier { result.savedObject.id }
+                Mono.fromSupplier { result.savedObject.playniteId }
                     .flatMapMany { gameRepository.findByCompletionStatusIds(listOf(it)) }
             },
             { game, dbModel, savedObject ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false
                 val changedObject = dbModel.completionStatus?.let { subObject ->
-                    if (subObject.id == savedObject.id && subObject.name != savedObject.name) {
+                    if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changed = true
-                        savedObject.copy(
-                            createdAt = null,
-                            createdBy = null,
-                            modifiedAt = null,
-                            modifiedBy = null
+                        CompletionStatusDTO(
+                            serverId = savedObject.id,
+                            id = savedObject.playniteId,
+                            name = savedObject.name
                         )
                     } else {
                         null
@@ -1179,7 +1190,7 @@ class GameService(
     fun updateCompletionStatusesAfterDelete(results: List<LibrarySaveResult<CompletionStatus>>): Mono<List<ChangeDTO>> {
         return propagateReferenceDelete(
             results,
-            { ids -> gameRepository.findBySourceIds(ids) },
+            { ids -> gameRepository.findByCompletionStatusIds(ids) },
             { game, dbModel, ids ->
                 val gameDiffDTO = createDiffDTO(game)
                 var changed = false

@@ -17,23 +17,28 @@ import pl.yalgrin.playnite.simplesync.library.dto.LibraryPluginDiffDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.LibraryPluginMapper
 import pl.yalgrin.playnite.simplesync.library.repository.LibraryPluginDiffRepository
 import pl.yalgrin.playnite.simplesync.library.repository.LibraryPluginRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelLibraryPluginDTO
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelLibraryPluginMapper
 import reactor.core.publisher.Mono
+import java.util.*
 
 @Service
 class LibraryPluginService(
     gameRepository: LibraryPluginRepository,
     diffRepository: LibraryPluginDiffRepository,
     mapper: LibraryPluginMapper,
+    panelMapper: PanelLibraryPluginMapper,
     changeService: ChangeService,
     changeListenerService: ChangeListenerService,
     metadataService: MetadataService,
     transactionManager: ReactiveTransactionManager,
     @param:Lazy
     private val gameService: GameService
-) : BaseLibraryObjectWithDiffService<LibraryPluginDTO, LibraryPluginDiffDTO, LibraryPlugin, LibraryPluginDiff>(
+) : BaseLibraryObjectWithDiffService<LibraryPluginDTO, LibraryPluginDiffDTO, PanelLibraryPluginDTO, LibraryPlugin, LibraryPluginDiff>(
     gameRepository,
     diffRepository,
     mapper,
+    panelMapper,
     changeService,
     changeListenerService,
     metadataService,
@@ -72,6 +77,12 @@ class LibraryPluginService(
         )
     }
 
+    override fun createEntityFromPanelDTO(dto: PanelLibraryPluginDTO): LibraryPlugin {
+        return LibraryPlugin(
+            playniteId = UUID.randomUUID().toString()
+        )
+    }
+
     override fun getMetadataFields(): Set<String> {
         return setOf(ICON, BACKGROUND_IMAGE)
     }
@@ -104,7 +115,7 @@ class LibraryPluginService(
 
     override fun getDiffType(): ObjectType = ObjectType.LIBRARY_PLUGIN_DIFF
 
-    override fun doActionsAfterSave(result: LibrarySaveResult<LibraryPluginDTO>): Mono<LibrarySaveResult<LibraryPluginDTO>> {
+    override fun doActionsAfterSave(result: LibrarySaveResult<LibraryPlugin>): Mono<LibrarySaveResult<LibraryPlugin>> {
         return gameService.updateLibraryPlugins(result)
     }
 }

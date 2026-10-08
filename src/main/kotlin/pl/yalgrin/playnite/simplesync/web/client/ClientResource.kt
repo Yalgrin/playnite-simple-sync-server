@@ -13,6 +13,7 @@ import pl.yalgrin.playnite.simplesync.client.service.ConnectionService
 import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.toFlux
 
 @RestController
 @RequestMapping("/api/client")
@@ -38,7 +39,11 @@ class ClientResource(
 
     @PostMapping("/connect", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun connect(): Flux<ServerSentEvent<ConnectionMessage>> {
-        return connectionService.connect()
+        //TODO
+        return connectionService.connect().flatMap {
+            it.data()?.map { msg -> ServerSentEvent.builder<ConnectionMessage>().data(msg).build() }?.toFlux()
+                ?: Flux.empty()
+        }
     }
 
     @PostMapping("/enable-change-stream")

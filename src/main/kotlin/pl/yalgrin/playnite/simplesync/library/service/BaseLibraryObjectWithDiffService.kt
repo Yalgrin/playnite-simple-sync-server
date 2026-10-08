@@ -22,8 +22,10 @@ import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectDiffEntity
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity
 import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
 import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDiffDTO
+import pl.yalgrin.playnite.simplesync.library.dto.PanelObjectDTO
 import pl.yalgrin.playnite.simplesync.library.mapper.LibraryObjectWithDiffMapper
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.panel.mapper.PanelObjectWithDiffMapper
 import pl.yalgrin.playnite.simplesync.security.getSessionClientId
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -35,16 +37,18 @@ import java.time.Instant
 
 abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         DIFF_DTO : LibraryObjectDiffDTO,
+        PANEL_DTO : PanelObjectDTO,
         E : LibraryObjectEntity,
         DIFF_E : LibraryObjectDiffEntity>(
     protected val repository: ObjectRepository<E>,
     protected val diffRepository: R2dbcRepository<DIFF_E, Long>,
     protected val mapper: LibraryObjectWithDiffMapper<E, DIFF_E, DTO, DIFF_DTO>,
+    protected val panelMapper: PanelObjectWithDiffMapper<E, PANEL_DTO, DIFF_DTO>,
     protected val changeService: ChangeService,
     protected val changeListenerService: ChangeListenerService,
     protected val metadataService: MetadataService,
     protected val transactionManager: ReactiveTransactionManager
-) : LibraryObjectWithDiffSaveService<DTO, DIFF_DTO> {
+) : LibraryObjectWithDiffSaveService<DTO, DIFF_DTO, PANEL_DTO> {
 
     protected val log: Logger by lazy { LoggerFactory.getLogger(AopUtils.getTargetClass(this)) }
 
@@ -67,31 +71,31 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             .flatMap { findOrCreateEntity(it) }
             .flatMap { entity -> mapper.fillEntityAndGenerateDiff(dto, entity) }
             .flatMap { pair -> saveEntityWithDiff(pair, fileParts, saveFiles) }
+            .flatMap { saveResult ->
+                mapper.toDTO(saveResult.savedObject)
+                    .map { LibrarySaveResult(it, saveResult.generatedChanges) }
+            }
             .switchIfEmpty {
                 findOrCreateEntity(dto)
                     .flatMap { entity -> mapper.toDTO(entity) }
                     .map { LibrarySaveResult(it, emptyList()) }
             }
-            .flatMap { doActionsAfterSave(it) }
     }
 
-    protected open fun doActionsAfterSave(result: LibrarySaveResult<DTO>): Mono<LibrarySaveResult<DTO>> =
+    protected open fun doActionsAfterSave(result: LibrarySaveResult<E>): Mono<LibrarySaveResult<E>> =
         result.toMono()
 
     protected open fun saveEntityWithDiff(
         pair: Pair<E, DIFF_DTO>,
         fileParts: Flux<FilePart>,
         saveFiles: Boolean
-    ): Mono<LibrarySaveResult<DTO>> {
+    ): Mono<LibrarySaveResult<E>> {
         return Mono.fromSupplier { pair }
             .flatMap { pair -> updateAuditingFields(pair) }
             .flatMap { pair -> saveEntityAndFiles(pair, fileParts, saveFiles) }
             .flatMap { pair -> saveDiffIfNeeded(pair) }
             .flatMap { pair -> saveChange(pair) }
-            .flatMap { triple ->
-                mapper.toDTO(triple.first)
-                    .map { LibrarySaveResult(it, listOf(triple.third)) }
-            }
+            .flatMap { triple -> doActionsAfterSave(LibrarySaveResult(triple.first, listOf(triple.third))) }
     }
 
     protected open fun findOrCreateEntity(dto: DTO): Mono<E> {
@@ -337,9 +341,10 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                     }
                     .flatMap { t -> saveDiffIfNeeded(t) }
                     .flatMap { c -> saveChange(c) }
-                    .flatMap { t ->
-                        mapper.toDTO(t.first)
-                            .map { LibrarySaveResult(it, listOf(t.third)) }
+                    .flatMap { triple -> doActionsAfterSave(LibrarySaveResult(triple.first, listOf(triple.third))) }
+                    .flatMap { saveResult ->
+                        mapper.toDTO(saveResult.savedObject)
+                            .map { LibrarySaveResult(it, saveResult.generatedChanges) }
                     }
                     .doOnSuccess { dto ->
                         log.debug(
@@ -353,7 +358,6 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                     .flatMap { entity -> mapper.toDTO(entity) }
                     .map { LibrarySaveResult(it, emptyList()) }
             }
-            .flatMap { doActionsAfterSave(it) }
     }
 
     protected open fun findOrCreateEntity(dto: DIFF_DTO): Mono<E> {
@@ -520,6 +524,113 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         }.transactionalReadOnly(transactionManager)
     }
 
+    override fun saveObjectAndPublishChanges(
+        dto: PANEL_DTO,
+        fileParts: Flux<FilePart>,
+        saveFiles: Boolean
+    ): Mono<PANEL_DTO> {
+        return saveObject(dto, fileParts, saveFiles)
+            .transactional(transactionManager)
+            .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
+    }
+
+    override fun saveObject(
+        dto: PANEL_DTO,
+        fileParts: Flux<FilePart>,
+        saveFiles: Boolean
+    ): Mono<LibrarySaveResult<PANEL_DTO>> {
+        return dto.toMono()
+            .flatMap { findOrCreateEntity(it) }
+            .flatMap { entity -> panelMapper.fillEntityAndGenerateDiff(dto, entity) }
+            .flatMap { pair -> saveEntityWithDiff(pair, fileParts, saveFiles) }
+            .flatMap { saveResult ->
+                panelMapper.toDTO(saveResult.savedObject)
+                    .map { LibrarySaveResult(it, saveResult.generatedChanges) }
+            }
+            .switchIfEmpty {
+                findOrCreateEntity(dto)
+                    .flatMap { entity -> panelMapper.toDTO(entity) }
+                    .map { LibrarySaveResult(it, emptyList()) }
+            }
+    }
+
+    protected open fun findOrCreateEntity(dto: PANEL_DTO): Mono<E> {
+        return Mono.justOrEmpty(dto.id)
+            .flatMapMany { id -> repository.findById(id) }
+            .first()
+            .doOnNext { e ->
+                log.debug("findOrCreateEntity > found entity with id = {} by playnite id: {}", e.id, dto.id)
+            }
+            .switchIfEmpty(
+                Mono.fromSupplier { createEntityFromPanelDTO(dto) }
+                    .doOnNext { _ -> log.debug("findOrCreateEntity > creating new entity...") }
+            )
+    }
+
+    override fun deleteObjectAndPublishChanges(dto: PANEL_DTO): Mono<Unit> {
+        return getSessionClientId()
+            .flatMap { clientId ->
+                doDeleteObject(dto, clientId)
+                    .transactional(transactionManager)
+                    .flatMap { dtoList -> changeListenerService.publishChanges(dtoList) }
+            }
+    }
+
+    private fun doDeleteObject(dto: PANEL_DTO, clientId: String): Mono<List<ChangeDTO>> {
+        return dto.toMono()
+            .doOnNext { d ->
+                log.debug("deleteObject > START, dto: {}, clientId: {}", d, clientId)
+            }
+            .flatMapMany { categoryDTO -> this.findObjectToDelete(categoryDTO) }
+            .map { e ->
+                log.debug(
+                    "deleteObject > marking entity with id = {} as removed",
+                    e.id
+                )
+                e.isRemoved = true
+                e
+            }
+            .flatMap { pair -> updateAuditingFields(pair) }
+            .flatMap { entity -> repository.save(entity) }
+            .mapNotNull { e ->
+                val change = createDeleteChange(clientId, e)
+                e to change
+            }
+            .flatMap { (entity, changeDTO) ->
+                changeService.saveChange(changeDTO).map { LibrarySaveResult(entity, listOf(it)) }
+            }
+            .collectList()
+            .doOnSuccess { log.debug("deleteObject > END") }
+            .flatMap { doActionsAfterDelete(it) }
+    }
+
+    protected open fun findObjectToDelete(dto: PANEL_DTO): Flux<E> {
+        return Mono.fromSupplier {
+            val id = dto.id
+            val name = dto.name
+            if (id != null && name != null) {
+                id to name
+            } else {
+                null
+            }
+        }.flatMapMany { repository.findByIdAndNameAndRemovedIsFalse(it.first, it.second) }
+    }
+
+    override fun findByIdForPanel(id: Long): Mono<PANEL_DTO> {
+        return repository.findById(id)
+            .flatMap { entity -> panelMapper.toDTO(entity) }
+            .transactionalReadOnly(transactionManager)
+    }
+
+    override fun findAllForPanel(): Mono<List<PANEL_DTO>> {
+        return repository.findAll()
+            .filter { !it.isRemoved }
+            .flatMap { entity -> panelMapper.toDTO(entity) }
+            .sort(compareBy { (it.name ?: "").lowercase() })
+            .collectList()
+            .transactionalReadOnly(transactionManager)
+    }
+
     protected abstract fun applyFileChange(entity: E, baseName: String, md5: String?): Mono<Boolean>
 
     protected abstract fun getMetadataFolder(): String
@@ -529,6 +640,8 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
     }
 
     protected abstract fun createEntityFromDTO(dto: DTO): E
+
+    protected abstract fun createEntityFromPanelDTO(dto: PANEL_DTO): E
 
     protected abstract fun getMetadataFields(): Set<String>
 
