@@ -87,6 +87,20 @@ class LibraryPluginService(
         return setOf(ICON, BACKGROUND_IMAGE)
     }
 
+    override fun shouldSaveFile(entity: LibraryPlugin, field: String): Boolean {
+        var isSavingField = false
+        when (field) {
+            ICON -> {
+                isSavingField = entity.isSavingIcon
+            }
+
+            BACKGROUND_IMAGE -> {
+                isSavingField = entity.isSavingBackground
+            }
+        }
+        return isSavingField
+    }
+
     override fun hasFileDataChanged(
         entity: LibraryPlugin,
         bytes: ByteArray,

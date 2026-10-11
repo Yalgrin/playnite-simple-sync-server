@@ -23,6 +23,12 @@ class ExceptionHandler {
         return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.toErrorDTO()))
     }
 
+    @ExceptionHandler(NotFoundException::class)
+    fun handleAuthException(ex: NotFoundException): Mono<ResponseEntity<Void>> {
+        log.error("Not found error occurred!", ex)
+        return Mono.fromSupplier { ResponseEntity.status(HttpStatus.NOT_FOUND).build() }
+    }
+
     @ExceptionHandler(ApiVersionException::class)
     fun handleApiVersionException(ex: ApiVersionException): Mono<ResponseEntity<ErrorDTO>> {
         log.error("API version error occurred!", ex)

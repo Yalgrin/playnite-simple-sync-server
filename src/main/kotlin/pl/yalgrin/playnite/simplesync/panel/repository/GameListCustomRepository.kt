@@ -30,6 +30,8 @@ class GameListCustomRepository(
 
             val useAndFilteringStyle = filter.useAndFilteringStyle ?: false
 
+            queryBuilder.append(" AND g.removed = :isRemoved")
+            params["isRemoved"] = false
 
             filter.isHidden?.let {
                 queryBuilder.append(" AND g.contents->>'isHidden' = :isHidden")
@@ -322,12 +324,49 @@ class GameListCustomRepository(
         filter: GameListFilterDTO,
         queryBuilder: StringBuilder
     ) {
-        val sortingOrder = filter.sortingOrder
-        val direction = if (filter.sortingOrderDirection?.lowercase() == "desc") "DESC" else "ASC"
-        if (!sortingOrder.isNullOrBlank()) {
-            queryBuilder.append(" ORDER BY lower(name) $direction")
+        val direction = if (filter.sortingOrderDirection.equals(
+                SortOrderDirection.DESCENDING.code,
+                ignoreCase = true
+            )
+        ) "DESC" else "ASC"
+        val sortingOrder = SortOrder.entries.find { it.code == filter.sortingOrder }
+        if (sortingOrder != null) {
+            when (sortingOrder) {
+                SortOrder.NAME -> queryBuilder.append(" ORDER BY COALESCE(g.contents->>'sortingName', name) $direction")
+                SortOrder.PLATFORMS -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'platforms') AS item) $direction")
+                SortOrder.LIBRARY -> queryBuilder.append(" ORDER BY g.contents->>'pluginName' $direction")
+                SortOrder.CATEGORIES -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'categories') AS item) $direction")
+                SortOrder.LAST_ACTIVITY -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'lastActivityInMs' AS BIGINT), 0) $direction")
+                SortOrder.GENRES -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'genres') AS item) $direction")
+                SortOrder.RELEASE_DATE -> queryBuilder.append(" ORDER BY TO_DATE(g.contents->>'releaseDate', 'YYYY-MM-DD') $direction")
+                SortOrder.DEVELOPERS -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'developers') AS item) $direction")
+                SortOrder.PUBLISHERS -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'publishers') AS item) $direction")
+                SortOrder.TAGS -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'tags') AS item) $direction")
+                SortOrder.SERIES -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'series') AS item) $direction")
+                SortOrder.AGE_RATINGS -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'ageRatings') AS item) $direction")
+                SortOrder.VERSION -> queryBuilder.append(" ORDER BY lower(version) $direction")
+                SortOrder.REGIONS -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'regions') AS item) $direction")
+                SortOrder.SOURCE -> queryBuilder.append(" ORDER BY (CAST(g.contents->>'source' AS jsonb)->>'name') $direction")
+                SortOrder.PLAY_COUNT -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'playCount' AS BIGINT), 0) $direction")
+                SortOrder.PLAYTIME -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'playtime' AS BIGINT), 0) $direction")
+                SortOrder.COMPLETION_STATUS -> queryBuilder.append(" ORDER BY (CAST(g.contents->>'completionStatus' AS jsonb)->>'name') $direction")
+                SortOrder.USER_SCORE -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'userScore' AS BIGINT), 0) $direction")
+                SortOrder.CRITIC_SCORE -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'criticScore' AS BIGINT), 0) $direction")
+                SortOrder.COMMUNITY_SCORE -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'communityScore' AS BIGINT), 0) $direction")
+                SortOrder.ADDED -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'addedInMs' AS BIGINT), 0) $direction")
+                SortOrder.MODIFIED -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'modifiedInMs' AS BIGINT), 0) $direction")
+//                SortOrder.IS_INSTALLED -> TODO()
+                SortOrder.HIDDEN -> queryBuilder.append(" ORDER BY COALESCE(g.contents->>'isHidden', 'false') $direction")
+                SortOrder.FAVORITE -> queryBuilder.append(" ORDER BY COALESCE(g.contents->>'isFavorite', 'false') $direction")
+//                SortOrder.INSTALL_DIRECTORY -> TODO()
+                SortOrder.FEATURES -> queryBuilder.append(" ORDER BY (SELECT min(item->>'name') FROM json_array_elements(g.contents->'features') AS item) $direction")
+                SortOrder.INSTALL_SIZE -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'installSize' AS BIGINT), 0) $direction")
+                SortOrder.RECENT_ACTIVITY -> queryBuilder.append(" ORDER BY COALESCE(CAST(g.contents->>'recentActivityInMs' AS BIGINT), 0) $direction")
+                else -> queryBuilder.append(" ORDER BY COALESCE(g.contents->>'sortingName', name) $direction")
+            }
+            queryBuilder.append(", COALESCE(g.contents->>'sortingName', name) $direction, id $direction")
         } else {
-            queryBuilder.append(" ORDER BY lower(name) $direction")
+            queryBuilder.append(" ORDER BY COALESCE(g.contents->>'sortingName', name) $direction, id $direction")
         }
     }
 }

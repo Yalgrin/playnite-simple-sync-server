@@ -27,8 +27,12 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelGameDTO
 import pl.yalgrin.playnite.simplesync.panel.mapper.PanelGameMapper
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.switchIfEmpty
 import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.publisher.toMono
 import java.util.*
+
+private const val EMPTY_PLUGIN_ID = "00000000-0000-0000-0000-000000000000"
 
 @Service
 class GameService(
@@ -64,6 +68,7 @@ class GameService(
 ) {
     companion object {
         const val CTX_CURRENT_GAME_ID = "currentGameId"
+        const val CTX_CURRENT_GAME_DB_ID = "currentGameDbId"
     }
 
     override fun saveObjectAndPublishChanges(
@@ -443,14 +448,134 @@ class GameService(
         )
     }
 
+    override fun saveObjectAndPublishChanges(
+        dto: PanelGameDTO,
+        fileParts: Flux<FilePart>,
+        saveFiles: Boolean
+    ): Mono<PanelGameDTO> {
+        return saveGameWithDependencies(dto, fileParts, saveFiles)
+            .contextWrite { ctx ->
+                val id = dto.id
+                if (id != null) {
+                    ctx.put(CTX_CURRENT_GAME_DB_ID, id)
+                }
+                ctx
+            }
+            .transactional()
+            .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
+    }
+
+    private fun saveGameWithDependencies(
+        dto: PanelGameDTO,
+        fileParts: Flux<FilePart>,
+        saveFiles: Boolean
+    ): Mono<LibrarySaveResult<PanelGameDTO>> {
+        return Flux.concat(
+            Mono.defer {
+                val id = dto.id
+                if (id == null) {
+                    libraryPluginService.findByPlayniteIdForPanel(EMPTY_PLUGIN_ID)
+                        .doOnNext { dto.plugin = it }
+                        .map { emptyList<ChangeDTO>() }
+                        .switchIfEmpty {
+                            libraryPluginService.saveObject(LibraryPluginDTO(id = EMPTY_PLUGIN_ID, name = "Playnite"))
+                                .flatMap { saved ->
+                                    libraryPluginService.findByPlayniteIdForPanel(EMPTY_PLUGIN_ID)
+                                        .doOnNext { dto.plugin = it }
+                                        .thenReturn(saved.generatedChanges)
+                                }
+                        }
+                } else {
+                    dto.plugin?.id.toMono().flatMap { id -> libraryPluginService.findByIdForPanel(id) }
+                        .doOnNext { dto.plugin = it }.thenReturn(emptyList())
+                }
+            },
+            saveRelatedObjects(dto, genreService, { it.genres }, { dto, list -> dto.genres = list }),
+            saveRelatedObjects(dto, platformService, { it.platforms }, { dto, list -> dto.platforms = list }),
+            saveRelatedObjects(dto, companyService, { it.publishers }, { dto, list -> dto.publishers = list }),
+            saveRelatedObjects(dto, companyService, { it.developers }, { dto, list -> dto.developers = list }),
+            saveRelatedObjects(dto, categoryService, { it.categories }, { dto, list -> dto.categories = list }),
+            saveRelatedObjects(dto, tagService, { it.tags }, { dto, list -> dto.tags = list }),
+            saveRelatedObjects(dto, featureService, { it.features }, { dto, list -> dto.features = list }),
+            saveRelatedObjects(dto, seriesService, { it.series }, { dto, list -> dto.series = list }),
+            saveRelatedObjects(dto, ageRatingService, { it.ageRatings }, { dto, list -> dto.ageRatings = list }),
+            saveRelatedObjects(dto, regionService, { it.regions }, { dto, list -> dto.regions = list }),
+            saveRelatedObject(dto, sourceService, { it.source }, { dto, r -> dto.source = r }),
+            saveRelatedObject(
+                dto,
+                completionStatusService,
+                { it.completionStatus },
+                { dto, r -> dto.completionStatus = r })
+        ).collectList()
+            .map { it.flatten() }
+            .flatMap { changes ->
+                saveObject(dto, fileParts, saveFiles)
+                    .map { LibrarySaveResult(it.savedObject, changes.plus(it.generatedChanges)) }
+            }
+    }
+
+    private fun <T : PanelObjectDTO> saveRelatedObjects(
+        dto: PanelGameDTO,
+        service: LibraryObjectSaveService<*, T>,
+        dtoGetter: (PanelGameDTO) -> List<T>,
+        dtoSetter: (PanelGameDTO, List<T>) -> Unit,
+    ): Mono<List<ChangeDTO>> {
+        return Mono.fromSupplier { dtoGetter(dto) }
+            .flatMapMany { Flux.fromIterable(it) }
+            .concatMap { d ->
+                service.saveObject(d)
+                    .switchIfEmpty(Mono.fromSupplier { LibrarySaveResult(d, emptyList()) })
+            }
+            .collectList()
+            .doOnNext { list -> dtoSetter(dto, list.map { it.savedObject }) }
+            .flatMapMany { Flux.fromIterable(it) }
+            .flatMap { it.generatedChanges.toFlux() }
+            .collectList()
+    }
+
+    private fun <T : PanelObjectDTO> saveRelatedObject(
+        dto: PanelGameDTO,
+        service: LibraryObjectSaveService<*, T>,
+        dtoGetter: (PanelGameDTO) -> T?,
+        dtoSetter: (PanelGameDTO, T) -> Unit,
+    ): Mono<List<ChangeDTO>> {
+        return Mono.fromSupplier { dtoGetter(dto) }
+            .flatMap { d ->
+                service.saveObject(d)
+                    .switchIfEmpty(Mono.fromSupplier { LibrarySaveResult(d, emptyList()) })
+            }
+            .doOnNext { result -> dtoSetter(dto, result.savedObject) }
+            .map { it.generatedChanges }
+    }
+
     override fun createEntityFromPanelDTO(dto: PanelGameDTO): Game {
         return Game(
-            playniteId = UUID.randomUUID().toString()
+            playniteId = UUID.randomUUID().toString(),
+            gameId = UUID.randomUUID().toString(),
+            pluginId = EMPTY_PLUGIN_ID
         )
     }
 
     override fun getMetadataFields(): Set<String> {
         return setOf(ICON, COVER_IMAGE, BACKGROUND_IMAGE)
+    }
+
+    override fun shouldSaveFile(entity: Game, field: String): Boolean {
+        var isSavingField = false
+        when (field) {
+            ICON -> {
+                isSavingField = entity.isSavingIcon
+            }
+
+            COVER_IMAGE -> {
+                isSavingField = entity.isSavingCoverImage
+            }
+
+            BACKGROUND_IMAGE -> {
+                isSavingField = entity.isSavingBackground
+            }
+        }
+        return isSavingField
     }
 
     override fun hasFileDataChanged(
@@ -1232,9 +1357,14 @@ class GameService(
             .flatMap { result ->
                 Mono.deferContextual { ctx ->
                     val currentlyEditedGame = ctx.getOrEmpty<Pair<String?, String?>>(CTX_CURRENT_GAME_ID).orElse(null)
+                    val currentlyEditedGameDbId = ctx.getOrEmpty<Long>(CTX_CURRENT_GAME_DB_ID).orElse(null)
                     if (currentlyEditedGame?.first != null && currentlyEditedGame.second != null) {
                         findGames(result)
                             .filter { it.gameId != currentlyEditedGame.first || it.pluginId != currentlyEditedGame.second }
+                            .collectList()
+                    } else if (currentlyEditedGameDbId != null) {
+                        findGames(result)
+                            .filter { it.id != currentlyEditedGameDbId }
                             .collectList()
                     } else {
                         findGames(result)

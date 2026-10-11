@@ -22,6 +22,7 @@ import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
 import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
+import java.text.Collator
 import java.time.Instant
 
 abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectEntity, P : PanelObjectDTO>(
@@ -207,13 +208,24 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
 
     private fun findOrCreateEntity(dto: P): Mono<E> {
         return findBasedOnId(dto)
+            .switchIfEmpty(findBasedOnName(dto))
             .switchIfEmpty(createNewEntity(dto))
     }
 
     private fun findBasedOnId(dto: P): Mono<E> {
-        return dto.id.toMono().flatMapMany { repository.findById(it) }.first()
+        return dto.id.toMono().flatMap { repository.findById(it) }
             .doOnNext { e ->
                 log.debug("findOrCreateEntity > found entity with id = {}", e.id)
+            }
+    }
+
+    private fun findBasedOnName(dto: P): Mono<E> {
+        return dto.name.toMono().flatMapMany { repository.findByName(it) }.collectList().mapNotNull { objList ->
+            objList.sortedWith(compareBy({ it.isRemoved }, { it.id })).firstOrNull()
+        }
+            .doOnNext { e ->
+                log.debug("findOrCreateEntity > found entity with id = {} by name: {}", e.id, dto.name)
+                e.isNotifyAll = true
             }
     }
 
@@ -291,7 +303,25 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
 
     override fun findByIdForPanel(id: Long): Mono<P> {
         return repository.findById(id)
+            .filter { !it.isRemoved }
             .flatMap { entity -> panelMapper.toDTO(entity) }
+            .transactionalReadOnly()
+    }
+
+    override fun findByPlayniteIdForPanel(playniteId: String): Mono<P> {
+        return repository.findByPlayniteId(playniteId)
+            .filter { !it.isRemoved }
+            .first()
+            .flatMap { entity -> panelMapper.toDTO(entity) }
+            .transactionalReadOnly()
+    }
+
+    override fun findByPlayniteIdsForPanel(playniteIds: Collection<String>): Mono<List<P>> {
+        return playniteIds.toFlux()
+            .flatMapSequential { repository.findByPlayniteId(it) }
+            .filter { !it.isRemoved }
+            .flatMapSequential { entity -> panelMapper.toDTO(entity) }
+            .collectList()
             .transactionalReadOnly()
     }
 
@@ -299,7 +329,7 @@ abstract class BaseLibraryObjectService<D : LibraryObjectDTO, E : LibraryObjectE
         return repository.findAll()
             .filter { !it.isRemoved }
             .flatMap { entity -> panelMapper.toDTO(entity) }
-            .sort(compareBy { (it.name ?: "").lowercase() })
+            .sort(Comparator.comparing({ (it.name ?: "").lowercase() }, Collator.getInstance()))
             .collectList()
             .transactionalReadOnly()
     }

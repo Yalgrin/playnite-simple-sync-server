@@ -1,6 +1,7 @@
 package pl.yalgrin.playnite.simplesync.web.panel
 
 import org.springframework.web.bind.annotation.*
+import pl.yalgrin.playnite.simplesync.common.util.switchToNotFoundIfEmpty
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.service.FilterPresetService
 import pl.yalgrin.playnite.simplesync.panel.dto.PanelFilterPresetDTO
@@ -15,7 +16,7 @@ class PanelFilterPresetResource(
 
     @GetMapping("/{id}")
     fun getFeature(@PathVariable id: Long): Mono<PanelFilterPresetDTO> {
-        return service.findByIdForPanel(id)
+        return service.findByIdForPanel(id).switchToNotFoundIfEmpty()
     }
 
     @PostMapping("/save")

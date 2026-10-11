@@ -22,5 +22,9 @@ interface LibraryObjectSaveService<DTO : LibraryObjectDTO, PANEL_DTO : PanelObje
     fun findByIdForPanel(id: Long): Mono<PANEL_DTO>
 
     fun findAllForPanel(): Mono<List<PANEL_DTO>>
+
+    fun findByPlayniteIdForPanel(playniteId: String): Mono<PANEL_DTO>
+
+    fun findByPlayniteIdsForPanel(playniteIds: Collection<String>): Mono<List<PANEL_DTO>>
 }
 

@@ -16,11 +16,19 @@ class PanelPlatformMapper :
         generatedDiffDTO: PlatformDiffDTO
     ): Triple<Platform, PlatformDiffDTO, MutableList<String>> {
         val result = super.fillBasicFields(dto, entity, generatedDiffDTO)
+        val changedEntity = result.first
+        val changedDiff = result.second
+        val changedFields = result.third
+
         if (!Strings.CS.equals(entity.specificationId, dto.specificationId)) {
-            result.first.specificationId = dto.specificationId
-            result.second.specificationId = dto.specificationId
-            result.third.add("SpecificationId")
+            changedEntity.specificationId = dto.specificationId
+            changedDiff.specificationId = dto.specificationId
+            changedFields.add("SpecificationId")
         }
+
+        changedEntity.isSavingIcon = dto.isSavingIcon
+        changedEntity.isSavingCoverImage = dto.isSavingCoverImage
+        changedEntity.isSavingBackground = dto.isSavingBackground
         return result
     }
 
@@ -30,6 +38,9 @@ class PanelPlatformMapper :
         result.hasIcon = entity.iconMd5 != null
         result.hasCoverImage = entity.coverImageMd5 != null
         result.hasBackgroundImage = entity.backgroundImageMd5 != null
+        result.iconHash = entity.iconMd5
+        result.coverImageHash = entity.coverImageMd5
+        result.backgroundImageHash = entity.backgroundImageMd5
         return result
     }
 

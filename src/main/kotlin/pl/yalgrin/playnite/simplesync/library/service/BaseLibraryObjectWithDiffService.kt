@@ -167,6 +167,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             return Mono.empty()
         }
         return Flux.fromIterable(getMetadataFields())
+            .filter { field -> shouldSaveFile(entity, field) }
             .flatMap { field ->
                 fileParts
                     .filter { p -> field == FilenameUtils.getBaseName(p.filename()) }
@@ -190,6 +191,10 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
                     entity.isChanged = true
                 }
             }.thenAny()
+    }
+
+    protected open fun shouldSaveFile(entity: E, field: String): Boolean {
+        return true
     }
 
     private fun toFileData(
@@ -555,8 +560,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
 
     protected open fun findOrCreateEntity(dto: PANEL_DTO): Mono<E> {
         return Mono.justOrEmpty(dto.id)
-            .flatMapMany { id -> repository.findById(id) }
-            .first()
+            .flatMap { id -> repository.findById(id) }
             .doOnNext { e ->
                 log.debug("findOrCreateEntity > found entity with id = {} by playnite id: {}", e.id, dto.id)
             }
@@ -617,6 +621,7 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
 
     override fun findByIdForPanel(id: Long): Mono<PANEL_DTO> {
         return repository.findById(id)
+            .filter { !it.isRemoved }
             .flatMap { entity -> panelMapper.toDTO(entity) }
             .transactionalReadOnly()
     }
@@ -626,6 +631,23 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
             .filter { !it.isRemoved }
             .flatMap { entity -> panelMapper.toDTO(entity) }
             .sort(compareBy { (it.name ?: "").lowercase() })
+            .collectList()
+            .transactionalReadOnly()
+    }
+
+    override fun findByPlayniteIdForPanel(playniteId: String): Mono<PANEL_DTO> {
+        return repository.findByPlayniteId(playniteId)
+            .filter { !it.isRemoved }
+            .first()
+            .flatMap { entity -> panelMapper.toDTO(entity) }
+            .transactionalReadOnly()
+    }
+
+    override fun findByPlayniteIdsForPanel(playniteIds: Collection<String>): Mono<List<PANEL_DTO>> {
+        return playniteIds.toFlux()
+            .flatMapSequential { repository.findByPlayniteId(it) }
+            .filter { !it.isRemoved }
+            .flatMapSequential { entity -> panelMapper.toDTO(entity) }
             .collectList()
             .transactionalReadOnly()
     }

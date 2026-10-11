@@ -1,6 +1,7 @@
 package pl.yalgrin.playnite.simplesync.web.panel
 
 import org.springframework.web.bind.annotation.*
+import pl.yalgrin.playnite.simplesync.common.util.switchToNotFoundIfEmpty
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.service.CategoryService
 import pl.yalgrin.playnite.simplesync.panel.dto.PanelCategoryDTO
@@ -15,7 +16,7 @@ class PanelCategoryResource(
 
     @GetMapping("/{id}")
     fun getCategory(@PathVariable id: Long): Mono<PanelCategoryDTO> {
-        return service.findByIdForPanel(id)
+        return service.findByIdForPanel(id).switchToNotFoundIfEmpty()
     }
 
     @PostMapping("/save")

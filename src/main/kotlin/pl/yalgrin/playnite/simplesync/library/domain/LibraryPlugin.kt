@@ -43,5 +43,11 @@ data class LibraryPlugin(
     override var isNotifyAll: Boolean = false,
 
     @Transient
-    override var isChanged: Boolean = false
+    override var isChanged: Boolean = false,
+
+    @Transient
+    var isSavingIcon: Boolean = true,
+
+    @Transient
+    var isSavingBackground: Boolean = true,
 ) : LibraryObjectEntity

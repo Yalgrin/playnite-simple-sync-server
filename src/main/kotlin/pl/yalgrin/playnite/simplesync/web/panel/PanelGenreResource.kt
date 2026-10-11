@@ -1,6 +1,7 @@
 package pl.yalgrin.playnite.simplesync.web.panel
 
 import org.springframework.web.bind.annotation.*
+import pl.yalgrin.playnite.simplesync.common.util.switchToNotFoundIfEmpty
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.service.GenreService
 import pl.yalgrin.playnite.simplesync.panel.dto.PanelGenreDTO
@@ -15,7 +16,7 @@ class PanelGenreResource(
 
     @GetMapping("/{id}")
     fun getGenre(@PathVariable id: Long): Mono<PanelGenreDTO> {
-        return service.findByIdForPanel(id)
+        return service.findByIdForPanel(id).switchToNotFoundIfEmpty()
     }
 
     @PostMapping("/save")

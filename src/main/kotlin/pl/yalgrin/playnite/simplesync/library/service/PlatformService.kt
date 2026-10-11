@@ -88,6 +88,24 @@ class PlatformService(
         return setOf(ICON, COVER_IMAGE, BACKGROUND_IMAGE)
     }
 
+    override fun shouldSaveFile(entity: Platform, field: String): Boolean {
+        var isSavingField = false
+        when (field) {
+            ICON -> {
+                isSavingField = entity.isSavingIcon
+            }
+
+            COVER_IMAGE -> {
+                isSavingField = entity.isSavingCoverImage
+            }
+
+            BACKGROUND_IMAGE -> {
+                isSavingField = entity.isSavingBackground
+            }
+        }
+        return isSavingField
+    }
+
     override fun hasFileDataChanged(
         entity: Platform,
         bytes: ByteArray,

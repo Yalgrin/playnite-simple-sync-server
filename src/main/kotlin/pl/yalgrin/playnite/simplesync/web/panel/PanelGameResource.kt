@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.common.config.GAME
+import pl.yalgrin.playnite.simplesync.common.util.switchToNotFoundIfEmpty
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.service.GameService
 import pl.yalgrin.playnite.simplesync.library.service.MetadataService
@@ -29,10 +30,10 @@ class PanelGameResource(
 
     @GetMapping("/{id}")
     fun getGame(@PathVariable id: Long): Mono<PanelGameDTO> {
-        return service.findByIdForPanel(id)
+        return service.findByIdForPanel(id).switchToNotFoundIfEmpty()
     }
 
-    @GetMapping(value = ["/{id}/metadata/{metadataName}"], produces = [MediaType.APPLICATION_OCTET_STREAM_VALUE])
+    @GetMapping(value = ["/{id}/metadata/{metadataName}/{hash}"], produces = [MediaType.APPLICATION_OCTET_STREAM_VALUE])
     fun getGameMetadata(
         @PathVariable id: String,
         @PathVariable metadataName: String

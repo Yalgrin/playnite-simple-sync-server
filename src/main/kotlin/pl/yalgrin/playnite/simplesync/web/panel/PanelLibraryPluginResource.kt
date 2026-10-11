@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.web.bind.annotation.*
 import pl.yalgrin.playnite.simplesync.common.config.PLUGIN
+import pl.yalgrin.playnite.simplesync.common.util.switchToNotFoundIfEmpty
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.service.LibraryPluginService
 import pl.yalgrin.playnite.simplesync.library.service.MetadataService
@@ -25,7 +26,7 @@ class PanelLibraryPluginResource(
 
     @GetMapping("/{id}")
     fun getLibraryPlugin(@PathVariable id: Long): Mono<PanelLibraryPluginDTO> {
-        return service.findByIdForPanel(id)
+        return service.findByIdForPanel(id).switchToNotFoundIfEmpty()
     }
 
     @GetMapping(

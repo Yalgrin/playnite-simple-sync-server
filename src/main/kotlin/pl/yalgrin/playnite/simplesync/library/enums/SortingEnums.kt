@@ -1,0 +1,70 @@
+package pl.yalgrin.playnite.simplesync.library.enums
+
+enum class SortOrder(val code: String) {
+    NAME("Name"),
+    PLATFORMS("Platforms"),
+    LIBRARY("Library"),
+    CATEGORIES("Categories"),
+    LAST_ACTIVITY("LastActivity"),
+    GENRES("Genres"),
+    RELEASE_DATE("ReleaseDate"),
+    DEVELOPERS("Developers"),
+    PUBLISHERS("Publishers"),
+    TAGS("Tags"),
+    SERIES("Series"),
+    AGE_RATINGS("AgeRatings"),
+    VERSION("Version"),
+    REGIONS("Regions"),
+    SOURCE("Source"),
+    PLAY_COUNT("PlayCount"),
+    PLAYTIME("Playtime"),
+    COMPLETION_STATUS("CompletionStatus"),
+    USER_SCORE("UserScore"),
+    CRITIC_SCORE("CriticScore"),
+    COMMUNITY_SCORE("CommunityScore"),
+    ADDED("Added"),
+    MODIFIED("Modified"),
+    IS_INSTALLED("IsInstalled"),
+    HIDDEN("Hidden"),
+    FAVORITE("Favorite"),
+    INSTALL_DIRECTORY("InstallDirectory"),
+    FEATURES("Features"),
+    INSTALL_SIZE("InstallSize"),
+    RECENT_ACTIVITY("RecentActivity"),
+    ROM_LIST("RomList")
+}
+
+enum class SortOrderDirection(val code: String) {
+    ASCENDING("Ascending"),
+    DESCENDING("Descending")
+}
+
+enum class GroupableField(val code: String) {
+    NONE("None"),
+    PLATFORM("Platform"),
+    LIBRARY("Library"),
+    CATEGORY("Category"),
+    LAST_ACTIVITY("LastActivity"),
+    GENRE("Genre"),
+    RELEASE_YEAR("ReleaseYear"),
+    DEVELOPER("Developer"),
+    PUBLISHER("Publisher"),
+    TAG("Tag"),
+    SERIES("Series"),
+    AGE_RATING("AgeRating"),
+    REGION("Region"),
+    SOURCE("Source"),
+    PLAY_TIME("PlayTime"),
+    COMPLETION_STATUS("CompletionStatus"),
+    USER_SCORE("UserScore"),
+    CRITIC_SCORE("CriticScore"),
+    COMMUNITY_SCORE("CommunityScore"),
+    ADDED("Added"),
+    MODIFIED("Modified"),
+    FEATURE("Feature"),
+    INSTALLATION_STATUS("InstallationStatus"),
+    NAME("Name"),
+    INSTALL_DRIVE("InstallDrive"),
+    INSTALL_SIZE("InstallSize"),
+    RECENT_ACTIVITY("RecentActivity")
+}

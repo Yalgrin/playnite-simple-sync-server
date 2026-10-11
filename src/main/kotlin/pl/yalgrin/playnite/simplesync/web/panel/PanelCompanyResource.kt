@@ -1,6 +1,7 @@
 package pl.yalgrin.playnite.simplesync.web.panel
 
 import org.springframework.web.bind.annotation.*
+import pl.yalgrin.playnite.simplesync.common.util.switchToNotFoundIfEmpty
 import pl.yalgrin.playnite.simplesync.helper.SingleExecutorHelper
 import pl.yalgrin.playnite.simplesync.library.service.CompanyService
 import pl.yalgrin.playnite.simplesync.panel.dto.PanelCompanyDTO
@@ -15,7 +16,7 @@ class PanelCompanyResource(
 
     @GetMapping("/{id}")
     fun getCompany(@PathVariable id: Long): Mono<PanelCompanyDTO> {
-        return service.findByIdForPanel(id)
+        return service.findByIdForPanel(id).switchToNotFoundIfEmpty()
     }
 
     @PostMapping("/save")
