@@ -9,32 +9,117 @@ import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
 import pl.yalgrin.playnite.simplesync.client.dto.RegisteredClientDTO
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
+import pl.yalgrin.playnite.simplesync.client.dto.SessionSettingsDTO
 import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
 import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
 import pl.yalgrin.playnite.simplesync.library.domain.LibraryObjectEntity
 import pl.yalgrin.playnite.simplesync.library.dto.PanelObjectDTO
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
 import pl.yalgrin.playnite.simplesync.library.service.MetadataService
+import pl.yalgrin.playnite.simplesync.panel.dto.CsrfResponse
+import pl.yalgrin.playnite.simplesync.panel.dto.LoginRequest
+import pl.yalgrin.playnite.simplesync.panel.repository.PanelUserRepository
+import pl.yalgrin.playnite.simplesync.panel.service.PanelUserService
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import reactor.test.StepVerifier
+import spock.lang.Shared
 import tools.jackson.databind.json.JsonMapper
 
 abstract class AbstractPanelObjectTest<E extends LibraryObjectEntity, D extends PanelObjectDTO> extends SpockIntegrationTest {
+    @Shared
     @Autowired
     private ConnectionFactory connectionFactory
+    @Shared
     @Autowired
     private RegisteredClientService registeredClientService
+    @Shared
+    @Autowired
+    private PanelUserService userService
+    @Shared
+    @Autowired
+    private PanelUserRepository userRepository
+    @Shared
     @Autowired
     private SessionManager sessionManager
+    @Shared
     @Autowired
     private MetadataService metadataService
+    @Shared
     @Autowired
     protected JsonMapper jsonMapper
+    @Shared
     protected WebTestClient rawWebTestClient
 
+    @Shared
     protected String clientId
+    @Shared
     protected RegisteredClientDTO otherClientInfo
+
+    def setupSpec() {
+        def populator = new ResourceDatabasePopulator()
+        populator.addScript(new ClassPathResource("/sql/clear-db.sql"))
+        populator.populate(connectionFactory).block()
+
+        userService.init().block()
+
+        def csrfResult = webTestClient.get()
+                .uri("/api/panel/auth/csrf")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CsrfResponse)
+                .returnResult()
+
+        var session = csrfResult.getResponseCookies().getFirst("SESSION")
+
+        webTestClient = webTestClient.mutate()
+                .defaultCookie(session.getName(), session.getValue())
+                .defaultHeader(csrfResult.responseBody.headerName, csrfResult.responseBody.token)
+                .build()
+
+        def login = webTestClient.post()
+                .uri("/api/panel/auth/login")
+                .bodyValue(new LoginRequest("admin", "admin", true))
+                .exchange()
+                .expectStatus().isOk()
+                .returnResult()
+
+        session = login.getResponseCookies().getFirst("SESSION")
+
+        webTestClient = webTestClient.mutate()
+                .defaultCookie(session.getName(), session.getValue())
+                .build()
+
+        csrfResult = webTestClient.get()
+                .uri("/api/panel/auth/csrf")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CsrfResponse)
+                .returnResult()
+
+        session = csrfResult.getResponseCookies().getFirst("SESSION")
+
+        webTestClient = webTestClient.mutate()
+                .defaultCookie(session.getName(), session.getValue())
+                .defaultHeader(csrfResult.responseBody.headerName, csrfResult.responseBody.token)
+                .build()
+
+        def user = userRepository.findAll().blockFirst()
+        clientId = user.id.toString()
+
+        def sessionId = UUID.randomUUID().toString()
+
+        def sessionInfo = new SessionInfoDTO(clientId, user.username, sessionId, true)
+        sessionManager.saveSessionInfo(sessionInfo)
+        sessionManager.updateSettings(sessionInfo, new SessionSettingsDTO(true))
+
+        otherClientInfo = registeredClientService.register(new RegistrationRequestDTO("other-client", ConstantsKt.CURRENT_API_VERSION)).block()
+
+        rawWebTestClient = webTestClient
+        webTestClient = webTestClient.mutate()
+                .defaultHeader("X-Session-Id", sessionId)
+                .build()
+    }
 
     def setup() {
         def populator = new ResourceDatabasePopulator()
@@ -42,20 +127,6 @@ abstract class AbstractPanelObjectTest<E extends LibraryObjectEntity, D extends 
         populator.populate(connectionFactory).block()
 
         metadataService.init()
-
-        def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", ConstantsKt.CURRENT_API_VERSION)).block()
-        def sessionId = UUID.randomUUID().toString()
-        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))
-        otherClientInfo = registeredClientService.register(new RegistrationRequestDTO("other-client", ConstantsKt.CURRENT_API_VERSION)).block()
-
-        rawWebTestClient = webTestClient
-        webTestClient = webTestClient.mutate()
-                .defaultHeader("X-Client-Id", clientInfo.clientId)
-                .defaultHeader("X-Client-Token", clientInfo.clientToken)
-                .defaultHeader("X-Session-Id", sessionId)
-                .build()
-
-        clientId = "empty"
     }
 
     protected WebTestClient.ResponseSpec makeGetRequest(Long id) {

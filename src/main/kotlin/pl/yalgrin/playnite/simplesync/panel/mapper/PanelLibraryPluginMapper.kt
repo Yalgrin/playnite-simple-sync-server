@@ -24,10 +24,10 @@ class PanelLibraryPluginMapper :
 
     override fun fillBasicDtoFields(dto: PanelLibraryPluginDTO, entity: LibraryPlugin): PanelLibraryPluginDTO {
         val result = super.fillBasicDtoFields(dto, entity)
-        result.hasIcon = entity.iconMd5 != null
-        result.hasBackgroundImage = entity.backgroundImageMd5 != null
-        result.iconHash = entity.iconMd5
-        result.backgroundImageHash = entity.backgroundImageMd5
+        result.iconUrl =
+            if (entity.iconMd5 != null) "/api/panel/library-plugin/${entity.id}/metadata/Icon/${entity.iconMd5}" else null
+        result.backgroundImageUrl =
+            if (entity.backgroundImageMd5 != null) "/api/panel/library-plugin/${entity.id}/metadata/BackgroundImage/${entity.backgroundImageMd5}" else null
         return result
     }
 

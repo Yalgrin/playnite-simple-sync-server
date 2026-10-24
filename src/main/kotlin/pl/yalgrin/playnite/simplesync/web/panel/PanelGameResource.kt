@@ -70,4 +70,9 @@ class PanelGameResource(
     fun getGameList(@RequestBody filter: GameListFilterDTO): Mono<GameListResultDTO> {
         return gameListService.findByFilter(filter)
     }
+
+    @GetMapping("/release-years")
+    fun findAllReleaseYears(): Mono<List<String>> {
+        return gameListService.findAllReleaseYears()
+    }
 }

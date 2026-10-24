@@ -4,11 +4,11 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelTagDTO
 
 class PanelTagFactoryUtil {
     static PanelTagDTO createTag(Long id, String name) {
-        return new PanelTagDTO(id, name)
+        return new PanelTagDTO(id, null, name)
     }
 
     static PanelTagDTO createTag(String name) {
-        return new PanelTagDTO(null, name)
+        return new PanelTagDTO(null, null, name)
     }
 
     static PanelTagDTO randomTag() {

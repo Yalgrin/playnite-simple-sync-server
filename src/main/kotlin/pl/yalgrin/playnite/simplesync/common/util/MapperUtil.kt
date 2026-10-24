@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.common.util
 import org.apache.commons.lang3.Strings
 import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
 import pl.yalgrin.playnite.simplesync.library.dto.LinkDTO
+import java.time.ZonedDateTime
 
 object MapperUtil {
     fun hasChanged(obj1: Long?, obj2: Long?): Boolean {
@@ -15,6 +16,12 @@ object MapperUtil {
 
     fun hasChanged(obj1: String?, obj2: String?): Boolean {
         return !Strings.CS.equals(obj1, obj2)
+    }
+
+    fun hasChanged(obj1: ZonedDateTime?, obj2: ZonedDateTime?): Boolean {
+        val ms1 = obj1?.toInstant()?.toEpochMilli()
+        val ms2 = obj2?.toInstant()?.toEpochMilli()
+        return ms1 != ms2
     }
 
     fun hasChanged(obj1: Any?, obj2: Any?): Boolean {

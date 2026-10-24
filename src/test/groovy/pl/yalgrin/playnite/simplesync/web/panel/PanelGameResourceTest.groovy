@@ -17,13 +17,13 @@ import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
 import pl.yalgrin.playnite.simplesync.helper.MetadataTestHelper
 import pl.yalgrin.playnite.simplesync.library.domain.Game
-import pl.yalgrin.playnite.simplesync.library.dto.CategoryDTO
 import pl.yalgrin.playnite.simplesync.library.dto.GameDiffDTO
-import pl.yalgrin.playnite.simplesync.library.dto.GenreDTO
-import pl.yalgrin.playnite.simplesync.library.dto.SourceDTO
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
 import pl.yalgrin.playnite.simplesync.library.repository.ObjectRepository
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelCategoryDTO
 import pl.yalgrin.playnite.simplesync.panel.dto.PanelGameDTO
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelGenreDTO
+import pl.yalgrin.playnite.simplesync.panel.dto.PanelSourceDTO
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import pl.yalgrin.playnite.simplesync.util.JsonMapperUtil
 import pl.yalgrin.playnite.simplesync.util.panel.PanelGameAssertionUtil
@@ -196,44 +196,13 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         assertDeleted(newObjectId.get())
     }
 
-    //TODO rework or remove
-
     def "save, modify twice and delete and await the change stream"() {
         given:
         PanelGameDTO toSave = PanelGameFactoryUtil.randomGame()
         def files = PanelGameFactoryUtil.randomFiles(100, 100, 100)
-        PanelGameDTO modified = toSave.withName("some other name")
-        modified.setDescription("Description")
-        modified.setPluginName("Other plugin name")
-        def newGenre = new GenreDTO()
-        newGenre.id = UUID.randomUUID().toString()
-        newGenre.name = "New genre"
-        modified.genres = List.of(newGenre)
-        def newSource = new SourceDTO()
-        newSource.id = UUID.randomUUID().toString()
-        newSource.name = "New source"
-        modified.source = newSource
-        GameDiffDTO modifiedViaDiffDTO = new GameDiffDTO()
-        modifiedViaDiffDTO.id = modified.id
-        modifiedViaDiffDTO.gameId = modified.gameId
-        modifiedViaDiffDTO.pluginId = modified.pluginId
-        modifiedViaDiffDTO.pluginName = modified.pluginName
-        modifiedViaDiffDTO.name = "even different name"
-        modifiedViaDiffDTO.version = "3.0"
-        def newCategory = new CategoryDTO()
-        newCategory.id = UUID.randomUUID().toString()
-        newCategory.name = "New category"
-        modifiedViaDiffDTO.categories = List.of(newCategory)
-        def newSecondSource = new SourceDTO()
-        newSecondSource.id = UUID.randomUUID().toString()
-        newSecondSource.name = "New source 2"
-        modifiedViaDiffDTO.source = newSecondSource
-        modifiedViaDiffDTO.changedFields = List.of("Name", "Version", "Categories", "Source")
-        PanelGameDTO removed = modified.withRemoved(true)
-        removed.name = modifiedViaDiffDTO.name
-        removed.version = modifiedViaDiffDTO.version
-        removed.categories = modifiedViaDiffDTO.categories
-        removed.source = modifiedViaDiffDTO.source
+        toSave.setSavingIcon(files.any { it.name.startsWith("Icon") })
+        toSave.setSavingCoverImage(files.any { it.name.startsWith("CoverImage") })
+        toSave.setSavingBackground(files.any { it.name.startsWith("BackgroundImage") })
 
         when:
         def changeRequest = makeConnectRequest(otherClientInfo)
@@ -244,6 +213,11 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         AtomicLong newDiffObjectId = new AtomicLong(-1)
         AtomicLong newSecondDiffObjectId = new AtomicLong(-1)
         AtomicReference<String> sessionId = new AtomicReference<>()
+        AtomicReference<PanelGameDTO> savedFirstGame = new AtomicReference<>()
+        AtomicReference<PanelGameDTO> modifiedGame = new AtomicReference<>()
+        AtomicReference<PanelGameDTO> savedModifiedGame = new AtomicReference<>()
+        AtomicReference<PanelGameDTO> secondModifiedGame = new AtomicReference<>()
+        AtomicReference<PanelGameDTO> secondSavedModifiedGame = new AtomicReference<>()
         StepVerifier.create(responseFlux)
                 .expectSubscription()
                 .expectNextMatches { str ->
@@ -262,12 +236,9 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
                             .returnResult()
                             .responseBody
                     PanelGameAssertionUtil.assertGame(toSave, result)
-                    assert result.serverId != null
-                    assert result.createdAt != null
-                    assert result.createdBy != null
-                    assert result.modifiedAt != null
-                    assert result.modifiedBy != null
-                    collectedIds.add(result.serverId)
+                    savedFirstGame.set(result)
+                    assert result.id != null
+                    collectedIds.add(result.id)
                     if (collectedIds.size() > 1) {
                         assert collectedIds.stream().distinct().size() == 1
                     }
@@ -301,26 +272,33 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PanelGameDTO.class))
                             .expectNextMatches {
-                                assert it.serverId == collectedIds.first
-                                assert it.createdAt != null
-                                assert it.createdBy != null
-                                assert it.modifiedAt != null
-                                assert it.modifiedBy != null
+                                assert it.id == collectedIds.first
                                 objectMatches(it, toSave)
                             }
                             .verifyComplete()
                 }
                 .then {
+                    def modified = savedFirstGame.get().withName("some other name")
+                    modified.setDescription("Description")
+                    modified.setSavingIcon(false)
+                    modified.setSavingCoverImage(false)
+                    modified.setSavingBackground(false)
+                    def newGenre = new PanelGenreDTO()
+                    newGenre.name = "New genre"
+                    modified.genres = List.of(newGenre)
+
+                    def newSource = new PanelSourceDTO()
+                    newSource.name = "New source"
+                    modified.source = newSource
+                    modifiedGame.set(modified)
+
                     def result = makeSaveRequest(modified, files).expectStatus().is2xxSuccessful()
                             .expectBody(PanelGameDTO.class)
                             .returnResult()
                             .responseBody
                     PanelGameAssertionUtil.assertGame(modified, result)
-                    assert result.serverId == collectedIds.first
-                    assert result.createdAt != null
-                    assert result.createdBy != null
-                    assert result.modifiedAt != null
-                    assert result.modifiedBy != null
+                    savedModifiedGame.set(result)
+                    assert result.id == collectedIds.first
                 }
                 .thenConsumeWhile { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -348,50 +326,46 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PanelGameDTO.class))
                             .expectNextMatches {
-                                assert it.serverId == collectedIds.first
-                                assert it.createdAt != null
-                                assert it.createdBy != null
-                                assert it.modifiedAt != null
-                                assert it.modifiedBy != null
-                                objectMatches(it, modified)
+                                assert it.id == collectedIds.first
+                                objectMatches(it, modifiedGame.get())
                             }
                             .verifyComplete()
                 }
                 .then {
                     assert newDiffObjectId.get() != -1
-                    def getResponse = makeGetDiffRequest(newDiffObjectId.get())
+                    def getResponse = makeGetDiffRequest(newDiffObjectId.get(), sessionId.get())
 
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
                             .expectNextMatches {
                                 assert it.serverId != null
-                                assert it.id == toSave.id
+                                assert it.id != null
                                 assert it.baseObjectId == collectedIds.first
-                                assert it.gameId == toSave.gameId
-                                assert it.pluginId == toSave.pluginId
+                                assert it.gameId == savedFirstGame.get().gameId
+                                assert it.pluginId != null
+                                assert it.pluginName == toSave.plugin.name
                                 assert it.changedFields != null
-                                assert it.changedFields.size() == 5
+                                assert it.changedFields.size() == 4
                                 assert it.changedFields.contains("Name")
                                 assert it.changedFields.contains("Description")
                                 assert it.changedFields.contains("Genres")
                                 assert it.changedFields.contains("Source")
-                                assert it.changedFields.contains("PluginName")
-                                assert it.name == modified.name
-                                assert it.description == modified.description
-                                assert it.pluginName == modified.pluginName
+                                assert it.name == modifiedGame.get().name
+                                assert it.description == modifiedGame.get().description
+                                assert it.pluginName == modifiedGame.get().plugin.name
                                 assert it.version == null
                                 def genres = it.genres
                                 assert genres != null
                                 assert genres.size() == 1
-                                assert genres.get(0).id == newGenre.id
-                                assert genres.get(0).name == newGenre.name
+                                assert genres.get(0).serverId == savedModifiedGame.get().genres.first.id
+                                assert genres.get(0).name == modifiedGame.get().genres.first.name
                                 assert genres.get(0).createdAt == null
                                 assert genres.get(0).createdBy == null
                                 assert genres.get(0).modifiedAt == null
                                 assert genres.get(0).modifiedBy == null
-                                assert it.source?.id == newSource.id
-                                assert it.source?.name == newSource.name
+                                assert it.source?.serverId == savedModifiedGame.get().source.id
+                                assert it.source?.name == modifiedGame.get().source.name
                                 assert it.source?.createdAt == null
                                 assert it.source?.createdBy == null
                                 assert it.source?.modifiedAt == null
@@ -403,17 +377,24 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
                             .verifyComplete()
                 }
                 .then {
-                    def result = makeSaveDiffRequest(modifiedViaDiffDTO, List.of()).expectStatus().is2xxSuccessful()
+                    PanelGameDTO modifiedAgain = savedModifiedGame.get().withName("even different name")
+                    modifiedAgain.version = "3.0"
+                    def newCategory = new PanelCategoryDTO()
+                    newCategory.name = "New category"
+                    modifiedAgain.categories = List.of(newCategory)
+                    def newSecondSource = new PanelSourceDTO()
+                    newSecondSource.name = "New source 2"
+                    modifiedAgain.source = newSecondSource
+                    secondModifiedGame.set(modifiedAgain)
+
+                    def result = makeSaveRequest(modifiedAgain, List.of()).expectStatus().is2xxSuccessful()
                             .expectBody(PanelGameDTO.class)
                             .returnResult()
                             .responseBody
-                    assert result.name == modifiedViaDiffDTO.name
-                    assert result.description == modified.description
-                    assert result.version == modifiedViaDiffDTO.version
-                    assert result.createdAt != null
-                    assert result.createdBy != null
-                    assert result.modifiedAt != null
-                    assert result.modifiedBy != null
+                    secondSavedModifiedGame.set(result)
+                    assert result.name == modifiedAgain.name
+                    assert result.description == modifiedGame.get().description
+                    assert result.version == modifiedAgain.version
                 }
                 .thenConsumeWhile { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -436,37 +417,38 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
                 }
                 .then {
                     assert newDiffObjectId.get() != -1
-                    def getResponse = makeGetDiffRequest(newSecondDiffObjectId.get())
+                    def getResponse = makeGetDiffRequest(newSecondDiffObjectId.get(), sessionId.get())
 
                     getResponse.expectStatus().is2xxSuccessful()
 
                     StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, GameDiffDTO.class))
                             .expectNextMatches {
                                 assert it.serverId != null
-                                assert it.id == toSave.id
+                                assert it.id != null
                                 assert it.baseObjectId == collectedIds.first
-                                assert it.gameId == toSave.gameId
-                                assert it.pluginId == toSave.pluginId
+                                assert it.gameId == savedFirstGame.get().gameId
+                                assert it.pluginId != null
+                                assert it.pluginName == toSave.plugin.name
                                 assert it.changedFields != null
                                 assert it.changedFields.size() == 4
                                 assert it.changedFields.contains("Name")
                                 assert it.changedFields.contains("Version")
                                 assert it.changedFields.contains("Categories")
                                 assert it.changedFields.contains("Source")
-                                assert it.name == modifiedViaDiffDTO.name
+                                assert it.name == secondModifiedGame.get().name
                                 assert it.description == null
-                                assert it.version == modifiedViaDiffDTO.version
+                                assert it.version == secondModifiedGame.get().version
                                 def categories = it.categories
                                 assert categories != null
                                 assert categories.size() == 1
-                                assert categories.get(0).id == newCategory.id
-                                assert categories.get(0).name == newCategory.name
+                                assert categories.get(0).serverId == secondSavedModifiedGame.get().categories.first.id
+                                assert categories.get(0).name == secondModifiedGame.get().categories.first.name
                                 assert categories.get(0).createdAt == null
                                 assert categories.get(0).createdBy == null
                                 assert categories.get(0).modifiedAt == null
                                 assert categories.get(0).modifiedBy == null
-                                assert it.source?.id == newSecondSource.id
-                                assert it.source?.name == newSecondSource.name
+                                assert it.source?.serverId == secondSavedModifiedGame.get().source.id
+                                assert it.source?.name == secondModifiedGame.get().source.name
                                 assert it.source?.createdAt == null
                                 assert it.source?.createdBy == null
                                 assert it.source?.modifiedAt == null
@@ -478,7 +460,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
                             .verifyComplete()
                 }
                 .then {
-                    makeDeleteRequest(removed).expectStatus().is2xxSuccessful()
+                    makeDeleteRequest(secondSavedModifiedGame.get()).expectStatus().is2xxSuccessful()
                 }
                 .expectNextMatches { str ->
                     def change = JsonMapperUtil.readConnectionMessage(jsonMapper, str)
@@ -494,18 +476,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
                 .then {
                     def getResponse = makeGetRequest(collectedIds.first)
 
-                    getResponse.expectStatus().is2xxSuccessful()
-
-                    StepVerifier.create(IntegrationTestUtil.getReturnMono(getResponse, PanelGameDTO.class))
-                            .expectNextMatches {
-                                assert it.serverId == collectedIds.first
-                                assert it.createdAt != null
-                                assert it.createdBy != null
-                                assert it.modifiedAt != null
-                                assert it.modifiedBy != null
-                                objectMatches(it, removed)
-                            }
-                            .verifyComplete()
+                    getResponse.expectStatus().is4xxClientError()
                 }
                 .thenCancel()
                 .verify()
@@ -518,7 +489,10 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         def coverImage = PanelGameFactoryUtil.randomFile("CoverImage.jpeg", 2048)
         def backgroundImage = PanelGameFactoryUtil.randomFile("BackgroundImage.tif", 2048)
         def files = List.of(icon, coverImage, backgroundImage)
-        AtomicLong newObjectId = new AtomicLong(-1)
+        dto.savingIcon = true
+        dto.savingCoverImage = true
+        dto.savingBackground = true
+        AtomicReference<PanelGameDTO> savedFirstGame = new AtomicReference<>()
 
         when:
         def response = makeSaveRequest(dto, files)
@@ -529,44 +503,36 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         and:
         StepVerifier.create(IntegrationTestUtil.getReturnMono(response, PanelGameDTO.class))
                 .expectNextMatches {
-                    assert it.serverId != null
-                    assert it.createdAt != null
-                    assert it.createdBy != null
-                    assert it.modifiedAt != null
-                    assert it.modifiedBy != null
-                    newObjectId.set(it.serverId)
+                    assert it.id != null
+                    savedFirstGame.set(it)
                     objectMatches(it, dto)
                 }
                 .verifyComplete()
 
         and:
-        assertEntityAndGetResponse(dto, files, newObjectId.get())
+        def id = savedFirstGame.get().id
+        assertEntityAndGetResponse(dto, files, id)
 
         and:
-        checkFiles(dto, { id ->
-            assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "Icon.png")
-            assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "CoverImage.jpeg")
-            assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "BackgroundImage.tif")
-        })
+        assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "Icon.png")
+        assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "CoverImage.jpeg")
+        assert metadataTestHelper.fileExists(ConstantsKt.GAME, id, "BackgroundImage.tif")
 
         when:
-        GameDiffDTO diffDTO = new GameDiffDTO()
-        diffDTO.setId(dto.getId())
-        diffDTO.setGameId(dto.getGameId())
-        diffDTO.setPluginId(dto.getPluginId())
-        diffDTO.setChangedFields(List.of("Icon", "CoverImage", "BackgroundImage"))
+        PanelGameDTO diffDTO = savedFirstGame.get().copyAll()
+        diffDTO.savingIcon = true
+        diffDTO.savingCoverImage = true
+        diffDTO.savingBackground = true
 
-        def diffResponse = makeSaveDiffRequest(diffDTO, List.of())
+        def diffResponse = makeSaveRequest(diffDTO, List.of())
 
         then:
         diffResponse.expectStatus().is2xxSuccessful()
 
         and:
-        checkFiles(dto, { id ->
-            assert metadataTestHelper.fileDoesNotExist(ConstantsKt.GAME, id, "Icon.png")
-            assert metadataTestHelper.fileDoesNotExist(ConstantsKt.GAME, id, "CoverImage.jpeg")
-            assert metadataTestHelper.fileDoesNotExist(ConstantsKt.GAME, id, "BackgroundImage.tif")
-        })
+        assert metadataTestHelper.fileDoesNotExist(ConstantsKt.GAME, id, "Icon.png")
+        assert metadataTestHelper.fileDoesNotExist(ConstantsKt.GAME, id, "CoverImage.jpeg")
+        assert metadataTestHelper.fileDoesNotExist(ConstantsKt.GAME, id, "BackgroundImage.tif")
     }
 
 
@@ -576,7 +542,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
     }
 
     protected static String diffUri() {
-        return "/api/panel/game-diff"
+        return "/api/game-diff"
     }
 
 
@@ -623,7 +589,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         }
         for (final def filename in ConstantsKt.ALLOWED_FILE_NAMES) {
             def expectedFile = expectedFileMap.get(filename)
-            def metadataRequest = makeGetMetadataRequest(savedEntity.getId(), filename)
+            def metadataRequest = makeGetMetadataRequest(savedEntity.getId(), filename, getMd5(savedEntity, filename))
             if (expectedFile != null) {
                 metadataRequest.expectStatus().is2xxSuccessful()
 
@@ -643,15 +609,27 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         true
     }
 
+    private String getMd5(Game game, String filename) {
+        if (filename == ConstantsKt.ICON) {
+            return game.iconMd5
+        } else if (filename == ConstantsKt.COVER_IMAGE) {
+            return game.coverImageMd5
+        } else if (filename == ConstantsKt.BACKGROUND_IMAGE) {
+            return game.backgroundImageMd5
+        } else {
+            throw IllegalArgumentException("Invalid metadata $filename")
+        }
+    }
+
     private checkFiles(PanelGameDTO dto, Consumer<Long> idChecker) {
         idChecker.accept(dto.id)
         true
     }
 
-    protected WebTestClient.ResponseSpec makeGetMetadataRequest(Long id, String metadataName) {
+    protected WebTestClient.ResponseSpec makeGetMetadataRequest(Long id, String metadataName, String md5) {
         webTestClient.get()
                 .uri(uriBuilder -> uriBuilder
-                        .path("/api/game-metadata/$id/$metadataName")
+                        .path("/api/panel/game/$id/metadata/$metadataName/$md5")
                         .build())
                 .exchange()
     }
@@ -679,11 +657,14 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
                 .exchange()
     }
 
-    protected WebTestClient.ResponseSpec makeGetDiffRequest(Long id) {
-        webTestClient.get()
+    protected WebTestClient.ResponseSpec makeGetDiffRequest(Long id, String sessionId) {
+        rawWebTestClient.get()
                 .uri(uriBuilder -> uriBuilder
                         .path("${diffUri()}/$id")
                         .build())
+                .header("X-Client-Id", otherClientInfo.clientId)
+                .header("X-Client-Token", otherClientInfo.clientToken)
+                .header("X-Session-Id", sessionId)
                 .exchange()
     }
 }

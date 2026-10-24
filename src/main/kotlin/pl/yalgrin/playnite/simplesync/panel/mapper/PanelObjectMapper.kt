@@ -57,6 +57,7 @@ abstract class PanelObjectMapperImpl<E : LibraryObjectEntity, D : PanelObjectDTO
 
     private fun fillBasicDtoFields(dto: D, entity: E): D {
         dto.id = entity.id
+        dto.playniteId = entity.playniteId
         dto.name = entity.name
         return dto
     }

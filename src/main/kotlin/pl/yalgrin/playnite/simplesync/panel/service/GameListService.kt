@@ -16,7 +16,6 @@ import pl.yalgrin.playnite.simplesync.panel.repository.GameListCustomRepository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
-import reactor.kotlin.core.publisher.toMono
 import java.text.Collator
 
 @Service
@@ -236,22 +235,14 @@ class GameListService(
                     playtime = databaseModel.playtime,
                     isFavorite = databaseModel.isFavorite,
                     hasIcon = game.iconMd5 != null,
-                    iconHash = game.iconMd5,
+                    iconUrl = if (game.iconMd5 != null) "/api/panel/game/${game.id}/metadata/Icon/${game.iconMd5}" else null,
                 )
             }
     }
 
-    private fun fillPlugin(
-        databaseModel: GameDatabaseModel,
-        gameListDTO: GameListDTO
-    ): Mono<PanelLibraryPluginDTO> = databaseModel.pluginId.toMono()
-        .flatMap { libraryPluginService.findByPlayniteIdForPanel(it) }
-        .doOnNext { gameListDTO.plugin = it }
-
-    private fun fillCompletionStatus(
-        databaseModel: GameDatabaseModel,
-        gameListDTO: GameListDTO
-    ): Mono<PanelCompletionStatusDTO> = databaseModel.completionStatus?.id.toMono()
-        .flatMap { completionStatusService.findByPlayniteIdForPanel(it) }
-        .doOnNext { gameListDTO.completionStatus = it }
+    fun findAllReleaseYears(): Mono<List<String>> {
+        return gameRepository.findAllReleaseYears()
+            .collectList()
+            .transactionalReadOnly()
+    }
 }

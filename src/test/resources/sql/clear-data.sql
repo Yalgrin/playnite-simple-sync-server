@@ -15,6 +15,5 @@ TRUNCATE playnite_change,
     playnite_comp_status,
     playnite_filter_preset,
     playnite_game,
-    playnite_game_diff,
-    registered_client
+    playnite_game_diff
     RESTART IDENTITY;

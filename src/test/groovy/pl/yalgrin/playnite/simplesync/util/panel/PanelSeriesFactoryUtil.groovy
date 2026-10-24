@@ -4,11 +4,11 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelSeriesDTO
 
 class PanelSeriesFactoryUtil {
     static PanelSeriesDTO createSeries(Long id, String name) {
-        return new PanelSeriesDTO(id, name)
+        return new PanelSeriesDTO(id, null, name)
     }
 
     static PanelSeriesDTO createSeries(String name) {
-        return new PanelSeriesDTO(null, name)
+        return new PanelSeriesDTO(null, null, name)
     }
 
     static PanelSeriesDTO randomSeries() {

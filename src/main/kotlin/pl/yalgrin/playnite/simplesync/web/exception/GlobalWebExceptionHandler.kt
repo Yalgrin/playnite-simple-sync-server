@@ -9,7 +9,7 @@ import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.WebExceptionHandler
 import pl.yalgrin.playnite.simplesync.common.util.toErrorDTO
 import pl.yalgrin.playnite.simplesync.dto.ErrorDTO
-import pl.yalgrin.playnite.simplesync.exception.AuthException
+import pl.yalgrin.playnite.simplesync.exception.SecurityException
 import reactor.core.publisher.Mono
 import tools.jackson.databind.json.JsonMapper
 
@@ -24,7 +24,7 @@ class GlobalWebExceptionHandler(
     }
 
     override fun handle(exchange: ServerWebExchange, ex: Throwable): Mono<Void> {
-        if (ex is AuthException) {
+        if (ex is SecurityException) {
             log.error("Authorization error occurred!", ex)
             return Mono.just(
                 ex.toErrorDTO()

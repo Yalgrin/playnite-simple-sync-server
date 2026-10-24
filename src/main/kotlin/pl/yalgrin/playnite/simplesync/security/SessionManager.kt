@@ -4,8 +4,8 @@ import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.dto.SessionSettingsDTO
-import pl.yalgrin.playnite.simplesync.exception.AuthException
-import pl.yalgrin.playnite.simplesync.exception.AuthExceptionType
+import pl.yalgrin.playnite.simplesync.exception.SecurityException
+import pl.yalgrin.playnite.simplesync.exception.SecurityExceptionType
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 
@@ -42,9 +42,9 @@ class SessionManager {
 
     fun saveSessionInfo(sessionInfo: SessionInfoDTO) {
         synchronized(sessionMap) {
-            if (sessionMap.values.any { it.clientId == sessionInfo.clientId }) {
+            if (!sessionInfo.panelUser && sessionMap.values.any { it.clientId == sessionInfo.clientId }) {
                 log.warn("Client with id {} is already registered", sessionInfo.clientId)
-                throw AuthException(AuthExceptionType.CLIENT_ALREADY_REGISTERED)
+                throw SecurityException(SecurityExceptionType.CLIENT_ALREADY_REGISTERED)
             }
             log.info("Saving session info for client with id {} ({})", sessionInfo.clientId, sessionInfo.displayName)
             sessionMap[sessionInfo.sessionId] = sessionInfo

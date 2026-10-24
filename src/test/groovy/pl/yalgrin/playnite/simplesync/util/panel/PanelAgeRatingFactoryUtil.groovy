@@ -5,11 +5,11 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelAgeRatingDTO
 
 class PanelAgeRatingFactoryUtil {
     static PanelAgeRatingDTO createAgeRating(Long id, String name) {
-        return new PanelAgeRatingDTO(id, name)
+        return new PanelAgeRatingDTO(id, null, name)
     }
 
     static PanelAgeRatingDTO createAgeRating(String name) {
-        return new PanelAgeRatingDTO(null, name)
+        return new PanelAgeRatingDTO(null, null, name)
     }
 
     static PanelAgeRatingDTO randomAgeRating() {

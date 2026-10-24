@@ -5,6 +5,7 @@ import java.io.Serial
 
 data class PanelCompanyDTO(
     override var id: Long? = null,
+    override var playniteId: String? = null,
     override var name: String? = null
 ) : PanelObjectDTO {
     companion object {

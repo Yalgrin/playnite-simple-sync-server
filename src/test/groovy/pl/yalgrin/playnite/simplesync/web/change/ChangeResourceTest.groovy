@@ -41,15 +41,15 @@ class ChangeResourceTest extends SpockIntegrationTest {
 
     def setup() {
         def populator = new ResourceDatabasePopulator()
-        populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
+        populator.addScript(new ClassPathResource("/sql/clear-db.sql"))
         populator.populate(connectionFactory).block()
 
         def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", ConstantsKt.CURRENT_API_VERSION)).block()
         def clientInfoToSaveData = registeredClientService.register(new RegistrationRequestDTO("other-user", ConstantsKt.CURRENT_API_VERSION)).block()
         def sessionId = UUID.randomUUID().toString()
         def otherUserSessionId = UUID.randomUUID().toString()
-        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))
-        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfoToSaveData.clientId, clientInfoToSaveData.displayName, otherUserSessionId))
+        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId, false))
+        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfoToSaveData.clientId, clientInfoToSaveData.displayName, otherUserSessionId, false))
 
         def previousClient = webTestClient
         webTestClient = webTestClient.mutate()

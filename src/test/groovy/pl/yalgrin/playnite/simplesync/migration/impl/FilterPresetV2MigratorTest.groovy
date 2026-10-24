@@ -57,7 +57,7 @@ class FilterPresetV2MigratorTest extends SpockIntegrationTest {
 
     def setup() {
         def populator = new ResourceDatabasePopulator()
-        populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
+        populator.addScript(new ClassPathResource("/sql/clear-db.sql"))
         populator.populate(connectionFactory).block()
     }
 

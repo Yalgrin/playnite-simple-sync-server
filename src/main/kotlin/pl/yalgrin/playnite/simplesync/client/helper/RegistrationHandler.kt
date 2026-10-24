@@ -8,8 +8,8 @@ import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
 import pl.yalgrin.playnite.simplesync.client.repository.RegisteredClientRepository
 import pl.yalgrin.playnite.simplesync.common.util.pairWith
 import pl.yalgrin.playnite.simplesync.common.util.toSha1
-import pl.yalgrin.playnite.simplesync.exception.AuthException
-import pl.yalgrin.playnite.simplesync.exception.AuthExceptionType
+import pl.yalgrin.playnite.simplesync.exception.SecurityException
+import pl.yalgrin.playnite.simplesync.exception.SecurityExceptionType
 import pl.yalgrin.playnite.simplesync.security.ClientAuthenticationToken
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import reactor.core.publisher.Mono
@@ -24,7 +24,7 @@ class RegistrationHandler(
     fun getSessionInfo(token: ClientAuthenticationToken): Mono<SessionInfoDTO> {
         return doGetSessionInfo(token)
             .filter { it.clientId.isNotBlank() && it.displayName.isNotBlank() && (token.allowBlankSessionId || it.sessionId.isNotBlank()) }
-            .switchIfEmpty(Mono.error(AuthException(AuthExceptionType.NO_VALID_CLIENT_SESSION)))
+            .switchIfEmpty(Mono.error(SecurityException(SecurityExceptionType.NO_VALID_CLIENT_SESSION)))
     }
 
     fun getRegistrationInfo(exchange: ServerWebExchange): Mono<RegistrationInfoDTO> {
@@ -60,14 +60,14 @@ class RegistrationHandler(
     private fun doGetSessionInfo(token: ClientAuthenticationToken): Mono<SessionInfoDTO> = fetchHeaders(token)
         .flatMap { (clientId, clientToken, sessionId) ->
             if (clientId.isBlank() || clientToken.isBlank()) {
-                Mono.error(AuthException(AuthExceptionType.MISSING_REGISTRATION))
+                Mono.error(SecurityException(SecurityExceptionType.MISSING_REGISTRATION))
             } else {
                 Mono.zip(
                     registeredClientRepository.findByClientId(clientId)
                         .filter { client ->
                             client.clientToken == clientToken.toSha1()
                         }
-                        .switchIfEmpty(Mono.error(AuthException(AuthExceptionType.INVALID_REGISTRATION))),
+                        .switchIfEmpty(Mono.error(SecurityException(SecurityExceptionType.INVALID_REGISTRATION))),
                     sessionManager.getSessionInfoMono(sessionId)
                         .filter { it.clientId == clientId }
                         .map { Optional.of(it) }

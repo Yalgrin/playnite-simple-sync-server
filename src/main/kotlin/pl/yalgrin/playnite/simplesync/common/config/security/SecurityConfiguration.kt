@@ -1,7 +1,8 @@
-package pl.yalgrin.playnite.simplesync.config
+package pl.yalgrin.playnite.simplesync.common.config.security
 
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.core.annotation.Order
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder
 import org.springframework.security.config.web.server.ServerHttpSecurity
@@ -18,12 +19,10 @@ import pl.yalgrin.playnite.simplesync.security.ClientReactiveAuthenticationManag
 import reactor.core.publisher.Mono
 import tools.jackson.databind.json.JsonMapper
 
-//TODO separate security config for panel
 private val PUBLIC_PATHS = listOf(
     "/api/health",
     "/api/client/register",
-    "/api/client/check",
-    "/api/panel/**"
+    "/api/client/check"
 )
 
 private val LENIENT_PATHS = listOf(
@@ -38,6 +37,7 @@ class SecurityConfiguration(
     private val jsonMapper: JsonMapper
 ) {
     @Bean
+    @Order(1)
     fun securityWebFilterChain(
         http: ServerHttpSecurity,
         authManager: ClientReactiveAuthenticationManager
@@ -96,3 +96,4 @@ class SecurityConfiguration(
         return pathMatcher.match(pattern, path)
     }
 }
+

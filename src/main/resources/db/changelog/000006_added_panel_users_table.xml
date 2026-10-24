@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="000006-1" author="yalgrin">
+        <createTable tableName="panel_user">
+            <column name="id" type="uuid">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="username" type="varchar(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="password" type="varchar(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="last_login" type="timestamp with time zone"/>
+        </createTable>
+    </changeSet>
+
+    <changeSet id="000006-2" author="yalgrin" dbms="postgresql">
+        <addDefaultValue
+                tableName="panel_user"
+                columnName="id"
+                columnDataType="uuid"
+                defaultValueComputed="gen_random_uuid()"/>
+        <rollback>
+            <dropDefaultValue
+                    tableName="panel_user"
+                    columnName="id"
+                    columnDataType="uuid"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="000006-3" author="yalgrin">
+        <addUniqueConstraint tableName="panel_user" columnNames="username" constraintName="panel_user_unique"/>
+    </changeSet>
+</databaseChangeLog>

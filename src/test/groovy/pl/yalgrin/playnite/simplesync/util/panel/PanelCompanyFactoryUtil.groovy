@@ -4,11 +4,11 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelCompanyDTO
 
 class PanelCompanyFactoryUtil {
     static PanelCompanyDTO createCompany(Long id, String name) {
-        return new PanelCompanyDTO(id, name)
+        return new PanelCompanyDTO(id, null, name)
     }
 
     static PanelCompanyDTO createCompany(String name) {
-        return new PanelCompanyDTO(null, name)
+        return new PanelCompanyDTO(null, null, name)
     }
 
     static PanelCompanyDTO randomCompany() {

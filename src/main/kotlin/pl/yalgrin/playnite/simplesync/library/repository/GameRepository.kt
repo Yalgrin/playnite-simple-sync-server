@@ -171,4 +171,12 @@ interface GameRepository : ObjectRepository<Game>, ModelVersionObjectRepository<
                 " order by g.id"
     )
     fun findByCompletionStatusIds(ids: Collection<String>): Flux<Game>
+
+    @Query(
+        "select distinct g.contents->>'releaseYear'" +
+                " from playnite_game g" +
+                " where g.contents->>'releaseYear' is not null" +
+                " order by 1"
+    )
+    fun findAllReleaseYears(): Flux<String>
 }

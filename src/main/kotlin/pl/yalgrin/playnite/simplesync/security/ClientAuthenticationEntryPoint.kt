@@ -6,8 +6,8 @@ import org.springframework.security.core.AuthenticationException
 import org.springframework.security.web.server.ServerAuthenticationEntryPoint
 import org.springframework.web.server.ServerWebExchange
 import pl.yalgrin.playnite.simplesync.common.util.toErrorDTO
-import pl.yalgrin.playnite.simplesync.exception.AuthException
-import pl.yalgrin.playnite.simplesync.exception.AuthExceptionType
+import pl.yalgrin.playnite.simplesync.exception.SecurityException
+import pl.yalgrin.playnite.simplesync.exception.SecurityExceptionType
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import tools.jackson.databind.json.JsonMapper
@@ -19,7 +19,7 @@ class ClientAuthenticationEntryPoint(
         exchange: ServerWebExchange,
         ex: AuthenticationException
     ): Mono<Void> {
-        return Mono.fromSupplier { AuthException(AuthExceptionType.NO_VALID_CLIENT_SESSION) }
+        return Mono.fromSupplier { SecurityException(SecurityExceptionType.NO_VALID_CLIENT_SESSION) }
             .map { it.toErrorDTO() }
             .flatMap { errorDTO ->
                 Mono.fromCallable { jsonMapper.writeValueAsBytes(errorDTO) }

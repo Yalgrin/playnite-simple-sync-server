@@ -69,6 +69,7 @@ abstract class PanelObjectWithDiffMapperImpl<
 
     protected open fun fillBasicDtoFields(dto: DTO, entity: E): DTO {
         dto.id = entity.id
+        dto.playniteId = entity.playniteId
         dto.name = entity.name
         return dto
     }

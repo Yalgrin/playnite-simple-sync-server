@@ -17,6 +17,6 @@ class PanelChangeResource(
 
     @GetMapping("/connect", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun connect(): Flux<ServerSentEvent<List<ConnectionMessage>>> {
-        return connectionService.connect(true)
+        return connectionService.connectPanelUser()
     }
 }

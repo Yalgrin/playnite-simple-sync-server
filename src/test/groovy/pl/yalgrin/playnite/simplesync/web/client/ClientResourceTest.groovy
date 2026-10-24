@@ -324,7 +324,7 @@ class ClientResourceTest extends SpockIntegrationTest {
 
 
         when:
-        def sessionInfo = new SessionInfoDTO(receivedInfo.get().clientId, receivedInfo.get().displayName, UUID.randomUUID().toString())
+        def sessionInfo = new SessionInfoDTO(receivedInfo.get().clientId, receivedInfo.get().displayName, UUID.randomUUID().toString(), false)
         sessionManager.saveSessionInfo(sessionInfo)
         def checkResponse = makeCheckRequest(ConstantsKt.CURRENT_API_VERSION, receivedInfo.get(), sessionInfo.sessionId)
 

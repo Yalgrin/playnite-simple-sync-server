@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 class PanelLibraryPluginFactoryUtil {
     static PanelLibraryPluginDTO createLibraryPlugin(Long id, String name) {
-        return new PanelLibraryPluginDTO(id, name, false, false, null, null, false, false)
+        return new PanelLibraryPluginDTO(id, null, name, null, null, false, false)
     }
 
     static PanelLibraryPluginDTO createLibraryPlugin(String name) {

@@ -8,6 +8,7 @@ import java.io.Serial
 
 data class PanelFilterPresetDTO(
     override var id: Long? = null,
+    override var playniteId: String? = null,
     override var name: String? = null,
     var settings: FilterPresetSettingsDTO? = null,
     var sortingOrder: String? = null,

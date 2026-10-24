@@ -4,11 +4,11 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelFeatureDTO
 
 class PanelFeatureFactoryUtil {
     static PanelFeatureDTO createFeature(Long id, String name) {
-        return new PanelFeatureDTO(id, name)
+        return new PanelFeatureDTO(id, null, name)
     }
 
     static PanelFeatureDTO createFeature(String name) {
-        return new PanelFeatureDTO(null, name)
+        return new PanelFeatureDTO(null, null, name)
     }
 
     static PanelFeatureDTO randomFeature() {

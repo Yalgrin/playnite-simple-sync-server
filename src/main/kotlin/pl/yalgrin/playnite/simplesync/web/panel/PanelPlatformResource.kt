@@ -30,7 +30,7 @@ class PanelPlatformResource(
     }
 
     @GetMapping(
-        value = ["/{id}/metadata/{metadataName}"],
+        value = ["/{id}/metadata/{metadataName}/{hash}"],
         produces = [MediaType.APPLICATION_OCTET_STREAM_VALUE]
     )
     fun getPlatformMetadata(

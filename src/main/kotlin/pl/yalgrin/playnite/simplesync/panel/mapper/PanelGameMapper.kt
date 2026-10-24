@@ -12,6 +12,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.LibraryObjectDTO
 import pl.yalgrin.playnite.simplesync.library.enums.toPlaytimeCategory
 import pl.yalgrin.playnite.simplesync.library.enums.toScoreGroup
 import pl.yalgrin.playnite.simplesync.library.service.*
+import pl.yalgrin.playnite.simplesync.library.util.clearModificationData
 import pl.yalgrin.playnite.simplesync.panel.dto.PanelGameDTO
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
@@ -187,6 +188,7 @@ class PanelGameMapper(
                     { dto.plugin?.id },
                     { libraryPluginService.findById(it) },
                     { result ->
+                        result?.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.pluginId, result?.id)) {
                             changedFields.add(GameFields.PLUGIN_ID)
                         }
@@ -206,6 +208,7 @@ class PanelGameMapper(
                     { dto.genres.mapNotNull { it.id } },
                     { genreService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.genres, results)) {
                             generatedDiffDTO.genres = results
                             databaseModel.genres = results
@@ -218,6 +221,7 @@ class PanelGameMapper(
                     { dto.platforms.mapNotNull { it.id } },
                     { platformService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.platforms, results)) {
                             generatedDiffDTO.platforms = results
                             databaseModel.platforms = results
@@ -230,6 +234,7 @@ class PanelGameMapper(
                     { dto.publishers.mapNotNull { it.id } },
                     { companyService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.publishers, results)) {
                             generatedDiffDTO.publishers = results
                             databaseModel.publishers = results
@@ -242,6 +247,7 @@ class PanelGameMapper(
                     { dto.developers.mapNotNull { it.id } },
                     { companyService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.developers, results)) {
                             generatedDiffDTO.developers = results
                             databaseModel.developers = results
@@ -254,6 +260,7 @@ class PanelGameMapper(
                     { dto.categories.mapNotNull { it.id } },
                     { categoryService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.categories, results)) {
                             generatedDiffDTO.categories = results
                             databaseModel.categories = results
@@ -266,6 +273,7 @@ class PanelGameMapper(
                     { dto.tags.mapNotNull { it.id } },
                     { tagService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.tags, results)) {
                             generatedDiffDTO.tags = results
                             databaseModel.tags = results
@@ -278,6 +286,7 @@ class PanelGameMapper(
                     { dto.features.mapNotNull { it.id } },
                     { featureService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.features, results)) {
                             generatedDiffDTO.features = results
                             databaseModel.features = results
@@ -290,6 +299,7 @@ class PanelGameMapper(
                     { dto.series.mapNotNull { it.id } },
                     { seriesService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.series, results)) {
                             generatedDiffDTO.series = results
                             databaseModel.series = results
@@ -302,6 +312,7 @@ class PanelGameMapper(
                     { dto.ageRatings.mapNotNull { it.id } },
                     { ageRatingService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.ageRatings, results)) {
                             generatedDiffDTO.ageRatings = results
                             databaseModel.ageRatings = results
@@ -314,6 +325,7 @@ class PanelGameMapper(
                     { dto.regions.mapNotNull { it.id } },
                     { regionService.findById(it) },
                     { results ->
+                        results.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.regions, results)) {
                             generatedDiffDTO.regions = results
                             databaseModel.regions = results
@@ -326,6 +338,7 @@ class PanelGameMapper(
                     { dto.source?.id },
                     { sourceService.findById(it) },
                     { result ->
+                        result?.clearModificationData()
                         if (MapperUtil.hasChanged(databaseModel.source?.id, result?.id)) {
                             generatedDiffDTO.source = result
                             databaseModel.source = result
@@ -338,6 +351,7 @@ class PanelGameMapper(
                     { dto.completionStatus?.id },
                     { completionStatusService.findById(it) },
                     { result ->
+                        result?.clearModificationData()
                         if (MapperUtil.hasChanged(
                                 databaseModel.completionStatus?.id,
                                 result?.id
@@ -392,12 +406,12 @@ class PanelGameMapper(
     override fun fillBasicDtoFields(dto: PanelGameDTO, entity: Game): PanelGameDTO {
         val result = super.fillBasicDtoFields(dto, entity)
         result.gameId = entity.gameId
-        result.hasIcon = entity.iconMd5 != null
-        result.hasCoverImage = entity.coverImageMd5 != null
-        result.hasBackgroundImage = entity.backgroundImageMd5 != null
-        result.iconHash = entity.iconMd5
-        result.coverImageHash = entity.coverImageMd5
-        result.backgroundImageHash = entity.backgroundImageMd5
+        result.iconUrl =
+            if (entity.iconMd5 != null) "/api/panel/game/${entity.id}/metadata/Icon/${entity.iconMd5}" else null
+        result.coverImageUrl =
+            if (entity.coverImageMd5 != null) "/api/panel/game/${entity.id}/metadata/CoverImage/${entity.coverImageMd5}" else null
+        result.backgroundImageUrl =
+            if (entity.backgroundImageMd5 != null) "/api/panel/game/${entity.id}/metadata/BackgroundImage/${entity.backgroundImageMd5}" else null
         return result
     }
 
@@ -416,6 +430,7 @@ class PanelGameMapper(
                 dto.added = databaseModel.added
                 dto.modified = databaseModel.modified
                 dto.playCount = databaseModel.playCount
+                dto.installSize = databaseModel.installSize
                 dto.version = databaseModel.version
                 dto.userScore = databaseModel.userScore
                 dto.criticScore = databaseModel.criticScore

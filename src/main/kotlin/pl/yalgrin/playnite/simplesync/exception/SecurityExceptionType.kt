@@ -1,6 +1,8 @@
 package pl.yalgrin.playnite.simplesync.exception
 
-enum class AuthExceptionType {
+enum class SecurityExceptionType {
+    UNAUTHORIZED,
+    FORBIDDEN,
     NO_VALID_CLIENT_SESSION,
     MISSING_REGISTRATION,
     INVALID_REGISTRATION,

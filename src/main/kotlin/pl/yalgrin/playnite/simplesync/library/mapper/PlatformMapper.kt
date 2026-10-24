@@ -21,11 +21,15 @@ class PlatformMapper :
         generatedDiffDTO: PlatformDiffDTO
     ): Triple<Platform, PlatformDiffDTO, MutableList<String>> {
         val result = super.fillBasicFields(dto, entity, generatedDiffDTO)
+        val changedEntity = result.first
         if (!Strings.CS.equals(entity.specificationId, dto.specificationId)) {
-            result.first.specificationId = dto.specificationId
+            changedEntity.specificationId = dto.specificationId
             result.second.specificationId = dto.specificationId
             result.third.add("SpecificationId")
         }
+        changedEntity.isSavingIcon = true
+        changedEntity.isSavingCoverImage = true
+        changedEntity.isSavingBackground = true
         return result
     }
 

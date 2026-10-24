@@ -14,6 +14,18 @@ import reactor.core.publisher.Mono
 class LibraryPluginMapper :
     LibraryObjectWithDiffMapperImpl<LibraryPlugin, LibraryPluginDiff, LibraryPluginDTO, LibraryPluginDiffDTO, LibraryPluginDiffDatabaseModel>() {
 
+    override fun fillBasicFields(
+        dto: LibraryPluginDTO,
+        entity: LibraryPlugin,
+        generatedDiffDTO: LibraryPluginDiffDTO
+    ): Triple<LibraryPlugin, LibraryPluginDiffDTO, MutableList<String>> {
+        val result = super.fillBasicFields(dto, entity, generatedDiffDTO)
+        val changedEntity = result.first
+        changedEntity.isSavingIcon = true
+        changedEntity.isSavingBackground = true
+        return result
+    }
+
     override fun fillBasicDtoFields(dto: LibraryPluginDTO, entity: LibraryPlugin): LibraryPluginDTO {
         val result = super.fillBasicDtoFields(dto, entity)
         result.hasIcon = entity.iconMd5 != null

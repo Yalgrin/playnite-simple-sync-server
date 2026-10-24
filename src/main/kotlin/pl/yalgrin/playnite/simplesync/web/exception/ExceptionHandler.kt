@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.web.exception
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import pl.yalgrin.playnite.simplesync.common.util.toErrorDTO
@@ -17,8 +18,8 @@ class ExceptionHandler {
         private val log = LoggerFactory.getLogger(ExceptionHandler::class.java)
     }
 
-    @ExceptionHandler(AuthException::class)
-    fun handleAuthException(ex: AuthException): Mono<ResponseEntity<ErrorDTO>> {
+    @ExceptionHandler(SecurityException::class)
+    fun handleAuthException(ex: SecurityException): Mono<ResponseEntity<ErrorDTO>> {
         log.error("Authorization error occurred!", ex)
         return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.toErrorDTO()))
     }
@@ -53,6 +54,12 @@ class ExceptionHandler {
     fun handleForceFetchRequiredException(ex: ForceFetchRequiredException): Mono<ResponseEntity<ErrorDTO>> {
         log.error("Force fetch required!", ex)
         return Mono.just(ResponseEntity.status(HttpStatus.CONFLICT).body(ErrorDTO("forceFetchRequired")))
+    }
+
+    @ExceptionHandler(AuthenticationException::class)
+    fun handleAuthenticationException(ex: AuthenticationException): Mono<ResponseEntity<Void>> {
+        log.error("Authentication exception!", ex)
+        return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED).build())
     }
 
     @ExceptionHandler(Exception::class)

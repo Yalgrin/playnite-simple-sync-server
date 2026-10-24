@@ -19,6 +19,7 @@ class PanelGameFactoryUtil {
     static PanelGameDTO createGame(Long id, String name) {
         return new PanelGameDTO(
                 id,
+                null,
                 name,
                 null,
                 PanelLibraryPluginFactoryUtil.createLibraryPlugin("Playnite"),
@@ -86,9 +87,6 @@ class PanelGameFactoryUtil {
                         new LinkDTO("home page", "https://some-website.com"),
                         new LinkDTO("steam page", "https://steam.com/whatever")
                 ),
-                true,
-                true,
-                true,
                 null,
                 null,
                 null,
@@ -101,6 +99,7 @@ class PanelGameFactoryUtil {
     static PanelGameDTO randomGame() {
         def random = ThreadLocalRandom.current()
         return new PanelGameDTO(
+                null,
                 null,
                 UUID.randomUUID().toString(),
                 null,
@@ -134,9 +133,6 @@ class PanelGameFactoryUtil {
                 ZonedDateTime.now().plusSeconds(random.nextLong(1_000_000_000) - 500_000_000),
                 UUID.randomUUID().toString(),
                 RandomUtil.generateRandomList { new LinkDTO(UUID.randomUUID().toString(), UUID.randomUUID().toString()) },
-                random.nextBoolean(),
-                random.nextBoolean(),
-                random.nextBoolean(),
                 null,
                 null,
                 null,

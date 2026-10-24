@@ -11,11 +11,9 @@ import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.core.io.buffer.DefaultDataBufferFactory
 import org.springframework.stereotype.Service
-import pl.yalgrin.playnite.simplesync.common.config.ALLOWED_FILE_NAMES
-import pl.yalgrin.playnite.simplesync.common.config.ALLOWED_FOLDERS
-import pl.yalgrin.playnite.simplesync.common.config.GAME
-import pl.yalgrin.playnite.simplesync.common.config.PLATFORM
+import pl.yalgrin.playnite.simplesync.common.config.*
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
+import pl.yalgrin.playnite.simplesync.library.repository.LibraryPluginRepository
 import pl.yalgrin.playnite.simplesync.library.repository.PlatformRepository
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -30,7 +28,8 @@ import kotlin.streams.asSequence
 @DependsOnDatabaseInitialization
 class MetadataService(
     private val gameRepository: GameRepository,
-    private val platformRepository: PlatformRepository
+    private val platformRepository: PlatformRepository,
+    private val pluginRepository: LibraryPluginRepository
 ) {
     @Value($$"${application.metadata-folder}")
     val metadataFolder: String = ""
@@ -59,6 +58,7 @@ class MetadataService(
                     val existingIds = when (path.fileName.toString()) {
                         GAME -> getExistingIds(idsToCheck, gameRepository::findIdsByIds)
                         PLATFORM -> getExistingIds(idsToCheck, platformRepository::findIdsByIds)
+                        PLUGIN -> getExistingIds(idsToCheck, pluginRepository::findIdsByIds)
                         else -> emptySet()
                     }
                     removeInvalidSubdirectories(path, existingIds, path.fileName.toString().lowercase())

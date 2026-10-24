@@ -35,12 +35,12 @@ class PanelPlatformMapper :
     override fun fillBasicDtoFields(dto: PanelPlatformDTO, entity: Platform): PanelPlatformDTO {
         val result = super.fillBasicDtoFields(dto, entity)
         result.specificationId = entity.specificationId
-        result.hasIcon = entity.iconMd5 != null
-        result.hasCoverImage = entity.coverImageMd5 != null
-        result.hasBackgroundImage = entity.backgroundImageMd5 != null
-        result.iconHash = entity.iconMd5
-        result.coverImageHash = entity.coverImageMd5
-        result.backgroundImageHash = entity.backgroundImageMd5
+        result.iconUrl =
+            if (entity.iconMd5 != null) "/api/panel/platform/${entity.id}/metadata/Icon/${entity.iconMd5}" else null
+        result.coverImageUrl =
+            if (entity.coverImageMd5 != null) "/api/panel/platform/${entity.id}/metadata/CoverImage/${entity.coverImageMd5}" else null
+        result.backgroundImageUrl =
+            if (entity.backgroundImageMd5 != null) "/api/panel/platform/${entity.id}/metadata/BackgroundImage/${entity.backgroundImageMd5}" else null
         return result
     }
 

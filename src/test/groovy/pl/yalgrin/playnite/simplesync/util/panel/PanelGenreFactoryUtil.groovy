@@ -4,11 +4,11 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelGenreDTO
 
 class PanelGenreFactoryUtil {
     static PanelGenreDTO createGenre(Long id, String name) {
-        return new PanelGenreDTO(id, name)
+        return new PanelGenreDTO(id, null, name)
     }
 
     static PanelGenreDTO createGenre(String name) {
-        return new PanelGenreDTO(null, name)
+        return new PanelGenreDTO(null, null, name)
     }
 
     static PanelGenreDTO randomGenre() {

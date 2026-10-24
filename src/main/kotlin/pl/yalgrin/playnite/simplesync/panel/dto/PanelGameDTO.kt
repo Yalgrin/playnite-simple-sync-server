@@ -11,6 +11,7 @@ import java.time.ZonedDateTime
 
 data class PanelGameDTO(
     override var id: Long? = null,
+    override var playniteId: String? = null,
     override var name: String? = null,
     var gameId: String? = null,
     var plugin: PanelLibraryPluginDTO? = null,
@@ -35,6 +36,7 @@ data class PanelGameDTO(
     var lastActivity: ZonedDateTime? = null,
     var playtime: Long = 0,
     var playCount: Long = 0,
+    var installSize: Long? = null,
     var version: String? = null,
     var manual: String? = null,
     @all:JsonProperty("isHidden")
@@ -45,15 +47,9 @@ data class PanelGameDTO(
     var modified: ZonedDateTime? = null,
     var notes: String? = null,
     var links: List<LinkDTO> = emptyList(),
-    @all:JsonProperty("hasIcon")
-    var hasIcon: Boolean = false,
-    @all:JsonProperty("hasCoverImage")
-    var hasCoverImage: Boolean = false,
-    @all:JsonProperty("hasBackgroundImage")
-    var hasBackgroundImage: Boolean = false,
-    var iconHash: String? = null,
-    var coverImageHash: String? = null,
-    var backgroundImageHash: String? = null,
+    var iconUrl: String? = null,
+    var coverImageUrl: String? = null,
+    var backgroundImageUrl: String? = null,
     @all:JsonProperty("isSavingIcon")
     var isSavingIcon: Boolean = false,
     @all:JsonProperty("isSavingCoverImage")
@@ -89,7 +85,7 @@ data class GameListDTO(
     val isFavorite: Boolean,
     @all:JsonProperty("hasIcon")
     var hasIcon: Boolean = false,
-    var iconHash: String? = null,
+    var iconUrl: String? = null,
 ) : Serializable {
     companion object {
         @Serial

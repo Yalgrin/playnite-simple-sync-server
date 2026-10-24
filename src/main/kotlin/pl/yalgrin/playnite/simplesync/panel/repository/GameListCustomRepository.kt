@@ -39,8 +39,10 @@ class GameListCustomRepository(
             }
 
             filter.isFavorite?.let {
-                queryBuilder.append(" AND g.contents->>'isFavorite' = :isFavorite")
-                params["isFavorite"] = it.toString()
+                if (it) {
+                    queryBuilder.append(" AND g.contents->>'isFavorite' = :isFavorite")
+                    params["isFavorite"] = true.toString()
+                }
             }
 
             val name = filter.name
@@ -57,8 +59,17 @@ class GameListCustomRepository(
 
             val releaseYears = filter.releaseYear?.values
             if (!releaseYears.isNullOrEmpty()) {
-                queryBuilder.append(" AND g.contents->>'releaseYear' IN (:releaseYears)")
-                params["releaseYears"] = releaseYears
+                val hasEmpty = releaseYears.any { it.isBlank() }
+                val notNull = releaseYears.filter { it.isNotBlank() }.toList()
+                queryBuilder.append(" AND (0=1")
+                if (hasEmpty) {
+                    queryBuilder.append(" OR g.contents->>'releaseYear' IS NULL OR g.contents->>'releaseYear' = ''")
+                }
+                if (notNull.isNotEmpty()) {
+                    queryBuilder.append(" OR g.contents->>'releaseYear' IN (:releaseYears)")
+                    params["releaseYears"] = notNull
+                }
+                queryBuilder.append(")")
             }
 
             addIdItemPropertiesFilterMultiple(filter.genre, queryBuilder, params, useAndFilteringStyle, "genres")
@@ -124,30 +135,8 @@ class GameListCustomRepository(
             return
         }
 
-        val ids = filter.ids
-        if (ids.isNotEmpty()) {
-            val paramName = "${fieldName}Ids"
-
-            if (useAndFilteringStyle) {
-                val idsMap = mutableMapOf<String, Any>()
-                val idsList = mutableListOf<Map<String, String>>()
-                ids.forEach {
-                    idsList.add(mapOf("id" to it))
-                }
-                idsMap[fieldName] = idsList
-                val queryJson = jsonMapper.writeValueAsString(idsMap)
-
-                queryBuilder.append(" AND CAST(g.contents AS jsonb) @> CAST(:$paramName AS jsonb)")
-                params[paramName] = queryJson
-            } else {
-                queryBuilder.append(
-                    """ AND EXISTS ( SELECT 1 FROM json_array_elements(g.contents->'$fieldName') AS o WHERE o->>'id' IN (:$paramName) )"""
-                )
-                params[paramName] = ids
-            }
-        }
-
         val text = filter.text
+        val ids = filter.ids
         if (text.isNotNullAndNotBlank()) {
             val paramName = "${fieldName}Text"
 
@@ -155,6 +144,46 @@ class GameListCustomRepository(
                 """ AND EXISTS ( SELECT 1 FROM json_array_elements(g.contents->'$fieldName') AS o WHERE lower(o->>'name') LIKE :$paramName ESCAPE '\' )"""
             )
             params[paramName] = "%${text.escapeLike()}%"
+        } else if (ids.isNotEmpty()) {
+            val paramName = "${fieldName}Ids"
+
+            val matchNone = ids.any { it.isBlank() || it.isEmpty() }
+            val matchAnyValue = ids.any { it.isNotEmpty() && it.isNotBlank() }
+
+            if (useAndFilteringStyle) {
+                if (matchNone) {
+                    if (matchAnyValue) {
+                        queryBuilder.append(" AND 0=1");
+                    } else {
+                        queryBuilder.append(" AND g.contents->'$fieldName' is null OR (g.contents->'$fieldName')::jsonb IN ('null'::jsonb, '[]'::jsonb)")
+                    }
+                } else {
+                    val idsMap = mutableMapOf<String, Any>()
+                    val idsList = mutableListOf<Map<String, String>>()
+                    ids.forEach {
+                        idsList.add(mapOf("id" to it))
+                    }
+                    idsMap[fieldName] = idsList
+                    val queryJson = jsonMapper.writeValueAsString(idsMap)
+
+                    queryBuilder.append(" AND CAST(g.contents AS jsonb) @> CAST(:$paramName AS jsonb)")
+                    params[paramName] = queryJson
+                }
+            } else {
+                queryBuilder.append(" AND (0=1")
+                if (matchAnyValue) {
+                    queryBuilder.append(
+                        """ OR EXISTS ( SELECT 1 FROM json_array_elements(g.contents->'$fieldName') AS o WHERE o->>'id' IN (:$paramName) )"""
+                    )
+                    params[paramName] = ids.filter { it.isNotBlank() }.toList()
+                } else {
+                    queryBuilder.append(" OR 0=1")
+                }
+                if (matchNone) {
+                    queryBuilder.append(" OR g.contents->'$fieldName' is null OR (g.contents->'$fieldName')::jsonb IN ('null'::jsonb, '[]'::jsonb)")
+                }
+                queryBuilder.append(")")
+            }
         }
     }
 
@@ -166,20 +195,26 @@ class GameListCustomRepository(
             return
         }
 
-        val ids = filter.ids
-        if (ids.isNotEmpty()) {
-            val paramName = "${fieldName}Ids"
-
-            queryBuilder.append(" AND CAST(g.contents->>'$fieldName' AS jsonb)->>'id' IN (:$paramName)")
-            params[paramName] = ids
-        }
-
         val text = filter.text
+        val ids = filter.ids
         if (text.isNotNullAndNotBlank()) {
             val paramName = "${fieldName}Text"
 
             queryBuilder.append(" AND lower(CAST(g.contents->>'$fieldName' AS jsonb)->>'name') LIKE :$paramName ESCAPE '\\'")
             params[paramName] = "%${text.escapeLike()}%"
+        } else if (ids.isNotEmpty()) {
+            val paramName = "${fieldName}Ids"
+            val hasEmpty = ids.any { it.isBlank() }
+            val notNull = ids.filter { it.isNotBlank() }.toList()
+            queryBuilder.append(" AND (0=1")
+            if (hasEmpty) {
+                queryBuilder.append(" OR CAST(g.contents->>'$fieldName' AS jsonb)->>'id' IS NULL OR CAST(g.contents->>'$fieldName' AS jsonb)->>'id' = ''")
+            }
+            if (notNull.isNotEmpty()) {
+                queryBuilder.append(" OR CAST(g.contents->>'$fieldName' AS jsonb)->>'id' IN (:$paramName)")
+                params[paramName] = notNull
+            }
+            queryBuilder.append(")")
         }
     }
 
@@ -191,20 +226,26 @@ class GameListCustomRepository(
             return
         }
 
-        val ids = filter.ids
-        if (ids.isNotEmpty()) {
-            val paramName = "${fieldName}Ids"
-
-            queryBuilder.append(" AND g.contents->>'$idFieldName' IN (:$paramName)")
-            params[paramName] = ids
-        }
-
         val text = filter.text
+        val ids = filter.ids
         if (text.isNotNullAndNotBlank()) {
             val paramName = "${fieldName}Text"
 
             queryBuilder.append(" AND lower(g.contents->>'$nameFieldName') LIKE :$paramName ESCAPE '\\'")
             params[paramName] = "%${text.escapeLike()}%"
+        } else if (ids.isNotEmpty()) {
+            val paramName = "${fieldName}Ids"
+            val hasEmpty = ids.any { it.isBlank() }
+            val notNull = ids.filter { it.isNotBlank() }.toList()
+            queryBuilder.append(" AND (0=1")
+            if (hasEmpty) {
+                queryBuilder.append(" OR g.contents->>'$idFieldName' IS NULL OR g.contents->>'$idFieldName' = ''")
+            }
+            if (notNull.isNotEmpty()) {
+                queryBuilder.append(" OR g.contents->>'$idFieldName' IN (:$paramName)")
+                params[paramName] = notNull
+            }
+            queryBuilder.append(")")
         }
     }
 

@@ -5,6 +5,7 @@ import java.io.Serial
 
 data class PanelRegionDTO(
     override var id: Long? = null,
+    override var playniteId: String? = null,
     override var name: String? = null,
     var specificationId: String? = null
 ) : PanelObjectDTO {

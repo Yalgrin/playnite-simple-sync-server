@@ -8,6 +8,7 @@ import org.aspectj.lang.annotation.Pointcut
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.stereotype.Component
+import org.springframework.web.server.ServerWebExchange
 import pl.yalgrin.playnite.simplesync.security.getSessionClientId
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -93,7 +94,14 @@ class ReactiveLoggingAspect {
     }
 
     private fun formatArgs(args: Array<Any?>): List<Any?> {
-        return args.map { formatResult(it) }
+        return args.filter { shouldIncludeArg(it) }.map { formatResult(it) }
+    }
+
+    private fun shouldIncludeArg(arg: Any?): Boolean {
+        if (arg is ServerWebExchange) {
+            return false
+        }
+        return true
     }
 
     private fun formatResult(result: Any?): Any? {

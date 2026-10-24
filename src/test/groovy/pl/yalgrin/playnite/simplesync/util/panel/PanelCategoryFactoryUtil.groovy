@@ -4,11 +4,11 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelCategoryDTO
 
 class PanelCategoryFactoryUtil {
     static PanelCategoryDTO createCategory(Long id, String name) {
-        return new PanelCategoryDTO(id, name)
+        return new PanelCategoryDTO(id, null, name)
     }
 
     static PanelCategoryDTO createCategory(String name) {
-        return new PanelCategoryDTO(null, name)
+        return new PanelCategoryDTO(null, null, name)
     }
 
     static PanelCategoryDTO randomCategory() {

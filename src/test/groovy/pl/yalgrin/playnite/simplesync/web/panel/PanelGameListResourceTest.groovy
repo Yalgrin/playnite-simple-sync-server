@@ -13,6 +13,7 @@ import pl.yalgrin.playnite.simplesync.SpockIntegrationTest
 import pl.yalgrin.playnite.simplesync.client.dto.RegisteredClientDTO
 import pl.yalgrin.playnite.simplesync.client.dto.RegistrationRequestDTO
 import pl.yalgrin.playnite.simplesync.client.dto.SessionInfoDTO
+import pl.yalgrin.playnite.simplesync.client.dto.SessionSettingsDTO
 import pl.yalgrin.playnite.simplesync.client.service.RegisteredClientService
 import pl.yalgrin.playnite.simplesync.common.config.ConstantsKt
 import pl.yalgrin.playnite.simplesync.library.dto.GameDTO
@@ -24,8 +25,13 @@ import pl.yalgrin.playnite.simplesync.library.enums.PastTimeSegment
 import pl.yalgrin.playnite.simplesync.library.enums.PlaytimeCategory
 import pl.yalgrin.playnite.simplesync.library.enums.ScoreGroup
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
+import pl.yalgrin.playnite.simplesync.library.service.MetadataService
+import pl.yalgrin.playnite.simplesync.panel.dto.CsrfResponse
 import pl.yalgrin.playnite.simplesync.panel.dto.GameListFilterDTO
 import pl.yalgrin.playnite.simplesync.panel.dto.GameListResultDTO
+import pl.yalgrin.playnite.simplesync.panel.dto.LoginRequest
+import pl.yalgrin.playnite.simplesync.panel.repository.PanelUserRepository
+import pl.yalgrin.playnite.simplesync.panel.service.PanelUserService
 import pl.yalgrin.playnite.simplesync.security.SessionManager
 import pl.yalgrin.playnite.simplesync.util.IntegrationTestUtil
 import pl.yalgrin.playnite.simplesync.util.library.*
@@ -40,6 +46,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
     private static final String FIRST_GAME_ID = "1"
     private static final String SECOND_GAME_ID = "2"
     private static final String THIRD_GAME_ID = "3"
+    private static final String FOURTH_GAME_ID = "4"
 
     @Shared
     @Autowired
@@ -50,37 +57,101 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
     @Shared
     @Autowired
     private SessionManager sessionManager
+    @Shared
+    @Autowired
+    private PanelUserService userService
+    @Shared
+    @Autowired
+    private PanelUserRepository userRepository
+    @Shared
+    @Autowired
+    private MetadataService metadataService
     @Autowired
     protected JsonMapper jsonMapper
     @Shared
     @Autowired
     protected GameRepository gameRepository
     @Shared
-    protected WebTestClient rawWebTestClient
+    protected WebTestClient pluginWebTestClient
 
-    @Shared
-    protected String clientId
     @Shared
     protected RegisteredClientDTO otherClientInfo
 
     def setupSpec() {
         def populator = new ResourceDatabasePopulator()
-        populator.addScript(new ClassPathResource("/sql/clear-data.sql"))
+        populator.addScript(new ClassPathResource("/sql/clear-db.sql"))
         populator.populate(connectionFactory).block()
+
+        userService.init().block()
+        metadataService.init()
+
+        pluginWebTestClient = webTestClient
 
         def clientInfo = registeredClientService.register(new RegistrationRequestDTO("test-user", ConstantsKt.CURRENT_API_VERSION)).block()
         def sessionId = UUID.randomUUID().toString()
-        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId))
-        otherClientInfo = registeredClientService.register(new RegistrationRequestDTO("other-client", ConstantsKt.CURRENT_API_VERSION)).block()
+        sessionManager.saveSessionInfo(new SessionInfoDTO(clientInfo.clientId, clientInfo.displayName, sessionId, false))
 
-        rawWebTestClient = webTestClient
-        webTestClient = webTestClient.mutate()
+        pluginWebTestClient = pluginWebTestClient.mutate()
                 .defaultHeader("X-Client-Id", clientInfo.clientId)
                 .defaultHeader("X-Client-Token", clientInfo.clientToken)
                 .defaultHeader("X-Session-Id", sessionId)
                 .build()
 
-        clientId = clientInfo.clientId
+        def csrfResult = webTestClient.get()
+                .uri("/api/panel/auth/csrf")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CsrfResponse)
+                .returnResult()
+
+        var session = csrfResult.getResponseCookies().getFirst("SESSION")
+
+        webTestClient = webTestClient.mutate()
+                .defaultCookie(session.getName(), session.getValue())
+                .defaultHeader(csrfResult.responseBody.headerName, csrfResult.responseBody.token)
+                .build()
+
+        def login = webTestClient.post()
+                .uri("/api/panel/auth/login")
+                .bodyValue(new LoginRequest("admin", "admin", true))
+                .exchange()
+                .expectStatus().isOk()
+                .returnResult()
+
+        session = login.getResponseCookies().getFirst("SESSION")
+
+        webTestClient = webTestClient.mutate()
+                .defaultCookie(session.getName(), session.getValue())
+                .build()
+
+        csrfResult = webTestClient.get()
+                .uri("/api/panel/auth/csrf")
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(CsrfResponse)
+                .returnResult()
+
+        session = csrfResult.getResponseCookies().getFirst("SESSION")
+
+        webTestClient = webTestClient.mutate()
+                .defaultCookie(session.getName(), session.getValue())
+                .defaultHeader(csrfResult.responseBody.headerName, csrfResult.responseBody.token)
+                .build()
+
+        def user = userRepository.findAll().blockFirst()
+        def clientId = user.id.toString()
+
+        def panelSessionId = UUID.randomUUID().toString()
+
+        def sessionInfo = new SessionInfoDTO(clientId, user.username, panelSessionId, true)
+        sessionManager.saveSessionInfo(sessionInfo)
+        sessionManager.updateSettings(sessionInfo, new SessionSettingsDTO(true))
+
+        otherClientInfo = registeredClientService.register(new RegistrationRequestDTO("other-client", ConstantsKt.CURRENT_API_VERSION)).block()
+
+        webTestClient = webTestClient.mutate()
+                .defaultHeader("X-Session-Id", panelSessionId)
+                .build()
 
         def game = GameFactoryUtil.randomGame()
         game.id = FIRST_GAME_ID
@@ -174,6 +245,12 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         game.playtime = 2250000
         game.installSize = 0
         makeSaveRequest(game, "/api/game", List.of())
+
+        game = new GameDTO()
+        game.id = FOURTH_GAME_ID
+        game.gameId = FOURTH_GAME_ID
+        game.pluginId = FOURTH_GAME_ID
+        makeSaveRequest(game, "/api/game", List.of())
     }
 
     def "should filter games by hidden"() {
@@ -189,8 +266,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         hidden || foundIds
-        null   || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
-        false  || [FIRST_GAME_ID, SECOND_GAME_ID]
+        null  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        false || [FIRST_GAME_ID, SECOND_GAME_ID, FOURTH_GAME_ID]
         true   || [THIRD_GAME_ID]
     }
 
@@ -207,8 +284,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         favorite || foundIds
-        null     || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
-        false    || [FIRST_GAME_ID, THIRD_GAME_ID]
+        null  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         true     || [SECOND_GAME_ID]
     }
 
@@ -225,8 +302,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         name              || foundIds
-        null              || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
-        ""                || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        null || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        ""   || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "a"               || [FIRST_GAME_ID, SECOND_GAME_ID]
         "x"               || [THIRD_GAME_ID]
         "game"            || [FIRST_GAME_ID]
@@ -247,8 +324,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         version || foundIds
-        null    || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
-        ""      || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        null || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        ""   || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "."     || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
         ".0"    || [FIRST_GAME_ID, THIRD_GAME_ID]
         "1.0"   || [FIRST_GAME_ID]
@@ -273,7 +350,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         releaseYears     || foundIds
-        []               || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] || [FOURTH_GAME_ID]
         ["2001"]         || [SECOND_GAME_ID]
         ["2001", "2026"] || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["2026"]         || [FIRST_GAME_ID]
@@ -297,7 +375,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -306,7 +385,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -332,7 +412,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Genre"    || [FIRST_GAME_ID, SECOND_GAME_ID]
         "re 1"     || [FIRST_GAME_ID, SECOND_GAME_ID]
         "eNrE 2"   || [FIRST_GAME_ID]
@@ -357,7 +437,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -366,7 +447,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -392,7 +474,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Platform" || [FIRST_GAME_ID, SECOND_GAME_ID]
         "rm 1"     || [FIRST_GAME_ID, SECOND_GAME_ID]
         "fOrM 2"   || [FIRST_GAME_ID]
@@ -417,7 +499,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -426,7 +509,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -452,7 +536,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Company"  || [FIRST_GAME_ID, SECOND_GAME_ID]
         "ny 1"     || [FIRST_GAME_ID, SECOND_GAME_ID]
         "PaNy 2"   || [FIRST_GAME_ID]
@@ -477,7 +561,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -486,7 +571,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -512,7 +598,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Company"  || [FIRST_GAME_ID, SECOND_GAME_ID]
         "ny 1"     || [FIRST_GAME_ID, SECOND_GAME_ID]
         "PaNy 2"   || [FIRST_GAME_ID]
@@ -537,7 +623,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -546,7 +633,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -572,7 +660,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Category" || [FIRST_GAME_ID, SECOND_GAME_ID]
         "ry 1"     || [FIRST_GAME_ID, SECOND_GAME_ID]
         "GoRy 2"   || [FIRST_GAME_ID]
@@ -597,7 +685,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -606,7 +695,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -632,7 +722,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Tag"      || [FIRST_GAME_ID, SECOND_GAME_ID]
         "g 1"      || [FIRST_GAME_ID, SECOND_GAME_ID]
         "aG 2"     || [FIRST_GAME_ID]
@@ -657,7 +747,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -666,7 +757,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -692,7 +784,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Series"   || [FIRST_GAME_ID, SECOND_GAME_ID]
         "ies 1"    || [FIRST_GAME_ID, SECOND_GAME_ID]
         "RiEs 2"   || [FIRST_GAME_ID]
@@ -717,7 +809,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -726,7 +819,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -752,7 +846,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Region"   || [FIRST_GAME_ID, SECOND_GAME_ID]
         "ion 1"    || [FIRST_GAME_ID, SECOND_GAME_ID]
         "GiOn 2"   || [FIRST_GAME_ID]
@@ -777,7 +871,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [THIRD_GAME_ID]
         ["ccc"]               | false        || []
@@ -786,7 +881,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [THIRD_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [THIRD_GAME_ID]
         ["ccc"]               | true         || []
@@ -812,7 +908,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Source"   || [FIRST_GAME_ID, SECOND_GAME_ID]
         "rce 1"    || [FIRST_GAME_ID, SECOND_GAME_ID]
         "RcE 1"    || [FIRST_GAME_ID, SECOND_GAME_ID]
@@ -837,7 +933,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -846,7 +943,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -872,7 +970,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Rating"   || [FIRST_GAME_ID, SECOND_GAME_ID]
         "ing 1"    || [FIRST_GAME_ID, SECOND_GAME_ID]
         "TiNG 2"   || [FIRST_GAME_ID]
@@ -897,7 +995,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || []
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [THIRD_GAME_ID]
         ["ccc"]               | false        || []
@@ -906,7 +1005,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [THIRD_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || []
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [THIRD_GAME_ID]
         ["ccc"]               | true         || []
@@ -932,7 +1032,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Plugin"   || [FIRST_GAME_ID, SECOND_GAME_ID]
         "gIn 1"    || [FIRST_GAME_ID, SECOND_GAME_ID]
         "UgIN 1"   || [FIRST_GAME_ID, SECOND_GAME_ID]
@@ -957,7 +1057,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [THIRD_GAME_ID]
         ["ccc"]               | false        || []
@@ -966,7 +1067,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [THIRD_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [THIRD_GAME_ID]
         ["ccc"]               | true         || []
@@ -992,7 +1094,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Status"   || [FIRST_GAME_ID, SECOND_GAME_ID]
         "us 1"     || [FIRST_GAME_ID, SECOND_GAME_ID]
         "aTUs 1"   || [FIRST_GAME_ID, SECOND_GAME_ID]
@@ -1017,7 +1119,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterIds             | useAndFilter || foundIds
-        []                    | false        || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | false || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | false || [FOURTH_GAME_ID]
         ["aaa"]               | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | false        || [FIRST_GAME_ID]
         ["ccc"]               | false        || [SECOND_GAME_ID]
@@ -1026,7 +1129,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         ["bbb", "ccc"]        | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["aaa", "bbb", "ccc"] | false        || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["invalid"]           | false        || []
-        []                    | true         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []   | true  || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [""] | true  || [FOURTH_GAME_ID]
         ["aaa"]               | true         || [FIRST_GAME_ID, SECOND_GAME_ID]
         ["bbb"]               | true         || [FIRST_GAME_ID]
         ["ccc"]               | true         || [SECOND_GAME_ID]
@@ -1052,7 +1156,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterText || foundIds
-        ""         || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        "" || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         "Feature"  || [FIRST_GAME_ID, SECOND_GAME_ID]
         "ure 1"    || [FIRST_GAME_ID, SECOND_GAME_ID]
         "TuRe 2"   || [FIRST_GAME_ID]
@@ -1076,8 +1180,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterValues                     || foundIds
-        []                               || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
-        [ScoreGroup.NONE]                || []
+        []                || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [ScoreGroup.NONE] || [FOURTH_GAME_ID]
         [ScoreGroup.O0X]                 || [SECOND_GAME_ID, THIRD_GAME_ID]
         [ScoreGroup.O1X]                 || []
         [ScoreGroup.O2X]                 || []
@@ -1106,8 +1210,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterValues                                      || foundIds
-        []                                                || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
-        [ScoreGroup.NONE]                                 || [SECOND_GAME_ID]
+        []                                                || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [ScoreGroup.NONE]                                 || [SECOND_GAME_ID, FOURTH_GAME_ID]
         [ScoreGroup.O0X]                                  || []
         [ScoreGroup.O1X]                                  || []
         [ScoreGroup.O2X]                                  || []
@@ -1118,7 +1222,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
         [ScoreGroup.O7X]                                  || []
         [ScoreGroup.O8X]                                  || [FIRST_GAME_ID]
         [ScoreGroup.O9X]                                  || [THIRD_GAME_ID]
-        [ScoreGroup.NONE, ScoreGroup.O8X, ScoreGroup.O9X] || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        [ScoreGroup.NONE, ScoreGroup.O8X, ScoreGroup.O9X] || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
     }
 
     def "should filter games by critic scores"() {
@@ -1136,8 +1240,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterValues                                     || foundIds
-        []                                               || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
-        [ScoreGroup.NONE]                                || []
+        []                || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [ScoreGroup.NONE] || [FOURTH_GAME_ID]
         [ScoreGroup.O0X]                                 || []
         [ScoreGroup.O1X]                                 || [THIRD_GAME_ID]
         [ScoreGroup.O2X]                                 || []
@@ -1166,14 +1270,14 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterValues                                            || foundIds
-        []                                                      || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []                      || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         [PastTimeSegment.TODAY]                                 || [FIRST_GAME_ID]
         [PastTimeSegment.YESTERDAY]                             || []
         [PastTimeSegment.PAST_WEEK]                             || [SECOND_GAME_ID]
         [PastTimeSegment.PAST_MONTH]                            || []
         [PastTimeSegment.PAST_YEAR]                             || []
         [PastTimeSegment.MORE_THAN_YEAR]                        || [THIRD_GAME_ID]
-        [PastTimeSegment.NEVER]                                 || []
+        [PastTimeSegment.NEVER] || [FOURTH_GAME_ID]
         [PastTimeSegment.TODAY, PastTimeSegment.MORE_THAN_YEAR] || [FIRST_GAME_ID, THIRD_GAME_ID]
     }
 
@@ -1192,14 +1296,14 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterValues                                       || foundIds
-        []                                                 || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []                      || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         [PastTimeSegment.TODAY]                            || [FIRST_GAME_ID]
         [PastTimeSegment.YESTERDAY]                        || []
         [PastTimeSegment.PAST_WEEK]                        || [SECOND_GAME_ID]
         [PastTimeSegment.PAST_MONTH]                       || []
         [PastTimeSegment.PAST_YEAR]                        || [THIRD_GAME_ID]
         [PastTimeSegment.MORE_THAN_YEAR]                   || []
-        [PastTimeSegment.NEVER]                            || []
+        [PastTimeSegment.NEVER] || [FOURTH_GAME_ID]
         [PastTimeSegment.TODAY, PastTimeSegment.PAST_YEAR] || [FIRST_GAME_ID, THIRD_GAME_ID]
     }
 
@@ -1218,14 +1322,14 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterValues                                            || foundIds
-        []                                                      || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []                      || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         [PastTimeSegment.TODAY]                                 || []
         [PastTimeSegment.YESTERDAY]                             || [FIRST_GAME_ID]
         [PastTimeSegment.PAST_WEEK]                             || []
         [PastTimeSegment.PAST_MONTH]                            || [SECOND_GAME_ID]
         [PastTimeSegment.PAST_YEAR]                             || [THIRD_GAME_ID]
         [PastTimeSegment.MORE_THAN_YEAR]                        || []
-        [PastTimeSegment.NEVER]                                 || []
+        [PastTimeSegment.NEVER] || [FOURTH_GAME_ID]
         [PastTimeSegment.PAST_MONTH, PastTimeSegment.PAST_YEAR] || [SECOND_GAME_ID, THIRD_GAME_ID]
     }
 
@@ -1244,15 +1348,15 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterValues                                       || foundIds
-        []                                                 || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
+        []                                                 || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
         [PastTimeSegment.TODAY]                            || [FIRST_GAME_ID]
         [PastTimeSegment.YESTERDAY]                        || []
         [PastTimeSegment.PAST_WEEK]                        || []
         [PastTimeSegment.PAST_MONTH]                       || []
         [PastTimeSegment.PAST_YEAR]                        || [THIRD_GAME_ID]
         [PastTimeSegment.MORE_THAN_YEAR]                   || []
-        [PastTimeSegment.NEVER]                            || [SECOND_GAME_ID]
-        [PastTimeSegment.PAST_YEAR, PastTimeSegment.NEVER] || [SECOND_GAME_ID, THIRD_GAME_ID]
+        [PastTimeSegment.NEVER]                            || [SECOND_GAME_ID, FOURTH_GAME_ID]
+        [PastTimeSegment.PAST_YEAR, PastTimeSegment.NEVER] || [SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
     }
 
     def "should filter games by play time"() {
@@ -1270,8 +1374,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterValues                                                  || foundIds
-        []                                                            || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
-        [PlaytimeCategory.NOT_PLAYED]                                 || [SECOND_GAME_ID]
+        []                            || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [PlaytimeCategory.NOT_PLAYED] || [SECOND_GAME_ID, FOURTH_GAME_ID]
         [PlaytimeCategory.LESS_THAN_HOUR]                             || [FIRST_GAME_ID]
         [PlaytimeCategory.O1_10]                                      || []
         [PlaytimeCategory.O10_100]                                    || []
@@ -1296,8 +1400,8 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
 
         where:
         filterValues                                                   || foundIds
-        []                                                             || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID]
-        [InstallSizeGroup.NONE]                                        || [THIRD_GAME_ID]
+        []                      || [FIRST_GAME_ID, SECOND_GAME_ID, THIRD_GAME_ID, FOURTH_GAME_ID]
+        [InstallSizeGroup.NONE] || [THIRD_GAME_ID, FOURTH_GAME_ID]
         [InstallSizeGroup.S0_0MB_100MB]                                || []
         [InstallSizeGroup.S1_100MB_1GB]                                || [FIRST_GAME_ID]
         [InstallSizeGroup.S2_1GB_5GB]                                  || []
@@ -1342,7 +1446,7 @@ class PanelGameListResourceTest extends SpockIntegrationTest {
                 })
             }
         }
-        webTestClient.post()
+        pluginWebTestClient.post()
                 .uri(uriBuilder -> uriBuilder
                         .path("${uri}/save")
                         .build())

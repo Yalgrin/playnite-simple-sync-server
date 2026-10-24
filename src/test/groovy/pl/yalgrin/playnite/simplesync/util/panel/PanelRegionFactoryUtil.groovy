@@ -4,15 +4,15 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelRegionDTO
 
 class PanelRegionFactoryUtil {
     static PanelRegionDTO createRegion(Long id, String name, String specificationId) {
-        return new PanelRegionDTO(id, name, specificationId)
+        return new PanelRegionDTO(id, null, name, specificationId)
     }
 
     static PanelRegionDTO createRegion(String name, String specificationId) {
-        return new PanelRegionDTO(null, name, specificationId)
+        return new PanelRegionDTO(null, null, name, specificationId)
     }
 
     static PanelRegionDTO createRegion(String name) {
-        return new PanelRegionDTO(null, name, UUID.randomUUID().toString())
+        return new PanelRegionDTO(null, null, name, UUID.randomUUID().toString())
     }
 
     static PanelRegionDTO randomRegion() {

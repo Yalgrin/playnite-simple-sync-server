@@ -6,17 +6,12 @@ import java.io.Serial
 
 data class PanelPlatformDTO(
     override var id: Long? = null,
+    override var playniteId: String? = null,
     override var name: String? = null,
     var specificationId: String? = null,
-    @all:JsonProperty("hasIcon")
-    var hasIcon: Boolean = false,
-    @all:JsonProperty("hasCoverImage")
-    var hasCoverImage: Boolean = false,
-    @all:JsonProperty("hasBackgroundImage")
-    var hasBackgroundImage: Boolean = false,
-    var iconHash: String? = null,
-    var coverImageHash: String? = null,
-    var backgroundImageHash: String? = null,
+    var iconUrl: String? = null,
+    var coverImageUrl: String? = null,
+    var backgroundImageUrl: String? = null,
     @all:JsonProperty("isSavingIcon")
     var isSavingIcon: Boolean = false,
     @all:JsonProperty("isSavingCoverImage")

@@ -4,11 +4,11 @@ import pl.yalgrin.playnite.simplesync.panel.dto.PanelCompletionStatusDTO
 
 class PanelCompletionStatusFactoryUtil {
     static PanelCompletionStatusDTO createCompletionStatus(Long id, String name) {
-        return new PanelCompletionStatusDTO(id, name)
+        return new PanelCompletionStatusDTO(id, null, name)
     }
 
     static PanelCompletionStatusDTO createCompletionStatus(String name) {
-        return new PanelCompletionStatusDTO(null, name)
+        return new PanelCompletionStatusDTO(null, null, name)
     }
 
     static PanelCompletionStatusDTO randomCompletionStatus() {

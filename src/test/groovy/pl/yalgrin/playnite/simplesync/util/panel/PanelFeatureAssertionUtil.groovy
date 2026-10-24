@@ -15,6 +15,7 @@ class PanelFeatureAssertionUtil {
         if (expectedDTO.getId() != null) {
             assert resultDTO.getId() == expectedDTO.getId()
         }
+        assert resultDTO.getPlayniteId() != null
         assert resultDTO.getName() == expectedDTO.getName()
         true
     }

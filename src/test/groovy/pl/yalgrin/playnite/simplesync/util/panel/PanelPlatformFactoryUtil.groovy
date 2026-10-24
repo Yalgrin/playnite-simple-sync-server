@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 class PanelPlatformFactoryUtil {
     static PanelPlatformDTO createPlatform(Long id, String name) {
-        return new PanelPlatformDTO(id, name, UUID.randomUUID().toString(), false, false, false, null, null, null, false, false, false)
+        return new PanelPlatformDTO(id, null, name, UUID.randomUUID().toString(), null, null, null, false, false, false)
     }
 
     static PanelPlatformDTO createPlatform(String name) {

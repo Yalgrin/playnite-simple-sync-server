@@ -23,6 +23,7 @@ import pl.yalgrin.playnite.simplesync.library.dto.*
 import pl.yalgrin.playnite.simplesync.library.mapper.GameMapper
 import pl.yalgrin.playnite.simplesync.library.repository.GameDiffRepository
 import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
+import pl.yalgrin.playnite.simplesync.library.util.clearModificationData
 import pl.yalgrin.playnite.simplesync.panel.dto.PanelGameDTO
 import pl.yalgrin.playnite.simplesync.panel.mapper.PanelGameMapper
 import reactor.core.publisher.Flux
@@ -134,10 +135,7 @@ class GameService(
                 service.saveObject(d)
                     .switchIfEmpty(Mono.fromSupplier { LibrarySaveResult(d, emptyList()) })
                     .doOnNext { result ->
-                        result.savedObject.createdAt = null
-                        result.savedObject.createdBy = null
-                        result.savedObject.modifiedAt = null
-                        result.savedObject.modifiedBy = null
+                        result.savedObject.clearModificationData()
                     }
             }
             .collectList()
@@ -158,10 +156,7 @@ class GameService(
                 service.saveObject(d)
                     .switchIfEmpty(Mono.fromSupplier { LibrarySaveResult(d, emptyList()) })
                     .doOnNext { result ->
-                        result.savedObject.createdAt = null
-                        result.savedObject.createdBy = null
-                        result.savedObject.modifiedAt = null
-                        result.savedObject.modifiedBy = null
+                        result.savedObject.clearModificationData()
                     }
             }
             .doOnNext { result -> dtoSetter(dto, result.savedObject) }
@@ -346,10 +341,7 @@ class GameService(
                             }
                         )
                             .doOnNext { result ->
-                                result.savedObject.createdAt = null
-                                result.savedObject.createdBy = null
-                                result.savedObject.modifiedAt = null
-                                result.savedObject.modifiedBy = null
+                                result.savedObject.clearModificationData()
                             }
                     }
                     .collectList()
@@ -383,10 +375,7 @@ class GameService(
                             }
                         )
                             .doOnNext { result ->
-                                result.savedObject.createdAt = null
-                                result.savedObject.createdBy = null
-                                result.savedObject.modifiedAt = null
-                                result.savedObject.modifiedBy = null
+                                result.savedObject.clearModificationData()
                             }
                     }
                     .doOnNext { t ->
