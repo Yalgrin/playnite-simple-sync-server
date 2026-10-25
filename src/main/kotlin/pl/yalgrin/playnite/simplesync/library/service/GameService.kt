@@ -1442,4 +1442,41 @@ class GameService(
                     .defaultIfEmpty { resultList.flatMap { it.generatedChanges } }
             }
     }
+
+    fun markAsFavorite(dto: PanelGameDTO, favorite: Boolean): Mono<PanelGameDTO> {
+        return dto.toMono()
+            .flatMap { findOrCreateEntity(it) }
+            .flatMap { entity ->
+                entity.extractDbModelOrEmpty()
+                    .mapNotNull { dbModel ->
+                        val gameDiffDTO = createDiffDTO(entity)
+                        val changed = dbModel.isFavorite != favorite
+                        if (!changed) {
+                            null
+                        } else {
+                            dbModel.isFavorite = favorite
+                            gameDiffDTO.isFavorite = favorite
+                            gameDiffDTO.changedFields = mutableListOf(GameFields.FAVORITE)
+                            entity.isChanged = true
+                            dbModel to gameDiffDTO
+                        }
+                    }.flatMap { (dbModel, diffDTO) ->
+                        dbModel.asJson()
+                            .doOnNext { entity.savedData = it }
+                            .map { entity to diffDTO }
+                    }
+            }
+            .flatMap { pair -> saveEntityWithDiff(pair, Flux.empty(), false) }
+            .flatMap { saveResult ->
+                panelMapper.toDTO(saveResult.savedObject)
+                    .map { LibrarySaveResult(it, saveResult.generatedChanges) }
+            }
+            .switchIfEmpty {
+                findOrCreateEntity(dto)
+                    .flatMap { entity -> panelMapper.toDTO(entity) }
+                    .map { LibrarySaveResult(it, emptyList()) }
+            }
+            .transactional()
+            .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
+    }
 }

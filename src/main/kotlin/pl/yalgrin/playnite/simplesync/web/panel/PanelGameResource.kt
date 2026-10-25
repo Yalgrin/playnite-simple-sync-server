@@ -75,4 +75,9 @@ class PanelGameResource(
     fun findAllReleaseYears(): Mono<List<String>> {
         return gameListService.findAllReleaseYears()
     }
+
+    @PostMapping("/mark-as-favorite")
+    fun markAsFavorite(@RequestParam favorite: Boolean, @RequestBody dto: PanelGameDTO): Mono<PanelGameDTO> {
+        return singleExecutorHelper.runOnExecutor(service.markAsFavorite(dto, favorite))
+    }
 }
