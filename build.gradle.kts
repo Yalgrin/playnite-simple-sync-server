@@ -19,6 +19,10 @@ kotlin {
     jvmToolchain(25)
 }
 
+springBoot {
+    buildInfo()
+}
+
 tasks.bootJar {
     enabled = true
     mainClass.set("pl.yalgrin.playnite.simplesync.PlayniteSimpleSyncServerApplicationKt")

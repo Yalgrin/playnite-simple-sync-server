@@ -175,11 +175,19 @@ class GameService(
             }
             .flatMap { e ->
                 log.debug(
-                    "findOrCreateEntity > found entity with id = {} by game id: {} and plugin id: {}",
+                    "findOrCreateEntity > found entity with id = {} (name: {}) by game id: {} and plugin id: {}",
                     e.id,
+                    e.name,
                     dto.gameId, dto.pluginId
                 )
                 if (!e.isRemoved && !Strings.CS.equals(e.playniteId, dto.id)) {
+                    log.warn(
+                        "findOrCreateEntity > force fetch required (isRemoved: {}, e.playniteId: {}, dto.id: {}, e.name: {})!",
+                        e.isRemoved,
+                        e.playniteId,
+                        dto.id,
+                        e.name
+                    )
                     Mono.error(ForceFetchRequiredException("Force fetch required!"))
                 } else {
                     Mono.just(e)
@@ -207,6 +215,11 @@ class GameService(
                     )
                 }
                 if (!Strings.CS.equals(e.playniteId, dto.id)) {
+                    log.warn(
+                        "findOrCreateEntity > force fetch required (e.playniteId: {}, dto.id: {})!",
+                        e.playniteId,
+                        dto.id
+                    )
                     Mono.error<Game>(ForceFetchRequiredException("Force fetch required!"))
                 } else {
                     Mono.just(e)
@@ -1101,7 +1114,6 @@ class GameService(
                 val changedObjects = dbModel.ageRatings.map { subObject ->
                     if (subObject.id == savedObject.playniteId && subObject.name != savedObject.name) {
                         changed = true
-                        //TODO powydzielac to do oddzielnych mapperow
                         AgeRatingDTO(
                             serverId = savedObject.id,
                             id = savedObject.playniteId,

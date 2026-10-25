@@ -1,5 +1,6 @@
 package pl.yalgrin.playnite.simplesync.client.service
 
+import org.springframework.boot.info.BuildProperties
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.stereotype.Service
 import pl.yalgrin.playnite.simplesync.change.mapper.ChangeMessageMapper
@@ -23,7 +24,8 @@ class ConnectionService(
     private val sessionManager: SessionManager,
     private val registeredClientService: RegisteredClientService,
     private val changeListenerService: ChangeListenerService,
-    private val changeMessageMapper: ChangeMessageMapper
+    private val changeMessageMapper: ChangeMessageMapper,
+    private val buildProperties: BuildProperties
 ) {
     fun connect(): Flux<ServerSentEvent<ConnectionMessage>> {
         return createSession()
@@ -67,11 +69,11 @@ class ConnectionService(
     }
 
     private fun createInitializationMessage(sessionInfo: SessionInfoDTO): Mono<ServerSentEvent<ConnectionMessage>> =
-        Mono.fromSupplier { InitializationMessage(sessionInfo.sessionId) }
+        Mono.fromSupplier { InitializationMessage(sessionInfo.sessionId, buildProperties.version) }
             .map { ServerSentEvent.builder<ConnectionMessage>().data(it).build() }
 
     private fun createInitializationMessageList(sessionInfo: SessionInfoDTO): Mono<ServerSentEvent<List<ConnectionMessage>>> =
-        Mono.fromSupplier { InitializationMessage(sessionInfo.sessionId) }
+        Mono.fromSupplier { InitializationMessage(sessionInfo.sessionId, buildProperties.version) }
             .map { ServerSentEvent.builder<List<ConnectionMessage>>().data(listOf(it)).build() }
 
     private fun <T : Any> createHeartbeatStream(): Flux<ServerSentEvent<T>> =

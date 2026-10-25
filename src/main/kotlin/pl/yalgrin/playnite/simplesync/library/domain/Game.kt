@@ -5,6 +5,7 @@ import org.springframework.data.annotation.Id
 import org.springframework.data.annotation.Transient
 import org.springframework.data.relational.core.mapping.Column
 import org.springframework.data.relational.core.mapping.Table
+import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import pl.yalgrin.playnite.simplesync.common.util.asObject
 import pl.yalgrin.playnite.simplesync.library.dto.GameDatabaseModel
 import reactor.core.publisher.Mono
@@ -76,7 +77,17 @@ data class Game(
 
     @Transient
     var isSavingBackground: Boolean = true,
-) : LibraryObjectEntity
+) : LibraryObjectEntity {
+    override fun toString(): String {
+        return ToStringUtil.createBuilder(this)
+            .append("id", id)
+            .append("playniteId", playniteId)
+            .append("gameId", gameId)
+            .append("pluginId", pluginId)
+            .append("name", name)
+            .build()
+    }
+}
 
 fun Game.extractDbModelOrEmpty(): Mono<GameDatabaseModel> {
     return this.savedData.asObject(GameDatabaseModel::class.java)

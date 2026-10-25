@@ -1,5 +1,7 @@
 package pl.yalgrin.playnite.simplesync.common.aop
 
+import io.vavr.Tuple
+import io.vavr.Tuple2
 import org.aspectj.lang.ProceedingJoinPoint
 import org.aspectj.lang.Signature
 import org.aspectj.lang.annotation.Around
@@ -107,8 +109,25 @@ class ReactiveLoggingAspect {
     private fun formatResult(result: Any?): Any? {
         return if (result is ByteArray) {
             "byte[${result.size}]"
+        } else if (result is Flux<*>) {
+            "Flux"
+        } else if (result is Tuple2<*, *>) {
+            Tuple.of(formatResult(result._1), formatResult(result._2))
+        } else if (result is Collection<*>) {
+            "Collection[${result.size}]: ${truncateResult(result)}"
         } else {
-            result
+            truncateResult(result)
         }
+    }
+
+    private fun truncateResult(result: Any?): String? {
+        result?.let { r ->
+            val str = r.toString()
+            if (str.length > 200) {
+                return str.substring(0, 200) + "..."
+            }
+            return str
+        }
+        return null
     }
 }
