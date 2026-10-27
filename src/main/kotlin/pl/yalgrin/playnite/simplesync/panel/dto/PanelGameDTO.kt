@@ -1,9 +1,12 @@
 package pl.yalgrin.playnite.simplesync.panel.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import pl.yalgrin.playnite.simplesync.common.config.json.AnyFormatLocalDateTimeDeserializer
+import pl.yalgrin.playnite.simplesync.common.config.json.AnyFormatZonedDateTimeDeserializer
 import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import pl.yalgrin.playnite.simplesync.library.dto.LinkDTO
 import pl.yalgrin.playnite.simplesync.library.dto.PanelObjectDTO
+import tools.jackson.databind.annotation.JsonDeserialize
 import java.io.Serial
 import java.io.Serializable
 import java.time.LocalDateTime
@@ -15,6 +18,7 @@ data class PanelGameDTO(
     override var name: String? = null,
     var gameId: String? = null,
     var plugin: PanelLibraryPluginDTO? = null,
+    @all:JsonDeserialize(using = AnyFormatLocalDateTimeDeserializer::class)
     var releaseDate: LocalDateTime? = null,
     var sortingName: String? = null,
     var series: List<PanelSeriesDTO> = emptyList(),
@@ -33,6 +37,7 @@ data class PanelGameDTO(
     var tags: List<PanelTagDTO> = emptyList(),
     var communityScore: Int? = null,
     var description: String? = null,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var lastActivity: ZonedDateTime? = null,
     var playtime: Long = 0,
     var playCount: Long = 0,
@@ -43,7 +48,9 @@ data class PanelGameDTO(
     var isHidden: Boolean = false,
     @all:JsonProperty("isFavorite")
     var isFavorite: Boolean = false,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var added: ZonedDateTime? = null,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var modified: ZonedDateTime? = null,
     var notes: String? = null,
     var links: List<LinkDTO> = emptyList(),
@@ -79,6 +86,7 @@ data class GameListDTO(
     val name: String?,
     var plugin: PanelLibraryPluginDTO? = null,
     var completionStatus: PanelCompletionStatusDTO? = null,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var lastActivity: ZonedDateTime? = null,
     var playtime: Long = 0,
     @all:JsonProperty("isFavorite")

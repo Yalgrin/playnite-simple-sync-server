@@ -26,6 +26,7 @@ class PanelGameAssertionUtil {
         assert resultDTO.getName() == expectedDTO.getName()
         assert resultDTO.getDescription() == expectedDTO.getDescription()
         assert resultDTO.getNotes() == expectedDTO.getNotes()
+        //TODO sorting
         assert assertListMatches(expectedDTO.getGenres(), resultDTO.getGenres(), { expected, result ->
             PanelGenreAssertionUtil.assertGenre(expected, result)
         })

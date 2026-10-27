@@ -1,8 +1,10 @@
 package pl.yalgrin.playnite.simplesync.library.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import pl.yalgrin.playnite.simplesync.common.config.json.AnyFormatInstantDeserializer
 import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
 import pl.yalgrin.playnite.simplesync.library.dto.filter.FilterPresetSettingsDTO
+import tools.jackson.databind.annotation.JsonDeserialize
 import java.io.Serial
 import java.time.Instant
 
@@ -18,8 +20,10 @@ data class FilterPresetDTO(
     var groupingOrder: String? = null,
     @all:JsonProperty("showInFullscreenQuickSelection")
     var showInFullscreenQuickSelection: Boolean = false,
+    @all:JsonDeserialize(using = AnyFormatInstantDeserializer::class)
     override var createdAt: Instant? = null,
     override var createdBy: String? = null,
+    @all:JsonDeserialize(using = AnyFormatInstantDeserializer::class)
     override var modifiedAt: Instant? = null,
     override var modifiedBy: String? = null
 ) : LibraryObjectDTO {

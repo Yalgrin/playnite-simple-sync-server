@@ -1,7 +1,11 @@
 package pl.yalgrin.playnite.simplesync.library.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import pl.yalgrin.playnite.simplesync.common.config.json.AnyFormatInstantDeserializer
+import pl.yalgrin.playnite.simplesync.common.config.json.AnyFormatLocalDateTimeDeserializer
+import pl.yalgrin.playnite.simplesync.common.config.json.AnyFormatZonedDateTimeDeserializer
 import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
+import tools.jackson.databind.annotation.JsonDeserialize
 import java.io.Serial
 import java.time.Instant
 import java.time.LocalDateTime
@@ -22,6 +26,7 @@ data class GameDiffDTO(
     var isHidden: Boolean = false,
     @all:JsonProperty("isFavorite")
     var isFavorite: Boolean = false,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var lastActivity: ZonedDateTime? = null,
     var sortingName: String? = null,
     var gameId: String? = null,
@@ -30,6 +35,7 @@ data class GameDiffDTO(
     var platforms: List<PlatformDTO> = emptyList(),
     var publishers: List<CompanyDTO> = emptyList(),
     var developers: List<CompanyDTO> = emptyList(),
+    @all:JsonDeserialize(using = AnyFormatLocalDateTimeDeserializer::class)
     var releaseDate: LocalDateTime? = null,
     var categories: List<CategoryDTO> = emptyList(),
     var tags: List<TagDTO> = emptyList(),
@@ -37,11 +43,14 @@ data class GameDiffDTO(
     var links: List<LinkDTO> = emptyList(),
     var playtime: Long = 0,
     var playtimeDiff: Long? = null,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var added: ZonedDateTime? = null,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var modified: ZonedDateTime? = null,
     var playCount: Long = 0,
     var playCountDiff: Long? = null,
     var installSize: Long? = null,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var lastSizeScanDate: ZonedDateTime? = null,
     var series: List<SeriesDTO> = emptyList(),
     var version: String? = null,
@@ -53,6 +62,7 @@ data class GameDiffDTO(
     var criticScore: Int? = null,
     var communityScore: Int? = null,
     var manual: String? = null,
+    @all:JsonDeserialize(using = AnyFormatInstantDeserializer::class)
     override var createdAt: Instant? = null,
     override var createdBy: String? = null
 ) : LibraryObjectDiffDTO {

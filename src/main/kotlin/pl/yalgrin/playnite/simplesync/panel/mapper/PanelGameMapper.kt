@@ -66,7 +66,6 @@ class PanelGameMapper(
                 val lastActivity = dto.lastActivity?.normalize()
                 val now = currentZonedDateTime()
                 val added: ZonedDateTime
-                val modified: ZonedDateTime
                 if (dto.added != null) {
                     added = dto.added!!.normalize()
                 } else if (entity.id == null) {
@@ -75,13 +74,6 @@ class PanelGameMapper(
                     added = databaseModel.added!!.normalize()
                 } else {
                     added = now
-                }
-                if (dto.modified != null) {
-                    modified = dto.modified!!.normalize()
-                } else if (databaseModel.modified != null) {
-                    modified = databaseModel.modified!!.normalize()
-                } else {
-                    modified = now
                 }
 
                 if (MapperUtil.hasChanged(databaseModel.description, dto.description)) {
@@ -141,12 +133,6 @@ class PanelGameMapper(
                     databaseModel.recentActivity = lastActivity?.max(databaseModel.added)
                     databaseModel.recentActivityInMs = databaseModel.recentActivity?.toInstant()?.toEpochMilli()
                     changedFields.add(GameFields.ADDED)
-                }
-                if (MapperUtil.hasChanged(databaseModel.modified, modified)) {
-                    generatedDiffDTO.modified = modified
-                    databaseModel.modified = modified
-                    databaseModel.modifiedInMs = databaseModel.modified?.toInstant()?.toEpochMilli()
-                    changedFields.add(GameFields.MODIFIED)
                 }
                 if (MapperUtil.hasChanged(databaseModel.playCount, dto.playCount)) {
                     generatedDiffDTO.playCount = dto.playCount
@@ -449,70 +435,70 @@ class PanelGameMapper(
                     databaseModel,
                     { databaseModel.genres.mapNotNull { it.id } },
                     genreService::findByPlayniteIdsForPanel,
-                    { obj -> dto.genres = obj })
+                    { obj -> dto.genres = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteIds(
                     databaseModel,
                     { databaseModel.platforms.mapNotNull { it.id } },
                     platformService::findByPlayniteIdsForPanel,
-                    { obj -> dto.platforms = obj })
+                    { obj -> dto.platforms = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteIds(
                     databaseModel,
                     { databaseModel.publishers.mapNotNull { it.id } },
                     companyService::findByPlayniteIdsForPanel,
-                    { obj -> dto.publishers = obj })
+                    { obj -> dto.publishers = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteIds(
                     databaseModel,
                     { databaseModel.developers.mapNotNull { it.id } },
                     companyService::findByPlayniteIdsForPanel,
-                    { obj -> dto.developers = obj })
+                    { obj -> dto.developers = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteIds(
                     databaseModel,
                     { databaseModel.categories.mapNotNull { it.id } },
                     categoryService::findByPlayniteIdsForPanel,
-                    { obj -> dto.categories = obj })
+                    { obj -> dto.categories = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteIds(
                     databaseModel,
                     { databaseModel.tags.mapNotNull { it.id } },
                     tagService::findByPlayniteIdsForPanel,
-                    { obj -> dto.tags = obj })
+                    { obj -> dto.tags = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteIds(
                     databaseModel,
                     { databaseModel.features.mapNotNull { it.id } },
                     featureService::findByPlayniteIdsForPanel,
-                    { obj -> dto.features = obj })
+                    { obj -> dto.features = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteIds(
                     databaseModel,
                     { databaseModel.series.mapNotNull { it.id } },
                     seriesService::findByPlayniteIdsForPanel,
-                    { obj -> dto.series = obj })
+                    { obj -> dto.series = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteIds(
                     databaseModel,
                     { databaseModel.ageRatings.mapNotNull { it.id } },
                     ageRatingService::findByPlayniteIdsForPanel,
-                    { obj -> dto.ageRatings = obj })
+                    { obj -> dto.ageRatings = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteIds(
                     databaseModel,
                     { databaseModel.regions.mapNotNull { it.id } },
                     regionService::findByPlayniteIdsForPanel,
-                    { obj -> dto.regions = obj })
+                    { obj -> dto.regions = obj.sortedBy { it.name } })
             }
             .flatMap { databaseModel ->
                 setFieldsByPlayniteId(

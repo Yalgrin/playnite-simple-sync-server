@@ -490,12 +490,12 @@ abstract class BaseLibraryObjectWithDiffService<DTO : LibraryObjectDTO,
         )
     }
 
-    private fun updateAuditingFields(pair: Pair<E, DIFF_DTO>): Mono<Pair<E, DIFF_DTO>> =
+    protected open fun updateAuditingFields(pair: Pair<E, DIFF_DTO>): Mono<Pair<E, DIFF_DTO>> =
         Mono.fromSupplier { pair.first }
             .flatMap { updateAuditingFields(it) }
             .thenReturn(pair)
 
-    private fun updateAuditingFields(entity: E): Mono<E> = getSessionClientId()
+    protected open fun updateAuditingFields(entity: E): Mono<E> = getSessionClientId()
         .doOnNext { clientId ->
             if (entity.id == null) {
                 entity.createdAt = Instant.now()

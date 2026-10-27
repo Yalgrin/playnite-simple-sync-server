@@ -12,10 +12,7 @@ import pl.yalgrin.playnite.simplesync.common.config.COVER_IMAGE
 import pl.yalgrin.playnite.simplesync.common.config.GAME
 import pl.yalgrin.playnite.simplesync.common.config.ICON
 import pl.yalgrin.playnite.simplesync.common.enums.ObjectType
-import pl.yalgrin.playnite.simplesync.common.util.asJson
-import pl.yalgrin.playnite.simplesync.common.util.defaultIfEmpty
-import pl.yalgrin.playnite.simplesync.common.util.first
-import pl.yalgrin.playnite.simplesync.common.util.isNotNullAndNotBlank
+import pl.yalgrin.playnite.simplesync.common.util.*
 import pl.yalgrin.playnite.simplesync.exception.ForceFetchRequiredException
 import pl.yalgrin.playnite.simplesync.exception.ManualSynchronizationRequiredException
 import pl.yalgrin.playnite.simplesync.library.domain.*
@@ -26,11 +23,13 @@ import pl.yalgrin.playnite.simplesync.library.repository.GameRepository
 import pl.yalgrin.playnite.simplesync.library.util.clearModificationData
 import pl.yalgrin.playnite.simplesync.panel.dto.PanelGameDTO
 import pl.yalgrin.playnite.simplesync.panel.mapper.PanelGameMapper
+import pl.yalgrin.playnite.simplesync.security.getSessionInfo
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
 import reactor.kotlin.core.publisher.toFlux
 import reactor.kotlin.core.publisher.toMono
+import java.time.ZoneId
 import java.util.*
 
 private const val EMPTY_PLUGIN_ID = "00000000-0000-0000-0000-000000000000"
@@ -1478,5 +1477,25 @@ class GameService(
             }
             .transactional()
             .flatMap { t -> changeListenerService.publishChanges(t.generatedChanges).thenReturn(t.savedObject) }
+    }
+
+    override fun updateAuditingFields(pair: Pair<Game, GameDiffDTO>): Mono<Pair<Game, GameDiffDTO>> {
+        return super.updateAuditingFields(pair)
+            .flatMap { (game, diffDTO) ->
+                getSessionInfo().map { it.panelUser }.defaultIfEmpty(false)
+                    .flatMap {
+                        game.extractDbModelOrEmpty()
+                            .map { dbModel ->
+                                dbModel.modified = game.modifiedAt.atZone(ZoneId.systemDefault()).normalize()
+                                dbModel.modifiedInMs = dbModel.modified?.toInstant()?.toEpochMilli()
+                                diffDTO.modified = dbModel.modified
+                                diffDTO.changedFields = diffDTO.changedFields.plus(GameFields.MODIFIED)
+                                dbModel
+                            }
+                            .flatMap { it.asJson() }
+                            .doOnNext { game.savedData = it }
+                    }
+                    .thenReturn(pair)
+            }
     }
 }

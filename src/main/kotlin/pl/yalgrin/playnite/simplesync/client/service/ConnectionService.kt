@@ -93,7 +93,7 @@ class ConnectionService(
 
     private fun createChangeStream(sessionInfo: SessionInfoDTO): Flux<ChangeMessage> =
         changeListenerService.modificationFlux()
-            .filter { it.isForceFetch || it.clientId != sessionInfo.clientId }.filterWhen {
+            .filter { it.isForceFetch || it.clientId != sessionInfo.clientId || sessionInfo.panelUser }.filterWhen {
                 sessionManager.getSessionSettingsMono(sessionInfo.sessionId)
                     .map { it.enabledChangeStream }
                     .defaultIfEmpty(false)

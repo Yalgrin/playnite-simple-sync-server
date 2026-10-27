@@ -1,9 +1,12 @@
 package pl.yalgrin.playnite.simplesync.library.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import pl.yalgrin.playnite.simplesync.common.config.json.AnyFormatLocalDateTimeDeserializer
+import pl.yalgrin.playnite.simplesync.common.config.json.AnyFormatZonedDateTimeDeserializer
 import pl.yalgrin.playnite.simplesync.library.enums.InstallSizeGroup
 import pl.yalgrin.playnite.simplesync.library.enums.PlaytimeCategory
 import pl.yalgrin.playnite.simplesync.library.enums.ScoreGroup
+import tools.jackson.databind.annotation.JsonDeserialize
 import java.io.Serial
 import java.time.LocalDateTime
 import java.time.ZonedDateTime
@@ -20,12 +23,14 @@ data class GameDiffDatabaseModel(
     var isHidden: Boolean = false,
     @all:JsonProperty("isFavorite")
     var isFavorite: Boolean = false,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var lastActivity: ZonedDateTime? = null,
     var lastActivityInMs: Long? = null,
     var sortingName: String? = null,
     var platforms: List<PlatformDTO> = emptyList(),
     var publishers: List<CompanyDTO> = emptyList(),
     var developers: List<CompanyDTO> = emptyList(),
+    @all:JsonDeserialize(using = AnyFormatLocalDateTimeDeserializer::class)
     var releaseDate: LocalDateTime? = null,
     var releaseYear: Int? = null,
     var categories: List<CategoryDTO> = emptyList(),
@@ -35,14 +40,17 @@ data class GameDiffDatabaseModel(
     var playtime: Long = 0,
     var playtimeCategory: PlaytimeCategory? = null,
     var playtimeDiff: Long? = null,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var added: ZonedDateTime? = null,
     var addedInMs: Long? = null,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var modified: ZonedDateTime? = null,
     var modifiedInMs: Long? = null,
     var playCount: Long = 0,
     var playCountDiff: Long? = null,
     var installSize: Long? = null,
     var installSizeGroup: InstallSizeGroup? = null,
+    @all:JsonDeserialize(using = AnyFormatZonedDateTimeDeserializer::class)
     var lastSizeScanDate: ZonedDateTime? = null,
     var lastSizeScanDateInMs: Long? = null,
     var series: List<SeriesDTO> = emptyList(),

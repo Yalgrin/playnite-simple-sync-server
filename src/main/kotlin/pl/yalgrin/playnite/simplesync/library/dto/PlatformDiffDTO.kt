@@ -1,7 +1,9 @@
 package pl.yalgrin.playnite.simplesync.library.dto
 
 import com.fasterxml.jackson.annotation.JsonProperty
+import pl.yalgrin.playnite.simplesync.common.config.json.AnyFormatInstantDeserializer
 import pl.yalgrin.playnite.simplesync.common.util.ToStringUtil
+import tools.jackson.databind.annotation.JsonDeserialize
 import java.io.Serial
 import java.time.Instant
 
@@ -14,6 +16,7 @@ data class PlatformDiffDTO(
     @all:JsonProperty("isRemoved")
     override var isRemoved: Boolean = false,
     var specificationId: String? = null,
+    @all:JsonDeserialize(using = AnyFormatInstantDeserializer::class)
     override var createdAt: Instant? = null,
     override var createdBy: String? = null
 ) : LibraryObjectDiffDTO {
