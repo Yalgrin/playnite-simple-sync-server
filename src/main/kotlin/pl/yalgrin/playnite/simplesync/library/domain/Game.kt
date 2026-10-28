@@ -76,7 +76,7 @@ data class Game(
     var isSavingCoverImage: Boolean = true,
 
     @Transient
-    var isSavingBackground: Boolean = true,
+    var isSavingBackgroundImage: Boolean = true,
 ) : LibraryObjectEntity {
     override fun toString(): String {
         return ToStringUtil.createBuilder(this)

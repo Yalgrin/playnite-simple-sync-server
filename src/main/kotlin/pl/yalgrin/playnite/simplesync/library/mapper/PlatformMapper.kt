@@ -29,7 +29,7 @@ class PlatformMapper :
         }
         changedEntity.isSavingIcon = true
         changedEntity.isSavingCoverImage = true
-        changedEntity.isSavingBackground = true
+        changedEntity.isSavingBackgroundImage = true
         return result
     }
 

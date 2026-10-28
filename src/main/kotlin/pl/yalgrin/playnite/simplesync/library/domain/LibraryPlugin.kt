@@ -49,5 +49,5 @@ data class LibraryPlugin(
     var isSavingIcon: Boolean = true,
 
     @Transient
-    var isSavingBackground: Boolean = true,
+    var isSavingBackgroundImage: Boolean = true,
 ) : LibraryObjectEntity

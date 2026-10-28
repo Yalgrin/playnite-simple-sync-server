@@ -40,7 +40,7 @@ class GameMapper : LibraryObjectWithDiffMapperImpl<Game, GameDiff, GameDTO, Game
         changedDiff.pluginId = changedEntity.pluginId
         changedEntity.isSavingIcon = true
         changedEntity.isSavingCoverImage = true
-        changedEntity.isSavingBackground = true
+        changedEntity.isSavingBackgroundImage = true
         return result
     }
 

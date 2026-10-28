@@ -573,7 +573,7 @@ class GameService(
             }
 
             BACKGROUND_IMAGE -> {
-                isSavingField = entity.isSavingBackground
+                isSavingField = entity.isSavingBackgroundImage
             }
         }
         return isSavingField
@@ -1483,6 +1483,7 @@ class GameService(
         return super.updateAuditingFields(pair)
             .flatMap { (game, diffDTO) ->
                 getSessionInfo().map { it.panelUser }.defaultIfEmpty(false)
+                    .filter { it }
                     .flatMap {
                         game.extractDbModelOrEmpty()
                             .map { dbModel ->

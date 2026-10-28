@@ -83,7 +83,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
             def files = PanelGameFactoryUtil.randomFiles()
             game.setSavingIcon(files.any { it.name.startsWith("Icon") })
             game.setSavingCoverImage(files.any { it.name.startsWith("CoverImage") })
-            game.setSavingBackground(files.any { it.name.startsWith("BackgroundImage") })
+            game.setSavingBackgroundImage(files.any { it.name.startsWith("BackgroundImage") })
             list.add(Tuple.of(game, files))
         }
         List<Long> createdIds = new ArrayList<>()
@@ -124,7 +124,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         def files = PanelGameFactoryUtil.randomFiles()
         dto.setSavingIcon(files.any { it.name.startsWith("Icon") })
         dto.setSavingCoverImage(files.any { it.name.startsWith("CoverImage") })
-        dto.setSavingBackground(files.any { it.name.startsWith("BackgroundImage") })
+        dto.setSavingBackgroundImage(files.any { it.name.startsWith("BackgroundImage") })
         AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
@@ -162,7 +162,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         def files = PanelGameFactoryUtil.randomFiles()
         dto.setSavingIcon(files.any { it.name.startsWith("Icon") })
         dto.setSavingCoverImage(files.any { it.name.startsWith("CoverImage") })
-        dto.setSavingBackground(files.any { it.name.startsWith("BackgroundImage") })
+        dto.setSavingBackgroundImage(files.any { it.name.startsWith("BackgroundImage") })
         AtomicLong newObjectId = new AtomicLong(-1)
 
         when:
@@ -202,7 +202,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         def files = PanelGameFactoryUtil.randomFiles(100, 100, 100)
         toSave.setSavingIcon(files.any { it.name.startsWith("Icon") })
         toSave.setSavingCoverImage(files.any { it.name.startsWith("CoverImage") })
-        toSave.setSavingBackground(files.any { it.name.startsWith("BackgroundImage") })
+        toSave.setSavingBackgroundImage(files.any { it.name.startsWith("BackgroundImage") })
 
         when:
         def changeRequest = makeConnectRequest(otherClientInfo)
@@ -282,7 +282,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
                     modified.setDescription("Description")
                     modified.setSavingIcon(false)
                     modified.setSavingCoverImage(false)
-                    modified.setSavingBackground(false)
+                    modified.setSavingBackgroundImage(false)
                     def newGenre = new PanelGenreDTO()
                     newGenre.name = "New genre"
                     modified.genres = List.of(newGenre)
@@ -346,11 +346,12 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
                                 assert it.pluginId != null
                                 assert it.pluginName == toSave.plugin.name
                                 assert it.changedFields != null
-                                assert it.changedFields.size() == 4
+                                assert it.changedFields.size() == 5
                                 assert it.changedFields.contains("Name")
                                 assert it.changedFields.contains("Description")
                                 assert it.changedFields.contains("Genres")
                                 assert it.changedFields.contains("Source")
+                                assert it.changedFields.contains("Modified")
                                 assert it.name == modifiedGame.get().name
                                 assert it.description == modifiedGame.get().description
                                 assert it.pluginName == modifiedGame.get().plugin.name
@@ -430,11 +431,12 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
                                 assert it.pluginId != null
                                 assert it.pluginName == toSave.plugin.name
                                 assert it.changedFields != null
-                                assert it.changedFields.size() == 4
+                                assert it.changedFields.size() == 5
                                 assert it.changedFields.contains("Name")
                                 assert it.changedFields.contains("Version")
                                 assert it.changedFields.contains("Categories")
                                 assert it.changedFields.contains("Source")
+                                assert it.changedFields.contains("Modified")
                                 assert it.name == secondModifiedGame.get().name
                                 assert it.description == null
                                 assert it.version == secondModifiedGame.get().version
@@ -491,7 +493,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         def files = List.of(icon, coverImage, backgroundImage)
         dto.savingIcon = true
         dto.savingCoverImage = true
-        dto.savingBackground = true
+        dto.savingBackgroundImage = true
         AtomicReference<PanelGameDTO> savedFirstGame = new AtomicReference<>()
 
         when:
@@ -522,7 +524,7 @@ class PanelGameResourceTest extends AbstractPanelObjectWithDiffTest<Game, PanelG
         PanelGameDTO diffDTO = savedFirstGame.get().copyAll()
         diffDTO.savingIcon = true
         diffDTO.savingCoverImage = true
-        diffDTO.savingBackground = true
+        diffDTO.savingBackgroundImage = true
 
         def diffResponse = makeSaveRequest(diffDTO, List.of())
 

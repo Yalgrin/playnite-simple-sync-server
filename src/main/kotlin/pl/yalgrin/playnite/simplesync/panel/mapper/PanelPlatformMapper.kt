@@ -28,7 +28,7 @@ class PanelPlatformMapper :
 
         changedEntity.isSavingIcon = dto.isSavingIcon
         changedEntity.isSavingCoverImage = dto.isSavingCoverImage
-        changedEntity.isSavingBackground = dto.isSavingBackground
+        changedEntity.isSavingBackgroundImage = dto.isSavingBackgroundImage
         return result
     }
 

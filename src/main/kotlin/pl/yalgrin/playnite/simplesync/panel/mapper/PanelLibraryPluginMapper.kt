@@ -18,7 +18,7 @@ class PanelLibraryPluginMapper :
         val changedEntity = result.first
 
         changedEntity.isSavingIcon = dto.isSavingIcon
-        changedEntity.isSavingBackground = dto.isSavingBackground
+        changedEntity.isSavingBackgroundImage = dto.isSavingBackgroundImage
         return result
     }
 

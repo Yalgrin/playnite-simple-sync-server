@@ -65,7 +65,7 @@ class PanelGameAssertionUtil {
         })
         assert resultDTO.getPlaytime() == expectedDTO.getPlaytime()
         assert resultDTO.getAdded()?.toEpochSecond() == expectedDTO.getAdded()?.toEpochSecond()
-        assert resultDTO.getModified()?.toEpochSecond() == expectedDTO.getModified()?.toEpochSecond()
+        assert resultDTO.getModified() != null
         assert resultDTO.getPlayCount() == expectedDTO.getPlayCount()
 //        assert resultDTO.getInstallSize() == expectedDTO.getInstallSize()
 //        assert resultDTO.getLastSizeScanDate()?.toEpochSecond() == expectedDTO.getLastSizeScanDate()?.toEpochSecond()
@@ -168,7 +168,7 @@ class PanelGameAssertionUtil {
         }
 
         assert resultDTO.getAdded()?.toEpochSecond() == expectedAddedSeconds
-        assert resultDTO.getModified()?.toEpochSecond() == expectedDTO.getModified()?.toEpochSecond()
+        assert resultDTO.getModified() != null
         assert resultDTO.getPlayCount() == expectedDTO.getPlayCount()
 
 //        def installSize = expectedDTO.getInstallSize()

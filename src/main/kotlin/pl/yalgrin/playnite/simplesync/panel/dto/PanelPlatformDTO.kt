@@ -16,8 +16,8 @@ data class PanelPlatformDTO(
     var isSavingIcon: Boolean = false,
     @all:JsonProperty("isSavingCoverImage")
     var isSavingCoverImage: Boolean = false,
-    @all:JsonProperty("isSavingBackground")
-    var isSavingBackground: Boolean = false
+    @all:JsonProperty("isSavingBackgroundImage")
+    var isSavingBackgroundImage: Boolean = false
 ) : PanelObjectDTO {
     companion object {
         @Serial

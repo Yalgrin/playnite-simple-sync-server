@@ -1,6 +1,7 @@
 package pl.yalgrin.playnite.simplesync.util
 
 import org.apache.commons.compress.utils.Lists
+import pl.yalgrin.playnite.simplesync.library.dto.PanelObjectDTO
 
 import java.util.concurrent.ThreadLocalRandom
 import java.util.function.Function
@@ -26,5 +27,9 @@ class RandomUtil {
             result.add(supplier.apply(i))
         }
         return result
+    }
+
+    static <T extends PanelObjectDTO> List<T> generateSortedRandomList(Function<Integer, T> supplier, int min = 0, int max = 10, int chanceOfNull = 5) {
+        generateRandomList(supplier, min, max, chanceOfNull).toSorted(Comparator.comparing { PanelObjectDTO t -> t.getName() })
     }
 }

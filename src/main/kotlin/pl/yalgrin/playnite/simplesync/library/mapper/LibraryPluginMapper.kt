@@ -22,7 +22,7 @@ class LibraryPluginMapper :
         val result = super.fillBasicFields(dto, entity, generatedDiffDTO)
         val changedEntity = result.first
         changedEntity.isSavingIcon = true
-        changedEntity.isSavingBackground = true
+        changedEntity.isSavingBackgroundImage = true
         return result
     }
 

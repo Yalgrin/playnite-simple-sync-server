@@ -51,7 +51,7 @@ class PanelGameMapper(
         changedDiff.pluginId = changedEntity.pluginId
         changedEntity.isSavingIcon = dto.isSavingIcon
         changedEntity.isSavingCoverImage = dto.isSavingCoverImage
-        changedEntity.isSavingBackground = dto.isSavingBackground
+        changedEntity.isSavingBackgroundImage = dto.isSavingBackgroundImage
         return result
     }
 

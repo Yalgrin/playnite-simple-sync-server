@@ -100,7 +100,7 @@ class PlatformService(
             }
 
             BACKGROUND_IMAGE -> {
-                isSavingField = entity.isSavingBackground
+                isSavingField = entity.isSavingBackgroundImage
             }
         }
         return isSavingField

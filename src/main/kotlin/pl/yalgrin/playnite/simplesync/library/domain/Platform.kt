@@ -58,5 +58,5 @@ data class Platform(
     var isSavingCoverImage: Boolean = true,
 
     @Transient
-    var isSavingBackground: Boolean = true,
+    var isSavingBackgroundImage: Boolean = true,
 ) : LibraryObjectEntity
