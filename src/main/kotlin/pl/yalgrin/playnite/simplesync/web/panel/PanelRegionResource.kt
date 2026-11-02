@@ -33,4 +33,9 @@ class PanelRegionResource(
     fun filterRegions(): Mono<List<PanelRegionDTO>> {
         return service.findAllForPanel()
     }
+
+    @GetMapping("/specification-ids")
+    fun findSpecificationIds(): Mono<List<String>> {
+        return service.findSpecificationIds()
+    }
 }

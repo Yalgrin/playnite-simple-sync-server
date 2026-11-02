@@ -12,4 +12,7 @@ interface PlatformRepository : ObjectRepository<Platform> {
 
     @Query("select id from playnite_platform where id in (:ids)")
     fun findIdsByIds(ids: Iterable<Long>): Flux<Long>
+
+    @Query("select distinct p.specification_id from playnite_platform p where p.specification_id is not null and p.removed = false")
+    fun findSpecificationIds(): Flux<String>
 }

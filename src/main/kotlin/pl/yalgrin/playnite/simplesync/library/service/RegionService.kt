@@ -18,7 +18,7 @@ import java.util.*
 
 @Service
 class RegionService(
-    repository: RegionRepository,
+    private val regionRepository: RegionRepository,
     mapper: RegionMapper,
     panelMapper: PanelRegionMapper,
     changeService: ChangeService,
@@ -27,7 +27,7 @@ class RegionService(
     @param:Lazy
     private val gameService: GameService
 ) : BaseLibraryObjectService<RegionDTO, Region, PanelRegionDTO>(
-    repository,
+    regionRepository,
     mapper,
     panelMapper,
     changeService,
@@ -56,5 +56,9 @@ class RegionService(
 
     override fun doActionsAfterDelete(results: List<LibrarySaveResult<Region>>): Mono<List<ChangeDTO>> {
         return gameService.updateRegionsAfterDelete(results)
+    }
+
+    fun findSpecificationIds(): Mono<List<String>> {
+        return regionRepository.findSpecificationIds().collectList().transactionalReadOnly()
     }
 }

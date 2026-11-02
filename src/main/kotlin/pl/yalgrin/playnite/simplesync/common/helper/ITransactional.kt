@@ -3,6 +3,7 @@ package pl.yalgrin.playnite.simplesync.common.helper
 import org.springframework.transaction.ReactiveTransactionManager
 import org.springframework.transaction.interceptor.DefaultTransactionAttribute
 import org.springframework.transaction.reactive.TransactionalOperator
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
 interface ITransactional {
@@ -14,7 +15,20 @@ interface ITransactional {
         operator.transactional(this)
     }
 
+    fun <T : Any> Flux<T>.transactional(): Flux<T> = Flux.defer {
+        val definition = DefaultTransactionAttribute()
+        val operator = TransactionalOperator.create(reactiveTransactionManager, definition)
+        operator.transactional(this)
+    }
+
     fun <T : Any> Mono<T>.transactionalReadOnly(): Mono<T> = Mono.defer {
+        val definition = DefaultTransactionAttribute()
+        definition.isReadOnly = true
+        val operator = TransactionalOperator.create(reactiveTransactionManager, definition)
+        operator.transactional(this)
+    }
+
+    fun <T : Any> Flux<T>.transactionalReadOnly(): Flux<T> = Flux.defer {
         val definition = DefaultTransactionAttribute()
         definition.isReadOnly = true
         val operator = TransactionalOperator.create(reactiveTransactionManager, definition)

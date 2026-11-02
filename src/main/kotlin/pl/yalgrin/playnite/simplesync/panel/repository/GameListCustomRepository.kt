@@ -3,6 +3,8 @@ package pl.yalgrin.playnite.simplesync.panel.repository
 import io.vavr.Tuple
 import org.springframework.r2dbc.core.DatabaseClient
 import org.springframework.stereotype.Repository
+import pl.yalgrin.playnite.simplesync.common.config.NULL_GUID_ID
+import pl.yalgrin.playnite.simplesync.common.config.NULL_OBJECT_ID
 import pl.yalgrin.playnite.simplesync.common.util.escapeLike
 import pl.yalgrin.playnite.simplesync.common.util.isNotNullAndNotBlank
 import pl.yalgrin.playnite.simplesync.library.dto.filter.IdItemPropertiesDTO
@@ -59,8 +61,8 @@ class GameListCustomRepository(
 
             val releaseYears = filter.releaseYear?.values
             if (!releaseYears.isNullOrEmpty()) {
-                val hasEmpty = releaseYears.any { it.isBlank() }
-                val notNull = releaseYears.filter { it.isNotBlank() }.toList()
+                val hasEmpty = releaseYears.any { it.isEmptyOption() }
+                val notNull = releaseYears.filter { !it.isEmptyOption() }.toList()
                 queryBuilder.append(" AND (0=1")
                 if (hasEmpty) {
                     queryBuilder.append(" OR g.contents->>'releaseYear' IS NULL OR g.contents->>'releaseYear' = ''")
@@ -147,8 +149,8 @@ class GameListCustomRepository(
         } else if (ids.isNotEmpty()) {
             val paramName = "${fieldName}Ids"
 
-            val matchNone = ids.any { it.isBlank() || it.isEmpty() }
-            val matchAnyValue = ids.any { it.isNotEmpty() && it.isNotBlank() }
+            val matchNone = ids.any { it.isEmptyOption() }
+            val matchAnyValue = ids.any { !it.isEmptyOption() }
 
             if (useAndFilteringStyle) {
                 if (matchNone) {
@@ -204,8 +206,8 @@ class GameListCustomRepository(
             params[paramName] = "%${text.escapeLike()}%"
         } else if (ids.isNotEmpty()) {
             val paramName = "${fieldName}Ids"
-            val hasEmpty = ids.any { it.isBlank() }
-            val notNull = ids.filter { it.isNotBlank() }.toList()
+            val hasEmpty = ids.any { it.isEmptyOption() }
+            val notNull = ids.filter { !it.isEmptyOption() }.toList()
             queryBuilder.append(" AND (0=1")
             if (hasEmpty) {
                 queryBuilder.append(" OR CAST(g.contents->>'$fieldName' AS jsonb)->>'id' IS NULL OR CAST(g.contents->>'$fieldName' AS jsonb)->>'id' = ''")
@@ -235,11 +237,11 @@ class GameListCustomRepository(
             params[paramName] = "%${text.escapeLike()}%"
         } else if (ids.isNotEmpty()) {
             val paramName = "${fieldName}Ids"
-            val hasEmpty = ids.any { it.isBlank() }
-            val notNull = ids.filter { it.isNotBlank() }.toList()
+            val hasEmpty = ids.any { it.isEmptyOption() }
+            val notNull = ids.filter { !it.isEmptyOption() }.toList()
             queryBuilder.append(" AND (0=1")
             if (hasEmpty) {
-                queryBuilder.append(" OR g.contents->>'$idFieldName' IS NULL OR g.contents->>'$idFieldName' = ''")
+                queryBuilder.append(" OR g.contents->>'$idFieldName' IS NULL OR g.contents->>'$idFieldName' = '' OR g.contents->>'$idFieldName' = '$NULL_GUID_ID'")
             }
             if (notNull.isNotEmpty()) {
                 queryBuilder.append(" OR g.contents->>'$idFieldName' IN (:$paramName)")
@@ -409,5 +411,9 @@ class GameListCustomRepository(
         } else {
             queryBuilder.append(" ORDER BY COALESCE(g.contents->>'sortingName', name) $direction, id $direction")
         }
+    }
+
+    private fun String?.isEmptyOption(): Boolean {
+        return this.isNullOrBlank() || this == NULL_OBJECT_ID || this == NULL_GUID_ID
     }
 }

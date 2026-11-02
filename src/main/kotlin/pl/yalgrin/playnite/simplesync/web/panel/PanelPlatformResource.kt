@@ -69,4 +69,9 @@ class PanelPlatformResource(
     fun filterPlatforms(): Mono<List<PanelPlatformDTO>> {
         return service.findAllForPanel()
     }
+
+    @GetMapping("/specification-ids")
+    fun findSpecificationIds(): Mono<List<String>> {
+        return service.findSpecificationIds()
+    }
 }

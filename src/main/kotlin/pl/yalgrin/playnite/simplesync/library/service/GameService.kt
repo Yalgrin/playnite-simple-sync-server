@@ -1481,6 +1481,7 @@ class GameService(
 
     override fun updateAuditingFields(pair: Pair<Game, GameDiffDTO>): Mono<Pair<Game, GameDiffDTO>> {
         return super.updateAuditingFields(pair)
+            .filter { it.second.changedFields.isNotEmpty() }
             .flatMap { (game, diffDTO) ->
                 getSessionInfo().map { it.panelUser }.defaultIfEmpty(false)
                     .filter { it }
@@ -1496,7 +1497,6 @@ class GameService(
                             .flatMap { it.asJson() }
                             .doOnNext { game.savedData = it }
                     }
-                    .thenReturn(pair)
-            }
+            }.thenReturn(pair)
     }
 }

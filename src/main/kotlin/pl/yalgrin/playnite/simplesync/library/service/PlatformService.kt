@@ -26,7 +26,7 @@ import java.util.*
 
 @Service
 class PlatformService(
-    gameRepository: PlatformRepository,
+    private val platformRepository: PlatformRepository,
     diffRepository: PlatformDiffRepository,
     mapper: PlatformMapper,
     panelMapper: PanelPlatformMapper,
@@ -37,7 +37,7 @@ class PlatformService(
     @param:Lazy
     private val gameService: GameService
 ) : BaseLibraryObjectWithDiffService<PlatformDTO, PlatformDiffDTO, PanelPlatformDTO, Platform, PlatformDiff>(
-    gameRepository,
+    platformRepository,
     diffRepository,
     mapper,
     panelMapper,
@@ -151,4 +151,9 @@ class PlatformService(
             playniteId = UUID.randomUUID().toString()
         )
     }
+
+    fun findSpecificationIds(): Mono<List<String>> {
+        return platformRepository.findSpecificationIds().collectList().transactionalReadOnly()
+    }
+
 }
