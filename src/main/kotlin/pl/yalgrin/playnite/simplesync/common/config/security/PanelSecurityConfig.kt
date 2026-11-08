@@ -8,7 +8,6 @@ import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.security.access.AccessDeniedException
-import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder
 import org.springframework.security.config.web.server.ServerHttpSecurity
@@ -20,6 +19,7 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint
 import org.springframework.security.web.server.authorization.ServerAccessDeniedHandler
 import org.springframework.security.web.server.context.ServerSecurityContextRepository
 import org.springframework.security.web.server.context.WebSessionServerSecurityContextRepository
+import org.springframework.security.web.server.csrf.CsrfException
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.server.ServerWebExchange
 import org.springframework.web.server.session.CookieWebSessionIdResolver
@@ -72,7 +72,7 @@ class PanelSecurityConfig {
                     .pathMatchers(HttpMethod.POST, "/api/panel/auth/login").permitAll()
                     .anyExchange().authenticated()
             }
-            .csrf(Customizer.withDefaults())
+            .csrf { csrf -> csrf.accessDeniedHandler(CustomServerAccessDeniedHandler()) }
             .addFilterAfter(PanelSessionFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
             .build()
 
@@ -148,6 +148,9 @@ class CustomServerAccessDeniedHandler : ServerAccessDeniedHandler {
             .flatMap { bytes ->
                 exchange.response.statusCode = HttpStatus.FORBIDDEN
                 exchange.response.headers.contentType = MediaType.APPLICATION_JSON
+                if (ex is CsrfException) {
+                    exchange.response.headers.add("X-CSRF-Error", "true")
+                }
                 exchange.response.writeWith(Mono.just(exchange.response.bufferFactory().wrap(bytes)))
             }
     }

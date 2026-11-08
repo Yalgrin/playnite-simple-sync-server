@@ -125,7 +125,7 @@ class GameListService(
                 }
             }
         }
-        var comparator = getComparator(grouping)
+        val comparator = getComparator(grouping)
         val sortedKeys = map.keys.sortedWith(comparator)
         return sortedKeys to map
     }
@@ -142,13 +142,15 @@ class GameListService(
                 GroupableField.MODIFIED,
                 GroupableField.INSTALL_SIZE,
                 GroupableField.LAST_ACTIVITY,
-                GroupableField.LAST_ACTIVITY,
-                GroupableField.LAST_ACTIVITY,
-                GroupableField.LAST_ACTIVITY,
                 GroupableField.RECENT_ACTIVITY,
             )
         ) {
             comparator = compareBy { it.toIntOrNull() ?: 999999 }
+        } else if (grouping in setOf(
+                GroupableField.RELEASE_YEAR
+            )
+        ) {
+            comparator = compareBy { it.toIntOrNull() ?: -999999 }
         } else {
             comparator = Comparator<String> { s1, s2 ->
                 if (s1.isEmpty() && s2.isNotEmpty()) {
